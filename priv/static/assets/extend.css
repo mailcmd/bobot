@@ -1,0 +1,50 @@
+html {
+    -webkit-tap-highlight-color: unset !important;
+}
+
+.phx-connected {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    overflow-x: hidden;
+}
+
+dialog {
+  position: relative;
+  border: 1px solid #6b21a8;
+  padding: 20px;
+  border-radius: 8px;
+  padding-top: 48px;
+  box-shadow: 0 0 10px 0px #6b21a8;  
+}
+
+dialog::backdrop {
+  background-color: #6b21a850;
+}
+
+dialog::before {
+  content: attr(data-title) !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem;  
+  color: white;
+  font-weight: bolder;
+}
+
+dialog .close {
+  position: absolute;
+  top: 11px;
+  right: 6px;
+  color: white;
+}
+
+input[required], select[required] {
+  outline-width: 1px;
+  outline-color: blueviolet;
+  outline-style: solid;
+}
