@@ -71,10 +71,10 @@ defmodule BobotWeb.Components do
 
   def select(assigns) do
     ~H"""
-    <div class={[@inline && "inline-grid" || "grid", "grid grid-cols-3 place-items-center"]}>
+    <div class={[@inline && "inline-grid" || "grid", "grid-cols-3 place-items-stretch"]}>
       <label for={@name}
         class={[
-          "block text-xs px-2 py-3 align-middle text-right font-medium dark:text-white",
+          "block text-xs px-2 py-3 align-middle text-right font-medium text-gray-900 dark:text-white",
         ]}><%= @label %></label>
       <select id={@name} name={@name}
         class={[
