@@ -1,0 +1,20 @@
+[
+  [:bot_config, [
+    start_block: :start,
+    start_params: phone,
+    stop_block: :good_bye,
+    fallback_block: :good_bye
+  ]],
+  [:block, :start, [receive: muid], [
+    [:call_api, :authenticate, [params: muid]],
+    [:case, session_value(:authentication), [
+      [:error, [
+        [:terminate, [message: "No estás autorizado para usar @SMI BOT, envía este ID: <b>#{muid}</b> a los admines"]]
+      ]],
+      [_, [
+        [:send_message, "Bienvenido, decime qué querés buscar..."],
+        [:call_block, :loop]
+      ]]
+    ]]
+  ]]
+]

@@ -1,0 +1,16 @@
+<form phx-submit="save:defblock">
+  <.input_hidden name="ope" value="put" />
+  <ul class="mb-5">
+    <li>
+      <.input name="name" label="Block name" required pattern="[a-z_]+" 
+        placeholder="You can use a-z and _"/>
+    </li>
+    <li>
+      <.input name="params" label="Block param(s)" placeholder="Ex: [id, name]" 
+        title="Can be a var name or many closed by [] and separated by ,"/>
+    </li>
+  </ul>
+  <.small_button class="float-right" icon="hand-thumb-up-solid" type="submit">
+    Save
+  </.small_button>
+</form>

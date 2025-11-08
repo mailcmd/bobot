@@ -1,0 +1,26 @@
+<form phx-submit="save:hooks">
+  <ul class="mb-5">
+    <li>
+      <.input name="start_block" label="Start block" required pattern="[a-z_]+" 
+        placeholder="You can use a-z and _"
+        value={Keyword.get(@current_bot[:hooks], :start_block, "")}/>
+    </li>
+    <li>
+      <.input name="start_params_count" label="Start params count" pattern="[0-9]+"
+        value={Keyword.get(@current_bot[:hooks], :start_params_count, "0")} />
+    </li>
+    <li>
+      <.input name="stop_block" label="Stop block" pattern="[a-z_]*"  
+        placeholder="You can use a-z and _"
+        value={Keyword.get(@current_bot[:hooks], :stop_block, "")}/>
+    </li>
+    <li>
+      <.input name="fallback_block" label="Fallback block" required pattern="[a-z_]+" 
+        placeholder="You can use a-z and _"
+        value={Keyword.get(@current_bot[:hooks], :fallback_block, "")}/>
+    </li>
+  </ul>
+  <.small_button class="float-right" icon="hand-thumb-up-solid" type="submit">
+    Save
+  </.small_button>
+</form>

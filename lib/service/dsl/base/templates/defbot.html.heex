@@ -1,0 +1,14 @@
+<form phx-submit="save:defbot">
+  <ul class="mb-5">
+    <li>
+      <.input name="name" label="Bot name" required pattern="[a-z]+" 
+        placeholder="You can use a-z"/>
+    </li>
+    <li>
+      <.select name="type" label="Type" options={[{"telegram", "Telegram"}]}/>
+    </li>
+  </ul>
+  <.small_button class="float-right" icon="hand-thumb-up-solid" type="submit">
+    Save
+  </.small_button>
+</form>
