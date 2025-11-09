@@ -28,14 +28,58 @@
   
 </header>
 
-<main class="flex flex-grow bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+<main class="flex flex-grow bg-gray-900 text-gray-100 dark:bg-gray-900 dark:text-gray-100">
   <div><%= "#{inspect @current_bot}" %></div>
-  <div class="grid grid-cols-2 border border-red">
-    <div>Equipment Cost</div>
-    <div class="text-right">$5,678</div>
-
-    <div>Building Depreciation</div>
-    <div class="text-right">$8,345</div>
+  <div :if={@current_bot[:definition] != %{}} class="overflow-hidden w-60 text-xs mt-12 border-4 border-purple-900 bottom-0 bg-purple-700 text-white rounded-lg m-1 fixed right-1 top-1">
+    <div class="w-full">
+      <table class="table-auto w-full border-b-2 border-purple-900">
+        <thead class="bg-purple-900 text-gray-200">
+          <tr>
+            <th class="p-2" colspan="2">Current Bot</th>
+          </tr>
+        </thead>
+        <tbody class="bg-purple-200 text-gray-800">
+          <tr class="border-1 border-b border-purple-400">
+            <td class="p-1 pl-2 font-bold">Name</td>
+            <td class="p-1 pr-2 text-right"><%= @current_bot[:definition][:name] %></td>
+          </tr>
+          <tr class="border-1 border-b border-purple-400">
+            <td class="p-1 pl-2 font-bold">Type</td>
+            <td class="p-1 pr-2 text-right"><%= @current_bot[:definition][:type] %></td>
+          </tr>
+        </tbody>
+      </table>
+      <table :if={@current_bot[:config] != []} class="table-fixed w-full">
+        <thead class="bg-purple-900 text-gray-200">
+          <tr>
+            <th class="p-2" colspan="2">Settings</th>
+          </tr>
+        </thead>
+        <tbody class="bg-purple-200 text-gray-800">
+          <%= for {key, value} <- @current_bot[:config] do %>
+          <tr class="border-1 border-b border-purple-400">
+            <td class="p-1 pl-2"><%= key %></td>
+            <td class="p-1 pr-2 text-right whitespace-normal"><%= value %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <table :if={@current_bot[:hooks] != []} class="table-fixed w-full">
+        <thead class="bg-purple-900 text-gray-200">
+          <tr>
+            <th class="p-2" colspan="2">Settings</th>
+          </tr>
+        </thead>
+        <tbody class="bg-purple-200 text-gray-800">
+          <%= for {key, value} <- @current_bot[:hooks] do %>
+          <tr class="border-1 border-b border-purple-400">
+            <td class="p-1 pl-2"><%= key %></td>
+            <td class="p-1 pr-2 text-right"><%= value %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   </div>
 </main>
 
