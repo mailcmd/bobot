@@ -10,9 +10,12 @@
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <link phx-track-static rel="stylesheet" href={~p"/assets/extend.css"} />
+    
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/extend.js"}></script>
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/ace/ace.js"}></script>
   </head>
   <body class="flex flex-col h-screen w-screen">
-    <%= @inner_content %>
+    <%= @inner_content %> 
   </body>
 </html>

@@ -24,6 +24,7 @@ defmodule BobotWeb.Home do
       config: [],
       hooks: [],
       body: [],
+      opened_block: -1,
       current_line: 0,
       current_level: 0,
       current_ope: "put"
@@ -38,10 +39,35 @@ defmodule BobotWeb.Home do
       |> assign(bots: %{})
       |> assign(modal: %{})
       |> assign(current_bot: %{
+        box_status: "maximized",
         definition: %{},
         config: [],
         hooks: [],
-        body: [],
+        body: [
+          [0, :defblock, [:start, [receive: {:muid, [], Elixir}]]],
+            [1, :call_api, [:authenticate, params: {:muid, [], Elixir}]],
+            [1, :case, [{:session_value, [], [:authentication]}]],
+              [2, :pattern, [:error]],
+                [3, :terminate, [
+                  message: {:<<>>, [],
+                  [
+                    "No estás autorizado para usar @SMI BOT, envía este ID: <b>",
+                    {:"::", [],
+                      [
+                        {{:., [], [Kernel, :to_string]}, [from_interpolation: true],
+                        [{:muid, [], Elixir}]},
+                        {:binary, [], Elixir}
+                      ]},
+                    "</b> a los admines"
+                  ]}
+                ]],
+              [2, :pattern, [{:_, [], Elixir}]],
+                [3, :send_message, ["Bienvenido, decime qué querés buscar..."]],
+                [3, :call_block, [:loop]],
+          [0, :defblock, [:stop, nil]],
+            [1, :terminate, [message: "Chau master!"]]
+        ],
+        opened_block: -1,
         current_line: 0,
         current_level: 0,
         current_ope: "put"
@@ -128,7 +154,7 @@ defmodule BobotWeb.Home do
   ## Specific SAVE for new_bot
   def handle_event("save:defbot", params, socket) do
     assigns = socket.assigns
-    module = assigns[:sentencies]["defbot"][:module]
+    module = assigns[:sentencies]["defbot"][:template]
     {result, message, def} = apply(module, :save, ["defbot", params, assigns])
 
     socket =
@@ -152,7 +178,7 @@ defmodule BobotWeb.Home do
   ## Specific SAVE for settings
   def handle_event("save:settings", params, socket) do
     assigns = socket.assigns
-    module = assigns[:sentencies]["settings"][:module]
+    module = assigns[:sentencies]["settings"][:template]
     {result, message, config} = apply(module, :save, ["settings", params, assigns])
 
     socket =
@@ -175,7 +201,7 @@ defmodule BobotWeb.Home do
   ## Specific SAVE for hooks
   def handle_event("save:hooks", params, socket) do
     assigns = socket.assigns
-    module = assigns[:sentencies]["hooks"][:module]
+    module = assigns[:sentencies]["hooks"][:template]
     {result, message, hooks} = apply(module, :save, ["hooks", params, assigns])
 
     socket =
@@ -198,7 +224,7 @@ defmodule BobotWeb.Home do
   ## Generic SAVE
   def handle_event("save:" <> sentency, params, socket) do
     assigns = socket.assigns
-    module = assigns[:sentencies][sentency][:module]
+    module = assigns[:sentencies][sentency][:template]
     {result, message, line} = apply(module, :save, [sentency, params, assigns])
 
     socket =
@@ -252,8 +278,29 @@ defmodule BobotWeb.Home do
     }
   end
 
-  def handle_event("validate", _params, socket) do
-    {:noreply, socket}
+  ################################################################################################
+  ## Misc events
+  ################################################################################################
+
+  def handle_event("open-block", params, socket) do
+    line = String.to_integer(params["value"])
+    {:noreply, socket
+      |> assign(current_bot: put_in(socket.assigns[:current_bot], [:opened_block], line))
+      |> push_event("js-exec", %{ js: """
+        // let editor = ace.edit("block-editor_#{line}");
+        // editor.setTheme("ace/theme/monokai");
+        // editor.session.setMode("ace/mode/elixir");
+        block_#{line}.showModal();
+      """ })
+    }
+  end
+
+  def handle_event("toggle-box-status", _params, socket) do
+    {:noreply, socket
+      |> push_event("js-exec", %{ js: """
+        toggle_box_min_max(document.getElementById('current-bot-info'))
+      """ })
+    }
   end
 
   ################################################################################################
@@ -267,6 +314,22 @@ defmodule BobotWeb.Home do
   ################################################################################################
   ## Private tools
   ################################################################################################
+
+  defp get_block_lines(body, line) do
+    block_lines =
+      body
+      |> :lists.sublist(line+2, length(body))
+      |> Enum.take_while(fn [level, _, _] -> level > 0 end)
+
+    [:lists.nth(line+1, body) | block_lines]
+  end
+
+  defp parse_lines(lines, sentencies, result \\ [])
+  defp parse_lines([], _, result), do: result
+  defp parse_lines([[_, sentency, _] = line | lines], sentencies, result) do
+    module = sentencies["#{sentency}"][:tools]
+    parse_lines(lines, sentencies, result ++ [ apply(module, :parse_sentency, [line]) ])
+  end
 
   defp put_message(socket, message, timeout \\ 3500)
   defp put_message(socket, nil, _), do: socket
@@ -296,7 +359,7 @@ defmodule BobotWeb.Home do
   end
 
   defp get_sentencies() do
-    Bobot.Tools.get_modules(~r/Bobot\.DSL\.(.+?)\.Parser/)
+    Bobot.Tools.get_modules(~r/Bobot\.DSL\.(.+?)\.Tools/)
       |> Enum.map(fn mod -> mod.info(:sentencies) end)
       |> List.flatten()
       |> Enum.into(%{})

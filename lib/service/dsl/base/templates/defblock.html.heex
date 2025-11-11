@@ -6,8 +6,8 @@
         placeholder="You can use a-z and _"/>
     </li>
     <li>
-      <.input name="params" label="Block param(s)" placeholder="Ex: [id, name]" 
-        title="Can be a var name or many closed by [] and separated by ,"/>
+      <.input name="params" label="Block param(s)" placeholder="Ex: [id, name]" pattern="(|\[.+\])"
+        title="Can be a var name or many vars closed by [] and separated by ,"/>
     </li>
   </ul>
   <.small_button class="float-right" icon="hand-thumb-up-solid" type="submit">

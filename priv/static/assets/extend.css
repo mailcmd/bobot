@@ -48,3 +48,53 @@ input[required], select[required] {
   outline-color: blueviolet;
   outline-style: solid;
 }
+
+.h-fit-content {
+  height: fit-content;
+}
+
+.editor {
+  width: 40vw;
+  height: 60vh;
+}
+
+
+#current-bot-info {
+ box-shadow: 0 0 10px 0px #bb83ff;   
+ transform-origin: top right;
+}
+
+
+/* Animations */
+
+.minimized {
+  animation: minimize;
+  animation-duration: 0.1s;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(.6,-0.28,.74,.05);
+}
+
+.maximized {
+  animation: maximize;
+  animation-duration: 0.1s;  
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(.95,.05,.8,.04);
+}
+
+@keyframes minimize {
+  0% {
+    transform: scaleX(1) scaleY(1);
+  }
+  100% {
+    transform: scaleX(0.1) scaleY(0.03);
+  }
+}
+
+@keyframes maximize {
+  0% {
+    transform: scaleX(0.1) scaleY(0.03);
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+  }
+}

@@ -74,12 +74,12 @@ defmodule BobotWeb.Components do
     <div class={[@inline && "inline-grid" || "grid", "grid-cols-3 place-items-stretch"]}>
       <label for={@name}
         class={[
-          "block text-xs px-2 py-3 align-middle text-right font-medium text-gray-900 dark:text-white",
+          "block text-xs px-2 py-3 align-middle text-right font-medium",
         ]}><%= @label %></label>
       <select id={@name} name={@name}
         class={[
           "block w-full p-2.5 col-span-2 bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg",
-          "focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600",
+          "focus:ring-purple-500 focus:border-purple-500 place-self-center dark:bg-gray-700 dark:border-gray-600",
           "dark:placeholder-gray-400 dark:text-white dark:focus:ring-purple-500 dark:focus:border-purple-500",
           @small && "!h-8 !p-1",
           @class

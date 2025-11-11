@@ -84,12 +84,14 @@ lbl  sentency          params
 How would example look?
 
 ```elixir
-[0, :block, [:start, receive: muid]],
+[0, :defblock, [:start, receive: muid]],
   [1, :call_api, [:authenticate, params: muid]],
   [1, :case, [session_value(:authentication)]],
     [2, :error, []],
       [3, :terminate, [message: "No estás autorizado para usar @SMI BOT, envía este ID: <b>#{muid}</b> a los admines"]],
     [2, :_, []],
       [3, :send, [message: "Bienvenido, decime qué querés buscar..."]],
-      [3, :call_block, [:loop]]
+      [3, :call_block, [:loop]],
+[0, :defblock, [:stop, nil]],
+  [1, :terminate, [message: "Chau master!"]]
 ```
