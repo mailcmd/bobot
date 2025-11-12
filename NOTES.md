@@ -95,3 +95,16 @@ How would example look?
 [0, :defblock, [:stop, nil]],
   [1, :terminate, [message: "Chau master!"]]
 ```
+
+{:__block__, [],
+ [
+   {:import, [line: 1], [{:__aliases__, [line: 1], [:Bobot, :DSL, :Base]}]},
+   {:defbot, [line: 3],
+    [
+      :smi,
+      _,
+      _
+    ]
+   }
+ ]
+}

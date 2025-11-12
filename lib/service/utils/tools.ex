@@ -69,11 +69,89 @@ defmodule Bobot.Tools do
   end
 
   def quote_string(str) do
-    Code.eval_string("""
-    quote do
-      #{str}
+    ast =
+      Code.eval_string("""
+      quote do
+        #{str}
+      end
+      """) |> elem(0)
+    case ast do
+      {:__block__, _, new_ast} -> new_ast
+      new_ast -> [new_ast]
     end
-    """) |> elem(0)
   end
 
+  def ast_from_file(filename) do
+    with {:ok, source_code} <- File.read(filename),
+         {:ok, ast} <- Code.string_to_quoted(source_code) do
+      ast
+    else
+      error -> error
+    end
+  end
+
+  def ast_to_source(ast) do
+    ast
+    |> Enum.map(&Macro.to_string/1)
+    |> Enum.join("\n")
+    |> Code.format_string!(line_length: 150, force_do_end_blocks: true)
+    |> Enum.join("")
+    |> String.replace(~r/[\(\)]/, " ")
+    # |> Code.quoted_to_algebra()
+    # |> Inspect.Algebra.format(:infinity)
+    # |> IO.iodata_to_binary()
+    # |> Code.format_string!(line_length: 150, force_do_end_blocks: true)
+    # |> IO.iodata_to_binary()
+    # |> String.replace(~r/[\(\)]/, " ")
+    |> String.trim()
+  end
+
+  def ast_extract_components({
+    :__block__, [],  [
+      {:import, [line: 1], [{:__aliases__, [line: 1], [:Bobot, :DSL, :Base]}]},
+      {:defbot, [line: 3],
+        [
+          name,
+          settings,
+          [ do: block ]
+        ]
+      }
+    ]
+  }) do
+
+    {name,
+      block
+      |> Macro.prewalk(%{name: name, settings: settings}, fn
+        {:hooks, _, [hooks]} = node, acc ->
+          {
+            node,
+            put_in(acc, [:hooks], hooks)
+          }
+        {:defblock, _, [block_name, [do: {_, _, block}]]} = node, acc ->
+          {
+            node,
+            acc
+              |> put_inx([:blocks, block_name, :params], [])
+              |> put_inx([:blocks, block_name, :block], block)
+          }
+        {:defblock, _, [block_name, params, [do: {_, _, block}]]} = node, acc ->
+          {
+            node,
+            acc
+              |> put_inx([:blocks, block_name, :params], params)
+              |> put_inx([:blocks, block_name, :block], block)
+          }
+        node, acc ->
+          {node, acc}
+      end)
+      |> elem(1)
+    }
+  end
+
+  def ast_extract_components(_), do: []
+
+
+  def eval_source_code(_str) do
+
+  end
 end

@@ -1,5 +1,6 @@
-defmodule Bobot.Bot.SpiSupport do
-  use Bobot.Bot,
+import Bobot.DSL.Base
+
+defbot :spi_support, [
     type: :telegram,
     config: [
       token: "8492230001:AAGMK_QYk1N7tatauRMLua2WFGoWqLSL6HU",
@@ -9,6 +10,7 @@ defmodule Bobot.Bot.SpiSupport do
       use_api: Bobot.API.SPISupport,
       commands_as_message: true
     ]
+  ] do
 
   hooks [
     start_block: :start,
@@ -21,7 +23,7 @@ defmodule Bobot.Bot.SpiSupport do
 
 
   ## BLOCKS
-  block :start, receive: muid do
+  defblock :start, receive: muid do
     call_api :authenticate, params: muid
     case value_of(:user_data) do
       :error ->
@@ -33,13 +35,13 @@ defmodule Bobot.Bot.SpiSupport do
           value_of(:start_message)
         ]
         unpin_message []
-        send message: "<i>GRUPO DE SOPORTE</i>"
+        send_message "<i>GRUPO DE SOPORTE</i>"
         pin_message message_id: value_of(:last_message_id)
         call_block :loop
     end
   end
 
-  block :loop do
+  defblock :loop do
     await_response store_in: message
     cond do
       # is image
@@ -61,7 +63,7 @@ defmodule Bobot.Bot.SpiSupport do
           )
         ]
         operator_name = get_operator_name(message, value_of([:user_data, :data, :providers]))
-        send message: "<i>#{String.upcase(operator_name)}</i>"
+        send_message "<i>#{String.upcase(operator_name)}</i>"
         pin_message message_id: value_of(:last_message_id)
 
       # is text
@@ -75,12 +77,11 @@ defmodule Bobot.Bot.SpiSupport do
     call_block :loop
   end
 
-  block :good_bye do
+  defblock :good_bye do
     terminate message: @bot_config[:expire_message]
   end
 
   ## LIBRARY
-
   def is_command?([47 | _]), do: true
   def is_command?([_ | _]), do: false
   def is_command?(text), do: is_command?(String.to_charlist(text))

@@ -13,11 +13,18 @@ defmodule Bobot.DSL.Base.Templates do
   ## SAVEs
   ################################################################################################
 
-  def save("defbot", params, _assigns) do
-    {:ok, "Bot created succesfully!", %{
-      name: String.to_atom(params["name"]),
-      type: String.to_atom(params["type"])
-    }}
+  def save("defbot", params, assigns) do
+    name = String.to_atom(params["name"])
+    case get_in(assigns[:bots], [name]) do
+      nil ->
+        {:ok, "Bot created succesfully!", %{
+          name: String.to_atom(params["name"]),
+          type: String.to_atom(params["type"])
+        }}
+
+      _ ->
+        {:error, "Already exists a bot with this name!", nil}
+    end
   end
 
   def save("hooks", params, _assigns) do
@@ -31,10 +38,12 @@ defmodule Bobot.DSL.Base.Templates do
   end
 
   def save("defblock", params, assigns) do
-    level = assigns[:current_bot][:current_level] || 0
     name = String.to_atom(params["name"])
-    parameters = Bobot.Tools.quote_string(params["params"])
-    {:ok, nil, [level, :defblock, [name, parameters]]}
+    case get_in(assigns[:current_bot], [:body, name]) do
+      nil -> {:ok, nil, %{name => %{params: params["params"], block: ""}}}
+      _ -> {:error, "Already exists a block with this name!", nil}
+    end
+
   end
 
 end

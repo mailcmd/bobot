@@ -14,8 +14,10 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
     <script defer phx-track-static type="text/javascript" src={~p"/assets/extend.js"}></script>
     <script defer phx-track-static type="text/javascript" src={~p"/assets/ace/ace.js"}></script>
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/ace/ext-statusbar.js"}></script>
   </head>
   <body class="flex flex-col h-screen w-screen">
     <%= @inner_content %> 
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/init.js"}></script>
   </body>
 </html>

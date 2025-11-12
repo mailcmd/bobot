@@ -9,7 +9,24 @@ defmodule BobotWeb.Home do
     ...
   }
 
-  - bots: ...
+  - bots: %{
+    <name>: %{
+      name: <name>,
+      blocks: %{
+        <block_name>: %{
+          params: <ast>,
+          block: <ast>
+        },
+        ...
+      },
+      hooks: [ <kwlist> ],
+      settings: %{
+        type: <type>,
+        config: [ <kwlist> ]
+      }
+    },
+    ...
+  }
 
   - modal: %{
       title: <string>,
@@ -19,65 +36,43 @@ defmodule BobotWeb.Home do
       }
     }
 
-  - current_bot: %{
-      definition: %{name: <atom>, type: <atom>},
-      config: [],
-      hooks: [],
-      body: [],
-      opened_block: -1,
-      current_line: 0,
-      current_level: 0,
-      current_ope: "put"
-    }
-
-
+  - current_bot: nil
+  - botinfo_status: "maximized"
   """
+
+  @blank_bot %{
+    name: nil,
+    blocks: nil,
+    hooks: [],
+    settings: nil
+  }
+
   def mount(_params, _session, socket) do
 
     {:ok, socket
       |> assign(sentencies: get_sentencies())
-      |> assign(bots: %{})
+      |> assign(bots: get_bots())
       |> assign(modal: %{})
-      |> assign(current_bot: %{
-        box_status: "maximized",
-        definition: %{},
-        config: [],
-        hooks: [],
-        body: [
-          [0, :defblock, [:start, [receive: {:muid, [], Elixir}]]],
-            [1, :call_api, [:authenticate, params: {:muid, [], Elixir}]],
-            [1, :case, [{:session_value, [], [:authentication]}]],
-              [2, :pattern, [:error]],
-                [3, :terminate, [
-                  message: {:<<>>, [],
-                  [
-                    "No estás autorizado para usar @SMI BOT, envía este ID: <b>",
-                    {:"::", [],
-                      [
-                        {{:., [], [Kernel, :to_string]}, [from_interpolation: true],
-                        [{:muid, [], Elixir}]},
-                        {:binary, [], Elixir}
-                      ]},
-                    "</b> a los admines"
-                  ]}
-                ]],
-              [2, :pattern, [{:_, [], Elixir}]],
-                [3, :send_message, ["Bienvenido, decime qué querés buscar..."]],
-                [3, :call_block, [:loop]],
-          [0, :defblock, [:stop, nil]],
-            [1, :terminate, [message: "Chau master!"]]
-        ],
-        opened_block: -1,
-        current_line: 0,
-        current_level: 0,
-        current_ope: "put"
-      })
+      |> assign(botinfo_status: "maximized")
+      |> assign(editor_status_bar: "")
+      |> assign(current_bot: get_bots()[:smi])
+      |> assign(current_block: nil)
     }
   end
 
   ################################################################################################
   ## SHOWs
   ################################################################################################
+
+  ## Specific SHOW for defbot
+  def handle_event("show:defbot", _params, socket) do
+    {:noreply, socket
+      |> open_modal(%{
+        template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "defbot"},
+        title: "New bot..."
+      })
+    }
+  end
 
   ## Specific SHOW for settings
   def handle_event("show:settings", _params, socket) do
@@ -101,49 +96,13 @@ defmodule BobotWeb.Home do
     }
   end
 
-  ## Generic SHOWs
-  ## title can carry "<title>[:<line>:<level>:<ope>]"
-  def handle_event("show:" <> sentency, %{"value" => "modal:" <> title}, socket) do
-    assigns = socket.assigns
-
-    [title | rest] = String.split(title, ":")
-    {line, level, ope} =
-      case rest do
-        [] -> {
-            get_in(assigns, [:current_bot, :current_line]),
-            get_in(assigns, [:current_bot, :current_level]),
-            "put"
-          }
-
-        [line, level, ope] -> {
-            parse_integer(line, get_in(assigns, [:current_bot, :current_line])),
-            parse_integer(level, get_in(assigns, [:current_bot, :current_level])),
-            ope
-          }
-      end
-
-    current_bot = %{assigns[:current_bot] |
-      current_level: level,
-      current_line: line,
-      current_ope: ope
-    }
-
+  ## Specific SHOW for defblock
+  def handle_event("show:defblock", _params, socket) do
     {:noreply, socket
-      |> assign(current_bot: current_bot)
-      |> assign(editing_line: get_editing_line(current_bot))
       |> open_modal(%{
-        template: %{module: Bobot.DSL.Base.Templates, sentency: sentency},
-        title: title
+        template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "defblock"},
+        title: "Bot block"
       })
-    }
-  end
-
-  def handle_event("show:" <> _sentency, _params, socket) do
-    {:noreply, socket
-      # |> open_modal(%{
-      #   template: %{module: Bobot.DSL.Base.Templates, sentency: "defbot"},
-      #   title: "New bot..."
-      # })
     }
   end
 
@@ -160,9 +119,14 @@ defmodule BobotWeb.Home do
     socket =
       case result do
         :ok ->
+          current_bot =
+            @blank_bot
+            |> put_in([:name], def[:name])
+            |> put_in([:settings, :type], def[:type])
+
           socket
-            |> assign(current_bot: %{assigns[:current_bot] | definition: def})
-            |> assign(bots: Map.put(assigns[:bots], def[:name], def[:name]))
+            |> assign(current_bot: current_bot)
+            |> assign(bots: Map.put(assigns[:bots], def[:name], current_bot))
 
         :error ->
           socket
@@ -185,7 +149,7 @@ defmodule BobotWeb.Home do
       case result do
         :ok ->
           socket
-            |> assign(current_bot: put_in(assigns[:current_bot], [:config], config))
+            |> assign(current_bot: put_in(assigns[:current_bot], [:settings, :config], config))
 
         :error ->
           socket
@@ -221,48 +185,18 @@ defmodule BobotWeb.Home do
     }
   end
 
-  ## Generic SAVE
-  def handle_event("save:" <> sentency, params, socket) do
+  ## Specific SAVE for defblock
+  def handle_event("save:defblock", params, socket) do
     assigns = socket.assigns
-    module = assigns[:sentencies][sentency][:template]
-    {result, message, line} = apply(module, :save, [sentency, params, assigns])
+    module = assigns[:sentencies]["defblock"][:template]
+    {result, message, block} = apply(module, :save, ["defblock", params, assigns])
 
     socket =
       case result do
         :ok ->
-          current_line = get_in(assigns, [:current_bot, :current_line])
-          body = assigns[:current_bot][:body]
-          current_bot = assigns[:current_bot]
-            |> update_in([:body], fn body ->
-              cond do
-                length(body) == 0 ->
-                  List.insert_at(body, current_line, line)
-
-                params["ope"] == "put" ->
-                  List.insert_at(body, current_line + 1, line)
-
-                params["ope"] == "update" ->
-                  List.update_at(body, current_line, fn _ -> line end)
-
-                true ->
-                  List.insert_at(body, current_line + 1, line)
-              end
-            end)
-            |> update_in([:current_line], fn _ ->
-              cond do
-                length(body) == 0 ->
-                  current_line + 1
-
-                params["ope"] == "put" ->
-                  current_line + 1
-
-                params["ope"] == "update" ->
-                  current_line
-
-                true ->
-                  current_line + 1
-              end
-            end)
+          current_bot = update_in(assigns[:current_bot], [:blocks], fn blocks ->
+            Map.merge(blocks, block)
+          end)
 
           socket
             |> assign(current_bot: current_bot)
@@ -281,17 +215,60 @@ defmodule BobotWeb.Home do
   ################################################################################################
   ## Misc events
   ################################################################################################
+  def handle_event("select-bot", params, socket) do
+    name = String.to_atom(params["bot_name"])
+    {:noreply, socket
+      |> assign(current_bot: socket.assigns[:bots][name])
+    }
+  end
 
   def handle_event("open-block", params, socket) do
-    line = String.to_integer(params["value"])
+    name = String.to_atom(params["value"])
+    block_prms = Macro.to_string(socket.assigns[:current_bot][:blocks][name][:params])
+    text = Bobot.Tools.ast_to_source(socket.assigns[:current_bot][:blocks][name][:block])
     {:noreply, socket
-      |> assign(current_bot: put_in(socket.assigns[:current_bot], [:opened_block], line))
+      |> assign(current_block: name)
       |> push_event("js-exec", %{ js: """
-        // let editor = ace.edit("block-editor_#{line}");
-        // editor.setTheme("ace/theme/monokai");
-        // editor.session.setMode("ace/mode/elixir");
-        block_#{line}.showModal();
+        editor_set_text(`#{text}`);
+        editor_set_title('BLOCK: #{name} #{block_prms}');
+        block_editor.showModal();
+        editor.selection.clearSelection();
       """ })
+    }
+  end
+
+  def handle_event("try-close-block", params, socket) do
+    # name = socket.assigns[:current_block]
+    # original_block = Bobot.Tools.ast_to_source(socket.assigns[:current_bot][:blocks][name][:block])
+    # new_block =
+    #   params["block_text"]
+    #   |> Bobot.Tools.quote_string()
+    #   |> Bobot.Tools.ast_to_source()
+
+    # {result, block_name, message} =
+    #   if original_block != new_block do
+    #     {:error, name, "You made changes, save them before close or CTRL + click to close without save."}
+    #   else
+    #     {:ok, nil, nil}
+    #   end
+
+    {:noreply, socket
+      |> push_event("js-exec", %{ js: """
+        console.log(1)
+      """ })
+      # |> assign(last_result: result)
+      # |> assign(current_block: block_name)
+      |> put_message("message")
+    }
+  end
+
+  def handle_event("close-block", _params, socket) do
+    # name = socket.assigns[:current_block]
+    {:noreply, socket
+      # |> push_event("js-exec", %{ js: """
+      #   console.log(editor.getValue().trim())
+      # """ })
+      # |> assign(current_block: nil)
     }
   end
 
@@ -308,28 +285,12 @@ defmodule BobotWeb.Home do
   ################################################################################################
 
   def handle_info(:clear_message, socket) do
-    {:noreply, clear_message(socket) |> IO.inspect}
+    {:noreply, clear_message(socket)}
   end
 
   ################################################################################################
   ## Private tools
   ################################################################################################
-
-  defp get_block_lines(body, line) do
-    block_lines =
-      body
-      |> :lists.sublist(line+2, length(body))
-      |> Enum.take_while(fn [level, _, _] -> level > 0 end)
-
-    [:lists.nth(line+1, body) | block_lines]
-  end
-
-  defp parse_lines(lines, sentencies, result \\ [])
-  defp parse_lines([], _, result), do: result
-  defp parse_lines([[_, sentency, _] = line | lines], sentencies, result) do
-    module = sentencies["#{sentency}"][:tools]
-    parse_lines(lines, sentencies, result ++ [ apply(module, :parse_sentency, [line]) ])
-  end
 
   defp put_message(socket, message, timeout \\ 3500)
   defp put_message(socket, nil, _), do: socket
@@ -365,30 +326,14 @@ defmodule BobotWeb.Home do
       |> Enum.into(%{})
   end
 
-  defp get_editing_line(%{body: body, current_ope: ope})
-    when length(body) == 0 or ope == "put"
-  do
-    %{
-      level: 0,
-      sentency: nil,
-      params: "[[]]"
-    }
+  def get_bots() do
+    "lib/service/bots/*.ex"
+    |> Path.wildcard()
+    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+    |> Stream.map(fn ast -> Bobot.Tools.ast_extract_components(ast) end)
+    |> Enum.into([])
+    |> Enum.filter(fn bot -> bot != [] end)
+    |> Enum.into(%{})
   end
-  defp get_editing_line(current_bot) do
-    [level, sentency, params] = Enum.at(current_bot[:body], current_bot[:current_line] || 0)
-    %{
-      level: level,
-      sentency: sentency,
-      params: Macro.to_string(params)
-    }
-  end
-
-  defp parse_integer(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      :error -> default
-      {val, _} -> val
-    end
-  end
-  defp parse_integer(_, default), do: default
 
 end

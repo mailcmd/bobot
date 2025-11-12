@@ -13,3 +13,19 @@ function toggle_box_min_max(box) {
         setTimeout(() => { box.onclick = () => toggle_box_min_max(box); }, 1000);
     }
 }
+
+function editor_set_text(text) {
+    editor.setValue(text);
+}
+
+function editor_set_title(title) {
+    block_editor.setAttribute('data-title', title)
+}
+
+function editor_set_status_bar(text) {
+    document.querySelector('#editor-status-bar > .info').innerHTML = text;
+}
+
+function editor_clear_status_bar() {
+    document.querySelector('#editor-status-bar > .info').innerHTML = '';
+}

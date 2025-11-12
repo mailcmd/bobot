@@ -25,7 +25,16 @@ import topbar from "../vendor/topbar"
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: undefined,
-  params: {_csrf_token: csrfToken}
+  params: {_csrf_token: csrfToken},
+  // dom: {
+  //   onBeforeElUpdated: (fromEl, toEl) => {
+  //     if (["DIALOG", "DETAILS"].indexOf(fromEl.tagName) >= 0) {
+  //       Array.from(fromEl.attributes).forEach(attr => {
+  //         toEl.setAttribute(attr.name, attr.value)
+  //       })
+  //     }
+  //   }
+  // }
 })
 
 // Show progress bar on live navigation and form submits

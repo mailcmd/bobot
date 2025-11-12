@@ -32,6 +32,25 @@ defmodule BobotWeb.Components do
     """
   end
 
+  attr :type, :string, default: "button"
+  attr :value, :string, default: ""
+  attr :icon, :string, default: nil
+  attr :"icon-size", :string, default: "4"
+  attr :class, :string, default: nil
+  attr :rest, :global
+
+  def icon_button(assigns) do
+    ~H"""
+    <button
+      type={@type}
+      class={@class}
+      value={@value}
+      {@rest}
+    >
+      <.icon name={"hero-#{@icon}"} class={"h-#{assigns[:"icon-size"]} w-#{assigns[:"icon-size"]}"} />
+    </button>
+    """
+  end
 
   attr :name, :string, default: nil
   attr :type, :string, default: "text"
@@ -86,7 +105,10 @@ defmodule BobotWeb.Components do
         ]}
       >
         <option :if={@emptyoption}></option>
-        <%= for {value, text} <- @options do %>
+        <%= for {value, text} <- @options |> Enum.map(fn
+              {val, text} -> {val, text}
+              val -> {val, val}
+            end) do %>
           <option value={value} selected={@value == value}><%= text %></option>
         <% end %>
       </select>

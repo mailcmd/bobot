@@ -53,9 +53,9 @@ input[required], select[required] {
   height: fit-content;
 }
 
-.editor {
-  width: 40vw;
-  height: 60vh;
+.ace_editor {
+  width: 60vw;
+  height: 70vh;
 }
 
 
