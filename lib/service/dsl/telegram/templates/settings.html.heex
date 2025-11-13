@@ -1,17 +1,38 @@
 <form phx-submit="save:settings">
   <ul class="mb-5">
     <li>
-      <.input name="token" label="Token" required/>
+      <.input name="token" label="Token" required 
+        value={
+          is_list(@current_bot[:settings]) 
+            && get_in(@current_bot, [:settings, :config, :token]) 
+            || ""}
+          />
     </li>
     <li>
-      <.input name="session_ttl" label="Session time" pattern="[0-9]*" value="300"
+      <.input name="session_ttl" label="Session time" pattern="[0-9]*" 
+        value={
+          is_list(@current_bot[:settings] |> IO.inspect) 
+            && "#{get_in(@current_bot, [:settings, :config, :session_ttl])}" 
+            || "300"
+        }
         placeholder="Seconds..."/>
     </li>
     <li>
-      <.input name="expire_message" label="Message on expire"/>
+      <.input name="expire_message" label="Message on expire" 
+        value={
+          is_list(@current_bot[:settings]) 
+            && get_in(@current_bot, [:settings, :config, :expire_message]) 
+            || ""
+          }
+          />
     </li>
     <li>
-      <.input name="use_api" label="API module" pattern="[A-Za-z_]*" 
+      <.input name="use_api" label="API module" pattern="[A-Za-z_\.]*" 
+        value={
+          is_list(@current_bot[:settings]) 
+            && "#{get_in(@current_bot, [:settings, :config, :use_api])}" 
+            || ""
+        }
         placeholder="You can use A-Z and a-z"/>
     </li>
   </ul>

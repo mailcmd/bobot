@@ -25,7 +25,7 @@ defbot :smi, [
       :error ->
         terminate message: "No estás autorizado para usar @SMI BOT, envía este ID: <b>#{muid}</b> a los admines"
       _ ->
-        send message: "Bienvenido, decime qué querés buscar..."
+        send_message "Bienvenido, decime qué querés buscar..."
         call_block :loop
     end
   end
@@ -33,22 +33,22 @@ defbot :smi, [
   ## MAIN LOOP
   defblock :loop do
     await_response store_in: id
-    send message: "<i>Estoy pensando, esperá unos segundos...</i>"
+    send_message "<i>Estoy pensando, esperá unos segundos...</i>"
     call_api :find_user, params: id
     call_block value_of(:result_type)
     call_block :loop
   end
 
   defblock :ftth do
-    send message: value_of(:data)
+    send_message value_of(:data)
   end
 
   defblock :docsis do
-    send message: value_of(:data)
+    send_message value_of(:data)
   end
 
   defblock :error do
-    send message: "Lo siento no encontré nada o algo salió mal 😢"
+    send_message "Lo siento no encontré nada o algo salió mal 😢"
   end
 
   defblock :good_bye do

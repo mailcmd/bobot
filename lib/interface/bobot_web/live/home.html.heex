@@ -4,7 +4,7 @@
   
     <form phx-change="select-bot">
     <.select :if={@current_bot == nil} inline={true} label="Select Bot" 
-      name="bot_name" options={Map.keys(@bots)} value={@current_bot[:definition][:name]} small={true}
+      name="bot_name" options={Map.keys(@bots)} value={@current_bot[:name]} small={true}
       class="!bg-purple-100 !rounded"/>
     </form>
 
@@ -18,12 +18,12 @@
       Settings
     </.small_button>
 
-    <.small_button :if={@current_bot != nil} disabled={is_map(@current_bot[:settings])}
+    <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
       class="float-right mr-2" type="button" phx-click="show:hooks" icon="cube-mini">
       Set hooks
     </.small_button>
 
-    <.small_button :if={@current_bot != nil} disabled={is_map(@current_bot[:settings])}
+    <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
       class="float-right mr-2" type="button" phx-click="show:defblock" icon="cube-mini">
       Add block
     </.small_button>
@@ -37,34 +37,24 @@
     <%= for {name, block_data} <- Map.to_list(@current_bot[:blocks]) do %>
     <div class="defblock relative font-mono text-xs h-fit-content m-2 p-2 pr-10 border-2 border-purple-400 bg-white rounded-lg"> 
       <%= 
-        %{params: params, block: block} = block_data
+        %{params: params} = block_data
         params = Macro.to_string(params)
-        title = "#{name} #{params}"
+        "#{name} #{params}"
       %>
       <.icon_button class="edit absolute right-2 top-2 text-gray-600 hover:text-red-800 hover:scale-110" icon="pencil" icon-size="3" phx-click="open-block" value={name}/>
     </div>
-    <!-- 
-    <dialog id={"block_#{name}"} :if={@current_block == name} class="relative px-0 pb-0 pt-8 before:bg-purple-800 before:font-mono before:text-xs" data-title={"BLOCK: #{title}"}>
-      <form phx-submit="try-close-block" onsubmit="block_text.value = editor.getValue().trim()">
-        <.input_hidden name="block_text" value=""/>
-        <.icon_button type="submit" class="absolute top-1 right-1 text-white" icon="x-mark-mini"/>
-        <div id={"block-editor_#{name}"}><%= Bobot.Tools.ast_to_source(block) %></div>
-        <div id="status_bar" class="editor-status-bar text-xs bg-purple-800 text-white"><%= "#{@editor_status_bar}" %></div>
-      </form>
-    </dialog>
-    -->
     <% end %>
   </span>
 
   <!-- Current bot info -->
-  <div :if={@current_bot != nil} id="current-bot-info" class={[@botinfo_status, "overflow-hidden w-60 text-xs mt-12 border-4 border-purple-900 bottom-0 bg-purple-700 text-white rounded-lg m-1 fixed right-1 top-1"]}>
+  <div :if={@current_bot != nil} phx-click="maximize-box-status" id="current-bot-info" class={[@box_status, "overflow-hidden w-60 text-xs mt-12 border-4 border-purple-900 bottom-0 bg-purple-700 text-white rounded-lg m-1 fixed right-1 top-1"]}>
     <div class="w-full">
       <table class="table-auto w-full border-b-2 border-purple-900">
         <thead class="bg-purple-900 text-gray-200">
           <tr>
             <th class="p-2" colspan="2">
               Current Bot
-              <button class="absolute right-1 top-1 cursor-pointer" phx-click="toggle-box-status">
+              <button class="absolute right-1 top-1 cursor-pointer" phx-click="minimize-box-status">
                 <.icon name="hero-chevron-down" class="ml-1 h-5 w-5"/>
               </button>
             </th>
@@ -75,19 +65,19 @@
             <td class="p-1 pl-2 font-bold">Name</td>
             <td class="p-1 pr-2 text-right"><%= @current_bot[:name] %></td>
           </tr>
-          <tr class="border-1 border-b border-purple-400">
+          <tr :if={@current_bot[:settings] != nil} class="border-1 border-b border-purple-400">
             <td class="p-1 pl-2 font-bold">Type</td>
             <td class="p-1 pr-2 text-right"><%= @current_bot[:settings][:type] %></td>
           </tr>
         </tbody>
       </table>
-      <table :if={@current_bot[:settings][:config] != []} class="table-fixed w-full">
+      <table :if={@current_bot[:settings] != nil} class="table-fixed w-full">
         <thead class="bg-purple-900 text-gray-200">
           <tr>
             <th class="p-2" colspan="2">Settings</th>
           </tr>
         </thead>
-        <tbody class="bg-purple-200 text-gray-800">
+        <tbody :if={@current_bot[:settings][:config] != []} class="bg-purple-200 text-gray-800">
           <%= for {key, value} <- @current_bot[:settings][:config] do %>
           <tr class="border-1 border-b border-purple-400">
             <td class="p-1 pl-2 font-bold"><%= key %></td>
@@ -127,9 +117,12 @@
 </dialog>
 
 <dialog id="block_editor" phx-update="ignore" class="relative px-0 pb-0 pt-8 before:bg-purple-800 before:font-mono before:text-xs" data-title="">
-  <form phx-submit="try-close-block" onsubmit="block_text.value = editor.getValue().trim()">
+  <form phx-submit="operation-block" onsubmit="block_text.value = editor.getValue().trim()">
+    <.icon_button type="submit" onclick="editor_set_operation(event, 'commit')" class="commit absolute top-1 right-8 text-white" icon="folder-arrow-down" title="Comit changes (CTRL + click close window)"/>
+    <.icon_button type="submit" onclick="editor_set_operation(event, 'cancel')" class="cancel absolute top-1 right-2 text-white" icon="x-mark-mini" title="CTRL + click to close without save"/>
     <.input_hidden name="block_text" value=""/>
-    <.icon_button type="submit" class="absolute top-1 right-2 text-white" icon="x-mark-mini"/>
+    <.input_hidden name="operation" value=""/>
+    <.input_hidden name="ctrl" value=""/>
     <div id="block-editor-text"></div>
     <div id="editor-status-bar" class="editor-status-bar text-right px-2 text-xs bg-purple-800 text-white">
       <div class="info float-left"></div>

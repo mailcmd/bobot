@@ -40,8 +40,21 @@ defmodule Bobot.DSL.Base.Templates do
   def save("defblock", params, assigns) do
     name = String.to_atom(params["name"])
     case get_in(assigns[:current_bot], [:body, name]) do
-      nil -> {:ok, nil, %{name => %{params: params["params"], block: ""}}}
-      _ -> {:error, "Already exists a block with this name!", nil}
+      nil ->
+        prms =
+          case String.trim(params["params"]) do
+            "" -> []
+            prm -> "[receive: #{prm}]" |> Code.string_to_quoted() |> elem(1)
+          end
+
+        {:ok, nil, %{
+          name => %{
+            params: prms,
+            block: []
+          }
+        }}
+      _ ->
+        {:error, "Already exists a block with this name!", nil}
     end
 
   end

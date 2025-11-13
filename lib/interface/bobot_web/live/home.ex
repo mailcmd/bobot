@@ -37,7 +37,7 @@ defmodule BobotWeb.Home do
     }
 
   - current_bot: nil
-  - botinfo_status: "maximized"
+  - box_status: "maximized"
   """
 
   @blank_bot %{
@@ -53,7 +53,7 @@ defmodule BobotWeb.Home do
       |> assign(sentencies: get_sentencies())
       |> assign(bots: get_bots())
       |> assign(modal: %{})
-      |> assign(botinfo_status: "maximized")
+      |> assign(box_status: "maximized")
       |> assign(editor_status_bar: "")
       |> assign(current_bot: get_bots()[:smi])
       |> assign(current_block: nil)
@@ -76,7 +76,7 @@ defmodule BobotWeb.Home do
 
   ## Specific SHOW for settings
   def handle_event("show:settings", _params, socket) do
-    type = socket.assigns[:current_bot][:definition][:type] |> to_string() |> Macro.camelize()
+    type = socket.assigns[:current_bot][:settings][:type] |> to_string() |> Macro.camelize()
     module = "Elixir.Bobot.DSL.#{type}.Templates"
     {:noreply, socket
       |> open_modal(%{
@@ -123,6 +123,7 @@ defmodule BobotWeb.Home do
             @blank_bot
             |> put_in([:name], def[:name])
             |> put_in([:settings, :type], def[:type])
+            |> put_in([:settings, :config], [])
 
           socket
             |> assign(current_bot: current_bot)
@@ -237,46 +238,87 @@ defmodule BobotWeb.Home do
     }
   end
 
-  def handle_event("try-close-block", params, socket) do
-    # name = socket.assigns[:current_block]
-    # original_block = Bobot.Tools.ast_to_source(socket.assigns[:current_bot][:blocks][name][:block])
-    # new_block =
-    #   params["block_text"]
-    #   |> Bobot.Tools.quote_string()
-    #   |> Bobot.Tools.ast_to_source()
-
-    # {result, block_name, message} =
-    #   if original_block != new_block do
-    #     {:error, name, "You made changes, save them before close or CTRL + click to close without save."}
-    #   else
-    #     {:ok, nil, nil}
-    #   end
-
+  def handle_event("operation-block", %{"operation" => "cancel", "ctrl" => "true"}, socket) do
     {:noreply, socket
+      |> assign(last_result: :ok)
+      |> assign(current_block: nil)
       |> push_event("js-exec", %{ js: """
-        console.log(1)
+        block_editor.close();
       """ })
-      # |> assign(last_result: result)
-      # |> assign(current_block: block_name)
-      |> put_message("message")
+      |> put_message("Change discarded!")
     }
   end
 
-  def handle_event("close-block", _params, socket) do
-    # name = socket.assigns[:current_block]
-    {:noreply, socket
-      # |> push_event("js-exec", %{ js: """
-      #   console.log(editor.getValue().trim())
-      # """ })
-      # |> assign(current_block: nil)
-    }
+  def handle_event("operation-block", %{"operation" => "cancel"} = params, socket) do
+    case Bobot.Tools.quote_string(params["block_text"]) do
+      {:error, nline, message} ->
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message("ERROR: #{message}", 3500)
+          |> push_event("js-exec", %{ js: """
+            editor_set_status_bar('ERROR: #{message} (line: #{nline})');
+            editor_gotoline(#{nline}, true);
+          """ })
+        }
+
+      ast ->
+        new_block = Bobot.Tools.ast_to_source(ast)
+        name = socket.assigns[:current_block]
+        original_block = Bobot.Tools.ast_to_source(socket.assigns[:current_bot][:blocks][name][:block])
+
+        {result, block_name, message} =
+          if original_block != new_block do
+            {:error, name, "You made changes, save them before close or CTRL + click to close without save."}
+          else
+            {:ok, nil, nil}
+          end
+
+        {:noreply, socket
+          |> assign(last_result: result)
+          |> assign(current_block: block_name)
+          |> push_event("js-exec", %{ js: """
+            if (!!!'#{block_name}') block_editor.close();
+          """ })
+          |> put_message(message, 5000)
+        }
+    end
   end
 
-  def handle_event("toggle-box-status", _params, socket) do
+  def handle_event("operation-block", %{"operation" => "commit"} = params, socket) do
+    case Bobot.Tools.quote_string(params["block_text"]) do
+      {:error, nline, message} ->
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message("ERROR: #{message}", 3500)
+          |> push_event("js-exec", %{ js: """
+            editor_set_status_bar('ERROR: #{message} (line: #{nline})');
+            editor_gotoline(#{nline}, true);
+          """ })
+        }
+
+      new_block ->
+        name = socket.assigns[:current_block]
+        {:noreply, socket
+          |> update(:current_bot, fn current_bot ->
+            put_in(current_bot, [:blocks, name, :block], new_block)
+          end)
+          |> assign(last_result: :ok)
+          |> push_event("js-exec", %{ js: """
+            if (#{params["ctrl"]}) block_editor.close();
+          """ })
+          |> put_message("Change commited!", 5000)
+        }
+    end
+  end
+
+  def handle_event("maximize-box-status", _params, socket) do
     {:noreply, socket
-      |> push_event("js-exec", %{ js: """
-        toggle_box_min_max(document.getElementById('current-bot-info'))
-      """ })
+      |> assign(box_status: "maximized")
+    }
+  end
+  def handle_event("minimize-box-status", _params, socket) do
+    {:noreply, socket
+      |> assign(box_status: "minimized cursor-pointer")
     }
   end
 
@@ -297,9 +339,13 @@ defmodule BobotWeb.Home do
   defp put_message(socket, message, timeout) do
     result_ok = socket.assigns[:last_result] == :ok
     socket
+      |> push_event("js-exec", %{ js: """
+        clearTimeout(window.flash_timeout)
+      """ })
+      |> clear_flash()
       |> put_flash(result_ok && :info || :error, message)
       |> push_event("js-exec", %{ js: """
-        setTimeout(()=>document.querySelectorAll('#flash-group > div').forEach(d=>d.style.display='none'), #{timeout})
+        window.flash_timeout = setTimeout(()=>document.querySelectorAll('#flash-group > div').forEach(d=>d.style.display='none'), #{timeout})
       """ })
   end
 

@@ -1,19 +1,3 @@
-function toggle_box_min_max(box) {
-    if (box.className.match('minimized')) {
-        box.className = box.className.replace('minimized', 'maximized'); 
-        box.classList.remove('cursor-pointer');
-        box.onclick = null;
-    } else if (box.className.match('maximized')) {
-        box.className = box.className.replace('maximized', 'minimized');
-        box.classList.add('cursor-pointer');
-        setTimeout(() => { box.onclick = () => toggle_box_min_max(box); }, 1000);
-    } else {
-        box.classList.add('minimized');
-        box.classList.add('cursor-pointer');
-        setTimeout(() => { box.onclick = () => toggle_box_min_max(box); }, 1000);
-    }
-}
-
 function editor_set_text(text) {
     editor.setValue(text);
 }
@@ -28,4 +12,15 @@ function editor_set_status_bar(text) {
 
 function editor_clear_status_bar() {
     document.querySelector('#editor-status-bar > .info').innerHTML = '';
+}
+
+function editor_set_operation(e, ope) {
+    operation.value = ope;
+    ctrl.value = e.ctrlKey    
+}
+
+function editor_gotoline(nline, select_line = false) {
+    editor.gotoLine(nline);
+    if (select_line) editor.selection.selectLine();
+    editor.focus();
 }

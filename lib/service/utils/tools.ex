@@ -69,15 +69,22 @@ defmodule Bobot.Tools do
   end
 
   def quote_string(str) do
-    ast =
-      Code.eval_string("""
-      quote do
-        #{str}
-      end
-      """) |> elem(0)
-    case ast do
-      {:__block__, _, new_ast} -> new_ast
-      new_ast -> [new_ast]
+    case eval_source_code(str) do
+      {:error, _, _} = error ->
+        error
+      {:ok, _} ->
+        ast =
+          Code.eval_string("""
+          quote do
+            #{str}
+          end
+          """)
+          |> elem(0)
+
+        case ast do
+          {:__block__, _, new_ast} -> new_ast
+          new_ast -> [new_ast]
+        end
     end
   end
 
@@ -97,27 +104,22 @@ defmodule Bobot.Tools do
     |> Code.format_string!(line_length: 150, force_do_end_blocks: true)
     |> Enum.join("")
     |> String.replace(~r/[\(\)]/, " ")
-    # |> Code.quoted_to_algebra()
-    # |> Inspect.Algebra.format(:infinity)
-    # |> IO.iodata_to_binary()
-    # |> Code.format_string!(line_length: 150, force_do_end_blocks: true)
-    # |> IO.iodata_to_binary()
-    # |> String.replace(~r/[\(\)]/, " ")
     |> String.trim()
   end
 
-  def ast_extract_components({
-    :__block__, [],  [
-      {:import, [line: 1], [{:__aliases__, [line: 1], [:Bobot, :DSL, :Base]}]},
-      {:defbot, [line: 3],
+  def ast_extract_components(
+    {:__block__, [],  [
+      {:import, _, [{:__aliases__, _, [:Bobot, :DSL, :Base]}]},
+      {:defbot, _,
         [
           name,
           settings,
           [ do: block ]
         ]
       }
-    ]
-  }) do
+    ]}) do
+
+    settings = settings |> Macro.to_string() |> Code.eval_string() |> elem(0)
 
     {name,
       block
@@ -127,14 +129,24 @@ defmodule Bobot.Tools do
             node,
             put_in(acc, [:hooks], hooks)
           }
-        {:defblock, _, [block_name, [do: {_, _, block}]]} = node, acc ->
+        {:defblock, _, [block_name, [do: block]]} = node, acc ->
+          block =
+            case block do
+              {:__block__, _, block} -> block
+              block -> [block]
+            end
           {
             node,
             acc
               |> put_inx([:blocks, block_name, :params], [])
               |> put_inx([:blocks, block_name, :block], block)
           }
-        {:defblock, _, [block_name, params, [do: {_, _, block}]]} = node, acc ->
+        {:defblock, _, [block_name, params, [do: block]]} = node, acc ->
+          block =
+            case block do
+              {:__block__, _, block} -> block
+              block -> [block]
+            end
           {
             node,
             acc
@@ -151,7 +163,16 @@ defmodule Bobot.Tools do
   def ast_extract_components(_), do: []
 
 
-  def eval_source_code(_str) do
+  def eval_source_code(str) do
+    case Code.string_to_quoted(str) do
+      {:error, {[{:line, nline} | _], {message, _}, line}} ->
+        {:error, nline, "#{message} #{line}"}
 
+      {:error, {[{:line, nline} | _], message, line}} ->
+        {:error, nline, "#{message} #{line}"}
+
+      {:ok, result} ->
+        {:ok, result}
+    end
   end
 end

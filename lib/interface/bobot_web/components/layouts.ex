@@ -9,7 +9,7 @@ defmodule BobotWeb.Layouts do
   `use BobotWeb, :live_view`.
   """
   use BobotWeb, :html
-  import BobotWeb.Components
+  # import BobotWeb.Components
 
   embed_templates "layouts/*"
 end
