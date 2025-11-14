@@ -162,7 +162,6 @@ defmodule Bobot.Tools do
 
   def ast_extract_components(_), do: []
 
-
   def eval_source_code(str) do
     case Code.string_to_quoted(str) do
       {:error, {[{:line, nline} | _], {message, _}, line}} ->
@@ -174,5 +173,12 @@ defmodule Bobot.Tools do
       {:ok, result} ->
         {:ok, result}
     end
+  end
+
+  def ast_find(ast, pattern) do
+    Macro.prewalk(ast, [], fn
+      {^pattern, _, _} = node, acc -> {node, acc ++ [node]}
+      node, acc -> {node, acc}
+    end) |> elem(1)
   end
 end

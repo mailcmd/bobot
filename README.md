@@ -4,14 +4,18 @@
 
 - [x] Move render_table from telegram to tools
 - [x] Make assigns variable more specific for every step
+- [ ] Base: call_http 
 - [ ] Make the API Creator interface
       [ ] defapi 
       [ ] defcall 
-- [ ] Base: call_http 
-- [ ] Base: add task schedule that trigger blocks every time period
 - [ ] Telegram: add send_image 
 - [ ] Interface web: add Telegram "command ..." as blocks
-
+- [ ] Base: add task schedule that trigger blocks every time period
+- [ ] See what can make with connections between blocks
+```elixir
+  # look for call_block's
+  Bobot.Tools.ast_find(b[:loop][:block], :call_block) |> Enum.map( fn {_,_, [x]} -> x end) |> Enum.filter(&is_atom/1)
+```
 
 ## Components
 - Nodes are equal a BLOCKS. So the main unit of process is the "block". 
