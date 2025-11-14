@@ -320,8 +320,14 @@ defmodule BobotWeb.Home do
           |> Enum.filter(&(&1.severity == :error))
           |> hd()
 
+
         error_message = error[:message]
-        {nline, _} = error[:position]
+        nline =
+          case error[:position] do
+            {nline, _} -> nline
+            nline -> nline
+          end
+
         text = bot_to_string(socket.assigns[:current_bot])
 
         {:noreply, socket

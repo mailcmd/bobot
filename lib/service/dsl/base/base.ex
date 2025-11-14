@@ -76,18 +76,18 @@ defmodule Bobot.DSL.Base do
       @fallback_block unquote(fallback)
       def start_bot(unquote(params), var!(sess_id), assigns \\ %{}) do
         Bobot.Bot.Assigns.set_all(var!(sess_id), assigns)
-        # try do
+        try do
           run(unquote(start), unquote(params), var!(sess_id))
           if unquote(stop) do
             run(unquote(stop), nil, var!(sess_id))
           end
           Bobot.Bot.Assigns.unset(var!(sess_id))
-        # rescue
-        #   error ->
-        #     require Logger
-        #     Logger.log(:error, "#{inspect error}")
-        #     run(unquote(fallback), nil, var!(sess_id))
-        # end
+        rescue
+          error ->
+            require Logger
+            Logger.log(:error, "#{inspect error}")
+            run(unquote(fallback), nil, var!(sess_id))
+        end
       end
     end
   end
@@ -187,7 +187,7 @@ defmodule Bobot.DSL.Base do
       api = __MODULE__.__info__(:attributes) |> Keyword.get(:bot_api) |> hd()
       res = api.call(unquote(id), unquote(params))
       # new_assigns = put_in(Bobot.Bot.Assigns.get_all(var!(sess_id)), [id], res)
-      Bobot.Bot.Assigns.put_in(var!(sess_id), [id], res)
+      Bobot.Bot.Assigns.put_in(var!(sess_id), [unquote(id)], res)
     end
   end
 

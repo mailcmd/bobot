@@ -24,16 +24,6 @@ defmodule Bobot.Engine.Telegram do
     def remove_token_data(token, key) do
       Agent.get(__MODULE__, fn status -> Map.delete(status, {token, key}) end)
     end
-
-    # def get(name, sess_id) do
-    #   Agent.get(name, fn status -> status[sess_id] end)
-    # end
-    # def set(name, sess_id, pids) do
-    #   Agent.update(name, fn status -> put_in(status, [sess_id], pids) end)
-    # end
-    # def remove(name, sess_id) do
-    #   Agent.update(name, fn status -> Map.delete(status, sess_id) end)
-    # end
   end
 
   ################################################################################################
@@ -150,7 +140,7 @@ defmodule Bobot.Engine.Telegram do
         _ -> nil
       end
     if not is_nil(pid), do: send(pid, text)
-    {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
+    {:ok, chat_id, not Process.alive?(pid) && 1 || Storage.get_token_data(token, :session_ttl)}
   end
   ## IMAGES
   def handle_update(%{"message" => %{"document" => %{"file_id" => file_id, "mime_type" => _mime_type}, "chat" => %{"id" => chat_id}}}, token, chat_id) do
