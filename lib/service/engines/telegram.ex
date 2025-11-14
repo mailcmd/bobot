@@ -139,26 +139,39 @@ defmodule Bobot.Engine.Telegram do
         {pid, _} -> pid
         _ -> nil
       end
-    if not is_nil(pid), do: send(pid, text)
-    {:ok, chat_id, not Process.alive?(pid) && 1 || Storage.get_token_data(token, :session_ttl)}
+    if not is_nil(pid) do
+      send(pid, text)
+      {:ok, chat_id, not Process.alive?(pid) && 1 || Storage.get_token_data(token, :session_ttl)}
+    else
+      {:ok, chat_id, 1}
+    end
   end
   ## IMAGES
   def handle_update(%{"message" => %{"document" => %{"file_id" => file_id, "mime_type" => _mime_type}, "chat" => %{"id" => chat_id}}}, token, chat_id) do
-    with {:ok, %{"file_path" => file_path}} <- Telegram.Api.request(token, "getFile", file_id: file_id),
-         {:ok, %Tesla.Env{body: body}} <- Tesla.get("https://api.telegram.org/file/bot#{token}/#{file_path}") do
+    pid =
+      with {:ok, %{"file_path" => file_path}} <- Telegram.Api.request(token, "getFile", file_id: file_id),
+          {:ok, %Tesla.Env{body: body}} <- Tesla.get("https://api.telegram.org/file/bot#{token}/#{file_path}") do
 
-      image = "," <> Base.encode64(body)
-      pid =
-        case Storage.get_token_data(token, chat_id) do
-          {pid, _} -> pid
-          _ -> nil
-        end
-      if not is_nil(pid), do: send(pid, {:image, image})
+        image = "," <> Base.encode64(body)
+        pid =
+          case Storage.get_token_data(token, chat_id) do
+            {pid, _} -> pid
+            _ -> nil
+          end
+        if not is_nil(pid), do: send(pid, {:image, image})
+        pid
+      else
+        _ ->
+          Logger.log(:error, "#{@log_prefix} Error retrieving image (#{file_id})")
+          nil
+      end
+
+      # {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
+    if not is_nil(pid) do
+      {:ok, chat_id, not Process.alive?(pid) && 1 || Storage.get_token_data(token, :session_ttl)}
     else
-      _ ->
-        Logger.log(:error, "#{@log_prefix} Error retrieving image (#{file_id})")
+      {:ok, chat_id, 1}
     end
-    {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
   end
   ## PHOTO
   def handle_update(%{"message" => %{"photo" => photos, "chat" => %{"id" => chat_id}}}, token, chat_id) do
@@ -173,8 +186,12 @@ defmodule Bobot.Engine.Telegram do
         {pid, _} -> pid
         _ -> nil
       end
-    if not is_nil(pid), do: send(pid, text)
-    {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
+    if not is_nil(pid) do
+      send(pid, text)
+      {:ok, chat_id, not Process.alive?(pid) && 1 || Storage.get_token_data(token, :session_ttl)}
+    else
+      {:ok, chat_id, 1}
+    end
   end
 
   ## UNKNOWN
