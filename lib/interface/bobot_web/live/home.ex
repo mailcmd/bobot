@@ -49,12 +49,14 @@ defmodule BobotWeb.Home do
   }
 
   @bots_dir Application.compile_env(:bobot, :bots_dir)
+  @active_bots Application.compile_env(:bobot, :telegram_bots, [])
 
   def mount(_params, _session, socket) do
 
     {:ok, socket
       |> assign(sentencies: get_sentencies())
       |> assign(bots: get_bots())
+      |> assign(active_bots: @active_bots)
       |> assign(modal: %{})
       |> assign(box_status: "maximized")
       |> assign(editor_status_bar: "")
@@ -232,9 +234,13 @@ defmodule BobotWeb.Home do
   ##############
   ### SELECT BOT
   def handle_event("select-bot", params, socket) do
-    name = String.to_atom(params["bot_name"])
+    name = params["bot_name"] |> String.replace(" *", "") |> String.to_atom()
     {:noreply, socket
       |> assign(current_bot: socket.assigns[:bots][name])
+      # |> push_event("js-exec", %{ js: """
+      #   block_connect('start', 'addresses_menu');
+      #   block_connect('start', 'first_contact');
+      # """ })
     }
   end
 
@@ -338,7 +344,6 @@ defmodule BobotWeb.Home do
     {:noreply, socket
       |> push_event("js-exec", %{ js: """
         editor_open('#{socket.assigns[:current_bot][:name]}', `#{text}`, true);
-        editor_set_status_bar('Readonly!');
       """ })
     }
 
@@ -358,18 +363,18 @@ defmodule BobotWeb.Home do
     }
   end
 
-  def handle_event("operation-block", %{"operation" => "cancel", "ctrl" => "true"}, socket) do
+  def handle_event("operation-editor", %{"operation" => "cancel", "ctrl" => "true"}, socket) do
     {:noreply, socket
       |> assign(last_result: :ok)
       |> assign(current_block: nil)
       |> push_event("js-exec", %{ js: """
-        block_editor.close();
+        bobot_editor.close();
       """ })
       |> put_message("Change discarded!")
     }
   end
 
-  def handle_event("operation-block", %{"operation" => "cancel"} = params, socket) do
+  def handle_event("operation-editor", %{"operation" => "cancel"} = params, socket) do
     case Bobot.Tools.quote_string(params["block_text"]) do
       {:error, nline, message} ->
         {:noreply, socket
@@ -386,32 +391,59 @@ defmodule BobotWeb.Home do
           |> Bobot.Tools.ast_to_source()
           |> Code.string_to_quoted()
 
-        name = socket.assigns[:current_block]
+        case socket.assigns[:current_block] do
+          ## If it is a complete bot
+          nil ->
+            name = socket.assigns[:current_bot][:name]
+            original_bot =
+              "#{@bots_dir}/#{name}.ex"
+              |> Bobot.Tools.ast_from_file()
+              |> List.wrap()
+              |> Bobot.Tools.ast_to_source()
+              |> Code.string_to_quoted()
 
-        original_block =
-          socket.assigns[:current_bot][:blocks][name][:block]
-          |> Bobot.Tools.ast_to_source()
-          |> Code.string_to_quoted()
+            {result, message} =
+              if original_bot != new_block do
+                {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
+              else
+                {:ok, nil}
+              end
 
-        {result, block_name, message} =
-          if original_block != new_block do
-            {:error, name, "You made changes, save them before close or [CTRL+click] to close without save."}
-          else
-            {:ok, nil, nil}
-          end
+            {:noreply, socket
+              |> assign(last_result: result)
+              |> push_event("js-exec", %{ js: """
+                if ('#{result}' == 'ok') bobot_editor.close();
+              """ })
+              |> put_message(message, 5000)
+            }
 
-        {:noreply, socket
-          |> assign(last_result: result)
-          |> assign(current_block: block_name)
-          |> push_event("js-exec", %{ js: """
-            if (!!!'#{block_name}') block_editor.close();
-          """ })
-          |> put_message(message, 5000)
-        }
+          ## If it is just a block
+          name ->
+            original_block =
+              socket.assigns[:current_bot][:blocks][name][:block]
+              |> Bobot.Tools.ast_to_source()
+              |> Code.string_to_quoted()
+
+            {result, block_name, message} =
+              if original_block != new_block do
+                {:error, name, "You made changes, save them before close or [CTRL+click] to close without save."}
+              else
+                {:ok, nil, nil}
+              end
+
+            {:noreply, socket
+              |> assign(last_result: result)
+              |> assign(current_block: block_name)
+              |> push_event("js-exec", %{ js: """
+                if (!!!'#{block_name}') bobot_editor.close();
+              """ })
+              |> put_message(message, 5000)
+            }
+        end
     end
   end
 
-  def handle_event("operation-block", %{"operation" => "commit"} = params, socket) do
+  def handle_event("operation-editor", %{"operation" => "commit"} = params, socket) do
     case Bobot.Tools.quote_string(params["block_text"]) do
       {:error, nline, message} ->
         {:noreply, socket
@@ -424,17 +456,41 @@ defmodule BobotWeb.Home do
         }
 
       new_block ->
-        name = socket.assigns[:current_block]
-        {:noreply, socket
-          |> update(:current_bot, fn current_bot ->
-            put_in(current_bot, [:blocks, name, :block], new_block)
-          end)
-          |> assign(last_result: :ok)
-          |> push_event("js-exec", %{ js: """
-            if (#{params["ctrl"]}) block_editor.close();
-          """ })
-          |> put_message("Change commited!", 5000)
-        }
+        case socket.assigns[:current_block] do
+          ## If it is a complete bot
+          nil ->
+            new_bot =
+              {:__block__, [],  new_block}
+              |> Bobot.Tools.ast_extract_components()
+              |> elem(1)
+              |> Map.put(:changed, true)
+
+            {:noreply, socket
+              |> assign(last_result: :ok)
+              |> assign(current_bot: new_bot)
+              |> push_event("js-exec", %{ js: """
+                if (#{params["ctrl"]}) bobot_editor.close();
+              """ })
+              |> put_message("Change commited!", 5000)
+            }
+
+          ## If it is just a block
+          name ->
+            {:noreply, socket
+              |> update(:current_bot, fn current_bot ->
+                current_bot
+                  |> put_in([:blocks, name, :block], new_block)
+                  |> put_in([:changed], true)
+              end)
+              |> assign(last_result: :ok)
+              |> assign(current_block: params["ctrl"] != "true" && name || nil )
+              |> push_event("js-exec", %{ js: """
+                if (#{params["ctrl"]}) bobot_editor.close();
+              """ })
+              |> put_message("Change commited!", 5000)
+            }
+
+        end
     end
   end
 
@@ -460,9 +516,9 @@ defmodule BobotWeb.Home do
 
     {:noreply, socket
       |> update(:current_bot, fn current_bot ->
-        update_in(current_bot, [:blocks], fn blocks ->
-          Map.delete(blocks, block_name)
-        end)
+        current_bot
+          |> update_in([:blocks], fn blocks -> Map.delete(blocks, block_name) end)
+          |> update_in([:changed], fn _ -> true end)
       end)
       |> push_event("js-exec", %{ js: """
         box_confirm_action.close();

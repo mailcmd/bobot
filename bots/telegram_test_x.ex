@@ -4,7 +4,7 @@ defbot :telegram_test_x,
   type: :telegram,
   config: [
     token: "8241208776:AAHz1-OjK94w_L0RIuIDoReuaZnJX0IWSXI",
-    session_ttl: 10000,
+    session_ttl: 3600,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo.",
     use_api: Bobot.API.Test

@@ -4,7 +4,9 @@
   
     <form phx-change="select-bot">
     <.select :if={@current_bot == nil} inline={true} label="Select Bot" 
-      name="bot_name" options={Map.keys(@bots)} value={@current_bot[:name]} small={true}
+      name="bot_name" 
+      options={@bots |> Map.keys() |> Enum.map(fn b -> (b in @active_bots) && "#{b} *" || b end)}
+      value={@current_bot[:name]} small={true}
       class="!bg-purple-100 !rounded"/>
     </form>
 
@@ -33,7 +35,8 @@
     </.small_button>
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class={[@current_bot[:changed] && "animate-color" || "", "float-right mr-0.5"]} type="button" phx-click="save-bot" icon="folder-arrow-down">
+      class={[@current_bot[:changed] && "animate-color" || "", "float-right mr-0.5"]} type="button" 
+      phx-click="save-bot" icon="folder-arrow-down-solid">
       Save
     </.small_button>
 
@@ -58,21 +61,28 @@
 <main class="flex flex-grow bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">  
   
   <!-- Blocks -->
-  <span :if={@current_bot}>
+  <span :if={@current_bot} class="block flex flex-col flex-wrap">
     <%= for {name, block_data} <- Map.to_list(@current_bot[:blocks]) do %>
-    <div class="defblock relative font-mono text-xs h-fit-content m-2 p-2 pr-10 border-2 border-purple-400 bg-white rounded-lg"> 
-      <%= 
-        %{params: params} = block_data
-        params = Macro.to_string(params)
-        "#{name} #{params}"
-      %>
-      <.icon_button class="remove absolute right-2 top-2 text-gray-600 hover:text-red-800 hover:scale-110" 
-        icon="x-circle-solid" icon-size="3"
-        onclick={"confirm_action('Are you sure about to remove <b class=\"text-red-800\">#{name}</b> block?', 'remove_block:#{name}')"}/>
-      <.icon_button class="edit absolute right-6 top-2 text-gray-600 hover:text-red-800 hover:scale-110" 
-        icon="pencil" icon-size="3" phx-click="open-block" value={name}/>
-    </div>
-    <% end %>
+    <span class="defblock">
+      <div data-block-name={name} class={[
+        "flex-none inline-block min-w-64 relative font-mono text-xs h-fit-content m-2 p-2 pr-10",
+        "border-2 border-purple-400 bg-white rounded-lg"
+        ]}> 
+        <%= 
+          %{params: params} = block_data
+          params = Macro.to_string(params)
+          params = params == "[]" && "" || params
+          raw("<b>#{name}</b> <div class=\"float-right\">#{params}</div>")
+        %>
+        <.icon_button class="remove absolute right-2 top-2 text-gray-600 hover:text-red-800 hover:scale-110" 
+          icon="x-circle-solid" icon-size="3"
+          onclick={"confirm_action('Are you sure about to remove <b class=\"text-red-800\">#{name}</b> block?', 'remove_block:#{name}')"}/>
+        <.icon_button class="edit absolute right-6 top-2 text-gray-600 hover:text-red-800 hover:scale-110" 
+          icon="pencil-solid" icon-size="3" phx-click="open-block" value={name}/>      
+      </div>
+      <!-- <div class="inline-block relative -top-1 ml-32 w-0 h-0" data-block-name-anchor={name}></div> -->
+    </span>
+    <% end %>    
   </span>
 
   <!-- Current bot info -->
@@ -145,28 +155,43 @@
   %>
 </dialog>
 
-<dialog id="block_editor" phx-update="ignore" class="relative px-0 pb-0 pt-8 before:bg-purple-800 before:font-mono before:text-xs" data-title="">
-  <form phx-submit="operation-block" onsubmit="block_text.value = editor.getValue().trim()">
-    <.icon_button type="submit" onclick="editor_set_operation(event, 'commit')" class="commit editing absolute top-1 right-8 text-white" icon="folder-arrow-down" title="Comit changes (CTRL + click close window)"/>
-    <.icon_button type="submit" onclick="editor_set_operation(event, 'cancel')" class="cancel editing absolute top-1 right-2 text-white" icon="x-mark-mini" title="CTRL + click to close without save"/>
-    <.icon_button type="button" onclick="block_editor.close()" class="cancel reading absolute top-1 right-2 text-white" icon="x-mark-mini"/>
+<dialog id="bobot_editor" phx-update="ignore"  data-title="" 
+  class="relative px-0 pb-0 pt-8 before:bg-purple-800 before:font-mono before:text-xs">
+  <form phx-submit="operation-editor" onsubmit="block_text.value = editor.getValue().trim()">
+    <!-- editing mode -->
+    <.icon_button type="submit" onclick="editor_set_operation(event, 'commit')" 
+      class="commit editing absolute top-1 right-8 text-white" icon="folder-arrow-down-solid" 
+      title="Comit changes (CTRL + click close window)"/>
+    <.icon_button type="submit" onclick="editor_set_operation(event, 'cancel')" 
+      class="cancel editing absolute top-1 right-2 text-white" icon="x-mark-mini" 
+      title="CTRL + click to close without save"/>
+    <!-- readonly mode -->
+    <.icon_button type="button" onclick="editor_set_readonly(false)" 
+      class="reading absolute top-1 right-8 text-white" icon="pencil-solid" icon-size="3"
+      title="Change to editing mode"/>
+    <.icon_button type="button" onclick="bobot_editor.close()"
+      class="cancel reading absolute top-1 right-2 text-white" icon="x-mark-mini"/>
+
     <.input_hidden name="block_text" value=""/>
     <.input_hidden name="operation" value=""/>
     <.input_hidden name="ctrl" value=""/>
-    <div id="block-editor-text"></div>
+
+    <div id="bobot-editor-text"></div>
     <div id="editor-status-bar" class="editor-status-bar text-right px-2 text-xs bg-purple-800 text-white">
       <div class="info float-left"></div>
     </div>
   </form>
 </dialog>
 
-<dialog id="box_confirm_action" phx-update="ignore" class="relative px-0 pb-0 pt-8 before:bg-purple-800 before:text-xs" data-title="Please confirm...">
+<dialog id="box_confirm_action" phx-update="ignore" data-title="Please confirm..." 
+  class="relative px-0 pb-0 pt-8 before:bg-purple-800 before:text-xs">
   <form phx-submit="confirmed-action">
     <.input_hidden name="action" value=""/>
     <div class="grid mb-5 grid grid-cols-2">
       <div id="message" class="w-64 text-center col-span-2 text-xs p-2 mb-2 px-4"></div>
       <div class="text-center">
-        <.small_button class="w-24 place-content-center bg-gray-700" icon="x-circle-solid" type="button" onclick="box_confirm_action.close()">
+        <.small_button class="w-24 place-content-center bg-gray-700" icon="x-circle-solid" 
+          type="button" onclick="box_confirm_action.close()">
           Cancel
         </.small_button>
       </div>

@@ -1,20 +1,13 @@
 # Bobot
 
-```elixir
-# AST to Code
-ast 
-  |> Code.quoted_to_algebra() 
-  |> Inspect.Algebra.format(:infinity) 
-  |> Enum.map(fn s -> String.replace(s, ~r/[\(\)]/, " ") end) 
-  |> IO.iodata_to_binary() 
-  |> IO.puts
-```
-
 ## TODO
 
 - [x] Move render_table from telegram to tools
-- [ ] Make assigns variable more specific for every step
-- [ ] Visual interface to create bots 
+- [x] Make assigns variable more specific for every step
+- [ ] Base: add task schedule that trigger blocks every time period
+- [ ] Telegram: add send_image 
+- [ ] Interface web: add Telegram "command ..." as blocks
+
 
 ## Components
 - Nodes are equal a BLOCKS. So the main unit of process is the "block". 

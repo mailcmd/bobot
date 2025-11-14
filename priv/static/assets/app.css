@@ -16139,6 +16139,18 @@ select {
   top: 1.5rem;
 }
 
+.top-0 {
+  top: 0px;
+}
+
+.top-0\.5 {
+  top: 0.125rem;
+}
+
+.-top-1 {
+  top: -0.25rem;
+}
+
 .z-50 {
   z-index: 50;
 }
@@ -16244,8 +16256,24 @@ select {
   margin-top: 0.75rem;
 }
 
+.ml-16 {
+  margin-left: 4rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.ml-32 {
+  margin-left: 8rem;
+}
+
 .block {
   display: block;
+}
+
+.inline-block {
+  display: inline-block;
 }
 
 .inline {
@@ -16304,6 +16332,10 @@ select {
   height: 100vh;
 }
 
+.h-0 {
+  height: 0px;
+}
+
 .min-h-\[6rem\] {
   min-height: 6rem;
 }
@@ -16354,6 +16386,22 @@ select {
 
 .w-screen {
   width: 100vw;
+}
+
+.w-96 {
+  width: 24rem;
+}
+
+.w-80 {
+  width: 20rem;
+}
+
+.w-0 {
+  width: 0px;
+}
+
+.min-w-64 {
+  min-width: 16rem;
 }
 
 .max-w-3xl {
@@ -16414,6 +16462,10 @@ select {
 
 .flex-col {
   flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
 }
 
 .place-content-center {

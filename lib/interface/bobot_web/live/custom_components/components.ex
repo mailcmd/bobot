@@ -17,7 +17,7 @@ defmodule BobotWeb.Components do
     <button
       type={@type}
       class={[
-        "small-button text-white bg-purple-800 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300",
+        "small-button text-white bg-purple-800 hover:bg-purple-800 focus:outline-none focus:ring-0",
         "dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900",
         "font-medium rounded text-xs p-1.5 text-center items-center disabled:text-gray-400",
         @class

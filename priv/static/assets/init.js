@@ -1,8 +1,8 @@
 setTimeout(()=>{
-    block_editor.addEventListener('keydown', function (e) {
+    bobot_editor.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') e.preventDefault();
     });
-    window.editor = ace.edit("block-editor-text");
+    window.editor = ace.edit("bobot-editor-text");
     editor.setTheme("ace/theme/monokai");
     editor.session.setMode("ace/mode/elixir");
     editor.setOptions({
@@ -19,7 +19,7 @@ setTimeout(()=>{
         },
         exec: function(editor) {
             let e = new MouseEvent('click', {bubbles: true, cancelable: true})
-            block_editor.querySelector('button.commit').dispatchEvent(e);
+            bobot_editor.querySelector('button.commit').dispatchEvent(e);
         },
         readOnly: false 
     });    
@@ -31,7 +31,7 @@ setTimeout(()=>{
         },
         exec: function(editor) {
             let e = new MouseEvent('click', {bubbles: true, cancelable: true})
-            block_editor.querySelector('button.cancel').dispatchEvent(e);
+            bobot_editor.querySelector('button.cancel').dispatchEvent(e);
         },
         readOnly: false 
     });
@@ -43,7 +43,7 @@ setTimeout(()=>{
         },
         exec: function(editor) {
             let e = new MouseEvent('click', {bubbles: true, cancelable: true, ctrlKey: true})
-            block_editor.querySelector('button.cancel').dispatchEvent(e);
+            bobot_editor.querySelector('button.cancel').dispatchEvent(e);
         },
         readOnly: false 
     });

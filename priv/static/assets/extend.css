@@ -11,6 +11,10 @@ html {
     overflow-x: hidden;
 }
 
+main {
+  max-height: calc(100vh - 48px);
+}
+
 dialog {
   position: relative;
   border: 1px solid #6b21a8;
@@ -59,6 +63,17 @@ input[required], select[required] {
   height: fit-content;
 }
 
+.min-w-64 {
+  min-width: 16rem;
+}
+
+.w-80 {
+  width: 20rem;
+}
+.w-96 {
+  width: 24rem;
+}
+
 .ace_editor {
   width: 60vw;
   height: 70vh;
@@ -69,6 +84,14 @@ input[required], select[required] {
   padding-bottom: 4px;
 }
 
+#bobot_editor.readonly::before, #bobot_editor.readonly .editor-status-bar {
+  background-color: black;
+  color: darkgray;
+}
+
+#bobot_editor.readonly {
+  filter: grayscale(0.5) blur(0.4px) contrast(1); 
+}
 
 #current-bot-info {
  box-shadow: 0 0 10px 0px #bb83ff;   

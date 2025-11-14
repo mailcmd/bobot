@@ -186,8 +186,8 @@ defmodule Bobot.DSL.Base do
     quote do
       api = __MODULE__.__info__(:attributes) |> Keyword.get(:bot_api) |> hd()
       res = api.call(unquote(id), unquote(params))
-      new_assigns = Map.merge(Bobot.Bot.Assigns.get_all(var!(sess_id)), res)
-      Bobot.Bot.Assigns.set_all(var!(sess_id), new_assigns)
+      # new_assigns = put_in(Bobot.Bot.Assigns.get_all(var!(sess_id)), [id], res)
+      Bobot.Bot.Assigns.put_in(var!(sess_id), [id], res)
     end
   end
 

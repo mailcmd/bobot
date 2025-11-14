@@ -7,15 +7,25 @@ function confirm_action(message, action) {
 function editor_open(title, text, readonly = false) {
     editor_set_text(text);
     editor_set_title(title);
-    block_editor.showModal();
+    bobot_editor.showModal();
     editor.selection.clearSelection();
+    editor_set_readonly(readonly);
+}
+
+function editor_set_readonly(readonly) {
     editor.setReadOnly(readonly);
     if (readonly) {
-        block_editor.querySelectorAll('.editing').forEach( b => b.style.display = 'none')
-        block_editor.querySelectorAll('.reading').forEach( b => b.style.display = '')
+        bobot_editor.querySelectorAll('.editing').forEach( b => b.style.display = 'none');
+        bobot_editor.querySelectorAll('.reading').forEach( b => b.style.display = '');
+        bobot_editor.classList.add('readonly');
+        editor_set_status_bar('Readonly!');
+        editor.renderer.$cursorLayer.element.style.display = 'none';
     } else {
-        block_editor.querySelectorAll('.reading').forEach( b => b.style.display = 'none')
-        block_editor.querySelectorAll('.editing').forEach( b => b.style.display = '')
+        bobot_editor.querySelectorAll('.reading').forEach( b => b.style.display = 'none');
+        bobot_editor.querySelectorAll('.editing').forEach( b => b.style.display = '');
+        bobot_editor.classList.remove('readonly');
+        editor_set_status_bar('');
+        editor.renderer.$cursorLayer.element.style.display = 'block';
     }
 }
 
@@ -24,7 +34,7 @@ function editor_set_text(text) {
 }
 
 function editor_set_title(title) {
-    block_editor.setAttribute('data-title', title)
+    bobot_editor.setAttribute('data-title', title)
 }
 
 function editor_set_status_bar(text, goto_line = null, select_line = true) {
@@ -45,4 +55,38 @@ function editor_gotoline(nline, select_line = false) {
     editor.gotoLine(nline);
     if (select_line) editor.selection.selectLine();
     editor.focus();
+}
+
+function block_connect(b1, b2, color = '#a855f7') {
+    new LeaderLine(
+        document.querySelector(`[data-block-name="${b1}"]`),
+        LeaderLine.pointAnchor(document.querySelector(`[data-block-name-anchor="${b1}"]`)),
+        {
+            startPlug: 'square',
+            endPlug: 'disc',
+            color: color, 
+            size: 2
+        }
+    );
+    new LeaderLine(
+        LeaderLine.pointAnchor(document.querySelector(`[data-block-name-anchor="${b1}"]`)),
+        LeaderLine.pointAnchor(document.querySelector(`[data-block-name-anchor="${b2}"]`)),
+        {
+            startPlug: 'disc',
+            endPlug: 'disc',
+            color: color, 
+            size: 2
+        }
+    );
+    new LeaderLine(
+        LeaderLine.pointAnchor(document.querySelector(`[data-block-name-anchor="${b2}"]`)),
+        document.querySelector(`[data-block-name="${b2}"]`),
+        {
+            startPlug: 'disc',
+            endPlug: 'arrow1',
+            color: color, 
+            size: 2
+        }
+    );
+
 }
