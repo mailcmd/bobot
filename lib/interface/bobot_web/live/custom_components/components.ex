@@ -7,7 +7,7 @@ defmodule BobotWeb.Components do
 
   attr :type, :string, default: "button"
   attr :icon, :string, default: nil
-  attr :class, :string, default: nil
+  attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
 
   slot :inner_block, required: true
@@ -17,16 +17,16 @@ defmodule BobotWeb.Components do
     <button
       type={@type}
       class={[
-        "text-white bg-purple-800 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300",
+        "small-button text-white bg-purple-800 hover:bg-purple-800 focus:outline-none focus:ring-4 focus:ring-purple-300",
         "dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900",
-        "font-medium rounded text-xs p-1.5 text-center inline-flex items-center disabled:text-gray-400",
+        "font-medium rounded text-xs p-1.5 text-center items-center disabled:text-gray-400",
         @class
       ]}
       {@rest}
     >
       <%= render_slot(@inner_block) %>
       <%= if @icon != nil do %>
-      <.icon name={"hero-#{@icon}"} class="ml-1 h-5 w-5" />
+      <.icon name={"hero-#{@icon}"} class="ml-1 h-4 w-4" />
       <% end %>
     </button>
     """

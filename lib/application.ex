@@ -2,6 +2,7 @@ defmodule Bobot.Application do
   @moduledoc false
 
   use Application
+  @bots_dir Application.compile_env(:bobot, :bots_dir)
 
   @impl Application
   def start(_type, _args) do
@@ -9,6 +10,10 @@ defmodule Bobot.Application do
     #   host: Keyword.fetch!(config, :host),
     #   local_port: Keyword.fetch!(config, :local_port)
     # ]
+
+    Enum.map(Application.get_env(:bobot, :telegram_bots, []), fn name ->
+      Code.compile_file("#{@bots_dir}/#{name}.ex")
+    end)
 
     children = [
       {DNSCluster, query: Application.get_env(:bobot, :dns_cluster_query) || :ignore},

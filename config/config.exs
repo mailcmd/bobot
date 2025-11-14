@@ -8,7 +8,8 @@
 import Config
 
 config :bobot,
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  bots_dir: "bots/"
 
 # Configures the endpoint
 config :bobot, BobotWeb.Endpoint,

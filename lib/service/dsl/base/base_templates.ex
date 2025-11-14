@@ -34,7 +34,7 @@ defmodule Bobot.DSL.Base.Templates do
       stop_block: String.to_atom(params["stop_block"]),
       fallback_block: String.to_atom(params["fallback_block"])
     ]
-    {:ok, "Hooks added!", hooks}
+    {:ok, "Hooks set!", hooks}
   end
 
   def save("defblock", params, assigns) do
