@@ -16143,6 +16143,10 @@ select {
   top: 1.5rem;
 }
 
+.top-0 {
+  top: 0px;
+}
+
 .z-50 {
   z-index: 50;
 }
@@ -16795,6 +16799,14 @@ select {
 
 .pt-8 {
   padding-top: 2rem;
+}
+
+.pl-1 {
+  padding-left: 0.25rem;
+}
+
+.pr-4 {
+  padding-right: 1rem;
 }
 
 .text-left {

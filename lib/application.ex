@@ -3,6 +3,7 @@ defmodule Bobot.Application do
 
   use Application
   @bots_dir Application.compile_env(:bobot, :bots_dir)
+  @apis_dir Application.compile_env(:bobot, :apis_dir)
 
   @impl Application
   def start(_type, _args) do
@@ -13,6 +14,10 @@ defmodule Bobot.Application do
 
     Enum.map(Application.get_env(:bobot, :telegram_bots, []), fn name ->
       Code.compile_file("#{@bots_dir}/#{name}.ex")
+    end)
+
+    Path.wildcard("#{@apis_dir}/*.ex") |> Enum.map(fn filename ->
+      Code.compile_file(filename)
     end)
 
     children = [

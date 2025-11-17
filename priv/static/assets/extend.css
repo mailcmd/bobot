@@ -53,6 +53,10 @@ button.small-button {
   min-width: 6rem;
 }
 
+button.small-button.no-text {
+  min-width: 2.5rem;
+}
+
 input[required], select[required] {
   outline-width: 1px;
   outline-color: blueviolet;
@@ -91,6 +95,7 @@ input[required], select[required] {
 .blur {
   filter: blur(1px);
 }
+
 
 #bobot_editor.readonly::before, #bobot_editor.readonly .editor-status-bar {
   background-color: black;

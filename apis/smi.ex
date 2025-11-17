@@ -1,8 +1,7 @@
-defmodule Bobot.API.SMI do
-  use Bobot.API
-  require Logger
+import Bobot.DSL.Base
 
-  import Bobot.Tools
+defapi :smi do
+
 
   @url "http://190.1.0.3:7531/smi/"
   # @url "http://186.189.240.9:3580/smi/"
@@ -10,11 +9,11 @@ defmodule Bobot.API.SMI do
   @password "lowland"
 
   @impl true
-  def call(:authenticate, _muid) do
+  defcall :authenticate, _muid do
     %{authentication: :ok}
   end
 
-  def call(:find_user, message) do
+  defcall :find_user, message do
     url = "#{@url}def.get_dev_info.php?action=findUser&decfile=&devkey=&fname=undefined&ifindex=&json=1&code=#{message}"
       |> URI.encode()
       |> URI.encode(&(&1 != ?#))
@@ -58,12 +57,6 @@ defmodule Bobot.API.SMI do
     end
   end
 
-
-  # Fallback
-  def call(call_api_name, params) do
-    Logger.log(:warning, "[API] API Call does not match: #{call_api_name}, #{inspect params}")
-    %{}
-  end
 
 
   ################################################################################################

@@ -2,9 +2,8 @@
 
 <header class="h-12 flex items-center gap-x-2 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
   
-    <.small_button :if={@current_api == nil}
-      type="button" onclick="location.href='/'" icon="arrow-long-left" icon-pos="left">
-      Go back 
+    <.small_button :if={@current_api == nil} class="no-text"
+      type="button" onclick="location.href='/'" icon="arrow-long-left" icon-pos="left">      
     </.small_button>
 
     <form phx-change="select-api">
@@ -20,17 +19,15 @@
       New API
     </.small_button>
 
-    <div :if={@current_api != nil} class="float-left font-bold">
-      <%= "#{@current_api[:name]}" %>
+    <div :if={@current_api != nil} class="float-left font-bold invert bg-white rounded-lg p-0 pl-1 pr-4 opacity-50">
+      <img class="inline-block mt-1" src={~p"/images/bobot.png"} width="30" />
+      <div class="float-right inline-block text-black py-1.5 pl-2">
+        API: <%= "#{@current_api[:name]}" %>
+      </div>
     </div>
 
     <.small_button :if={@current_api != nil}
-      class="float-right mr-0.5" type="button" phx-click="show:defcall" icon="cube-mini">
-      Add call
-    </.small_button>
-
-    <.small_button :if={@current_api != nil}
-      class={[@current_api[:changed] && "animate-color" || "", "float-right mr-0.5"]} type="button" 
+      class={[@current_api[:changed] && "animate-color" || "", "ml-auto float-right mr-0.5"]} type="button" 
       phx-click="save-api" icon="folder-arrow-down-solid">
       Save
     </.small_button>
@@ -53,33 +50,10 @@
 
 </header>
 
-<main class="flex flex-grow bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">  
-  
-  <!-- Blocks -->
-  <span :if={@current_api} class="block flex flex-col flex-wrap">
-    <%= for {name, call_data} <- Map.to_list(@current_api[:calls]) do %>
-    <span class="defblock">
-      <div data-block-name={name} class={[
-        "flex-none inline-block min-w-64 relative font-mono text-xs h-fit-content m-2 p-2 pr-10",
-        "border-2 border-purple-400 bg-white rounded-lg"
-        ]}> 
-        <%= 
-          %{params: params} = call_data
-          params = Macro.to_string(params)
-          params = params == "[]" && "" || params
-          raw("<b>#{name}</b> <div class=\"float-right\">#{params}</div>")
-        %>
-        <.icon_button class="remove absolute right-2 top-2 text-gray-600 hover:text-red-800 hover:scale-110" 
-          icon="x-circle-solid" icon-size="3"
-          onclick={"confirm_action('Are you sure about to remove <b class=\"text-red-800\">#{name}</b> API call?', 'remove_call:#{name}')"}/>
-        <.icon_button class="edit absolute right-6 top-2 text-gray-600 hover:text-red-800 hover:scale-110" 
-          icon="pencil-solid" icon-size="3" phx-click="open-api" value={name}/>      
-      </div>
-      <!-- <div class="inline-block relative -top-1 ml-32 w-0 h-0" data-block-name-anchor={name}></div> -->
-    </span>
-    <% end %>    
-  </span>
-
+<main class="flex relative flex-grow bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">  
+  <div class="grid place-content-center blur absolute top-0 left-0 w-full h-full">
+    <img class="invert" src={~p"/images/bobot.png"} width="500" style="height: 500px !important; opacity: 20%;"/>
+  </div>
 </main>
 
 <dialog :if={@modal[:template]} class="bg-gray-100 dark:bg-gray-700 text-700 dark:text-100 before:bg-purple-800 before:text-white" id="modal" data-title={@modal[:title]}>

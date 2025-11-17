@@ -201,7 +201,9 @@ defmodule Bobot.DSL.Base do
     quote do
       defmodule unquote(name) do
         use Bobot.API
+        require Logger
 
+        @impl true
         unquote(block)
       end
     end
@@ -211,11 +213,6 @@ defmodule Bobot.DSL.Base do
     quote do
       def call(unquote(name), unquote(vars)) do
         unquote(block)
-      end
-
-      # Fallback
-      def call(call_api_name, params) do
-        raise("API Call does not match: #{call_api_name}, #{inspect params}")
       end
     end
   end

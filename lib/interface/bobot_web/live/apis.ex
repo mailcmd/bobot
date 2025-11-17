@@ -8,12 +8,7 @@ defmodule BobotWeb.Apis do
   - apis: %{
     <name>: %{
       name: <name>,
-      calls: %{
-        <name>: %{
-          params: <ast>,
-          code: <ast>
-        }
-      }
+      code: <ast>
     },
     ...
   }
@@ -33,7 +28,7 @@ defmodule BobotWeb.Apis do
 
   @blank_api %{
     name: nil,
-    apis: nil,
+    code: nil,
     changed: true
   }
 
@@ -44,7 +39,6 @@ defmodule BobotWeb.Apis do
       |> assign(modal: %{})
       |> assign(editor_status_bar: "")
       |> assign(current_api: nil)
-      |> assign(current_call: nil)
     }
   end
 
@@ -58,16 +52,6 @@ defmodule BobotWeb.Apis do
       |> open_modal(%{
         template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "defapi"},
         title: "New API..."
-      })
-    }
-  end
-
-  ## Specific SHOW for defblock
-  def handle_event("show:defcall", _params, socket) do
-    {:noreply, socket
-      |> open_modal(%{
-        template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "defcall"},
-        title: "API call"
       })
     }
   end
@@ -91,33 +75,6 @@ defmodule BobotWeb.Apis do
           socket
             |> assign(current_api: current_api)
             |> assign(apis: Map.put(assigns[:apis], def[:name], current_api))
-
-        :error ->
-          socket
-      end
-
-    {:noreply, socket
-      |> assign(last_result: result)
-      |> close_modal()
-      |> put_message(message)
-    }
-  end
-
-  ## Specific SAVE for defblock
-  def handle_event("save:defcall", params, socket) do
-    assigns = socket.assigns
-    {result, message, call} = apply(Bobot.DSL.Base.Templates, :save, ["defcall", params, assigns])
-
-    socket =
-      case result do
-        :ok ->
-          current_api =
-            assigns[:current_api]
-            |> update_in([:calls], fn calls -> Map.merge(calls, call) end)
-            |> put_in([:changed], true)
-
-          socket
-            |> assign(current_api: current_api)
 
         :error ->
           socket
@@ -255,22 +212,9 @@ defmodule BobotWeb.Apis do
 
   ##############
   ### BLOCK MNG
-  def handle_event("open-call", params, socket) do
-    name = String.to_atom(params["value"])
-    call_prms = Macro.to_string(socket.assigns[:current_api][:calls][name][:params])
-    text = Bobot.Tools.ast_to_source(socket.assigns[:current_api][:calls][name][:code])
-    {:noreply, socket
-      |> assign(current_call: name)
-      |> push_event("js-exec", %{ js: """
-        editor_open('CALL: #{name} #{call_prms}', `#{text}`)
-      """ })
-    }
-  end
-
   def handle_event("operation-editor", %{"operation" => "cancel", "ctrl" => "true"}, socket) do
     {:noreply, socket
       |> assign(last_result: :ok)
-      |> assign(current_block: nil)
       |> push_event("js-exec", %{ js: """
         bobot_editor.close();
       """ })
@@ -295,55 +239,28 @@ defmodule BobotWeb.Apis do
           |> Bobot.Tools.ast_to_source()
           |> Code.string_to_quoted()
 
-        case socket.assigns[:current_call] do
-          ## If it is a complete api
-          nil ->
-            name = socket.assigns[:current_api][:name]
-            original_api =
-              "#{@apis_dir}/#{name}.ex"
-              |> Bobot.Tools.ast_from_file()
-              |> List.wrap()
-              |> Bobot.Tools.ast_to_source()
-              |> Code.string_to_quoted()
+        name = socket.assigns[:current_api][:name]
+        original_api =
+          "#{@apis_dir}/#{name}.ex"
+          |> Bobot.Tools.ast_from_file()
+          |> List.wrap()
+          |> Bobot.Tools.ast_to_source()
+          |> Code.string_to_quoted()
 
-            {result, message} =
-              if original_api != new_call do
-                {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
-              else
-                {:ok, nil}
-              end
+        {result, message} =
+          if original_api != new_call do
+            {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
+          else
+            {:ok, nil}
+          end
 
-            {:noreply, socket
-              |> assign(last_result: result)
-              |> push_event("js-exec", %{ js: """
-                if ('#{result}' == 'ok') bobot_editor.close();
-              """ })
-              |> put_message(message, 5000)
-            }
-
-          ## If it is just a call
-          name ->
-            original_call =
-              socket.assigns[:current_api][:calls][name][:code]
-              |> Bobot.Tools.ast_to_source()
-              |> Code.string_to_quoted()
-
-            {result, call_name, message} =
-              if original_call != new_call do
-                {:error, name, "You made changes, save them before close or [CTRL+click] to close without save."}
-              else
-                {:ok, nil, nil}
-              end
-
-            {:noreply, socket
-              |> assign(last_result: result)
-              |> assign(current_call: call_name)
-              |> push_event("js-exec", %{ js: """
-                if (!!!'#{call_name}') bobot_editor.close();
-              """ })
-              |> put_message(message, 5000)
-            }
-        end
+        {:noreply, socket
+          |> assign(last_result: result)
+          |> push_event("js-exec", %{ js: """
+            if ('#{result}' == 'ok') bobot_editor.close();
+          """ })
+          |> put_message(message, 5000)
+        }
     end
   end
 
@@ -360,62 +277,25 @@ defmodule BobotWeb.Apis do
         }
 
       new_call ->
-        case socket.assigns[:current_call] do
-          ## If it is a complete api
-          nil ->
-            new_api =
-              {:__block__, [],  new_call}
-              |> ast_extract_components()
-              |> elem(1)
-              |> Map.put(:changed, true)
+        new_api =
+          {:__block__, [],  new_call}
+          |> ast_extract_components()
+          |> elem(1)
+          |> Map.put(:changed, true)
 
-            {:noreply, socket
-              |> assign(last_result: :ok)
-              |> assign(current_api: new_api)
-              |> push_event("js-exec", %{ js: """
-                if (#{params["ctrl"]}) bobot_editor.close();
-              """ })
-              |> put_message("Change commited!", 5000)
-            }
-
-          ## If it is just a call
-          name ->
-            {:noreply, socket
-              |> update(:current_api, fn current_api ->
-                current_api
-                  |> put_in([:calls, name, :code], new_call)
-                  |> put_in([:changed], true)
-              end)
-              |> assign(last_result: :ok)
-              |> assign(current_call: params["ctrl"] != "true" && name || nil )
-              |> push_event("js-exec", %{ js: """
-                if (#{params["ctrl"]}) bobot_editor.close();
-              """ })
-              |> put_message("Change commited!", 5000)
-            }
-
-        end
+        {:noreply, socket
+          |> assign(last_result: :ok)
+          |> assign(current_api: new_api)
+          |> push_event("js-exec", %{ js: """
+            if (#{params["ctrl"]}) bobot_editor.close();
+          """ })
+          |> put_message("Change commited!", 5000)
+        }
     end
   end
 
   ####################
   ### CONFIRMED ACTION
-
-  #[remove_block]
-  def handle_event("confirmed-action", %{"action" => "remove_call:" <> name}, socket) do
-    call_name = String.to_atom(name)
-
-    {:noreply, socket
-      |> update(:current_api, fn current_api ->
-        current_api
-          |> update_in([:calls], fn calls -> Map.delete(calls, call_name) end)
-          |> update_in([:changed], fn _ -> true end)
-      end)
-      |> push_event("js-exec", %{ js: """
-        box_confirm_action.close();
-      """ })
-    }
-  end
 
 
   ################################################################################################
@@ -441,38 +321,7 @@ defmodule BobotWeb.Apis do
       }
     ]}) do
 
-    {name,
-      block
-      |> Macro.prewalk(%{name: name}, fn
-        {:defcall, _, [call_name, [do: block]]} = node, acc ->
-          block =
-            case block do
-              {:__block__, _, block} -> block
-              block -> [block]
-            end
-          {
-            node,
-            acc
-              |> Bobot.Tools.put_inx([:calls, call_name, :params], [])
-              |> Bobot.Tools.put_inx([:calls, call_name, :code], block)
-          }
-        {:defcall, _, [call_name, params, [do: block]]} = node, acc ->
-          block =
-            case block do
-              {:__block__, _, block} -> block
-              block -> [block]
-            end
-          {
-            node,
-            acc
-              |> Bobot.Tools.put_inx([:calls, call_name, :params], params)
-              |> Bobot.Tools.put_inx([:calls, call_name, :code], block)
-          }
-        node, acc ->
-          {node, acc}
-      end)
-      |> elem(1)
-    }
+    {name, %{name: name, code: block} }
   end
   defp ast_extract_components(_), do: []
 
@@ -497,25 +346,12 @@ defmodule BobotWeb.Apis do
     import Bobot.DSL.Base
 
     defapi :#{api[:name]} do
-      #{api_calls_to_source(api[:calls])}
+      @impl true
+      #{Bobot.Tools.ast_to_source(api[:code])}
     end
     """
     |> Code.format_string!()
     |> Enum.join("")
-  end
-
-  defp api_calls_to_source(calls) when is_map(calls) do
-     calls |> Enum.map(fn {n, c} -> Map.put(c, :name, n) end) |> api_calls_to_source()
-  end
-  defp api_calls_to_source([]), do: ""
-  defp api_calls_to_source([call | calls]) do
-    """
-    defcall :#{call[:name]}#{call[:params] != [] && ", #{Macro.to_string(call[:params])}" || ""} do
-      #{Bobot.Tools.ast_to_source(call[:code])}
-    end
-
-    #{api_calls_to_source(calls)}
-    """
   end
 
 end
