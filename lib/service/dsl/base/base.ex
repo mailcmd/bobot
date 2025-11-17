@@ -38,7 +38,7 @@ defmodule Bobot.DSL.Base do
 
 
   ################################################################################################
-  ## MACROS
+  ## MACROS BOT
   ################################################################################################
 
   defmacro defbot(name, opts \\ [], do: block) do
@@ -190,5 +190,36 @@ defmodule Bobot.DSL.Base do
       Bobot.Bot.Assigns.put_in(var!(sess_id), [unquote(id)], res)
     end
   end
+
+  ################################################################################################
+  ## MACROS API
+  ################################################################################################
+
+  defmacro defapi(name, do: block) do
+    name = name |> to_string() |> Macro.camelize() |> String.to_atom()
+    name = {:__aliases__, [alias: false], [:Bobot, :API, name]}
+    quote do
+      defmodule unquote(name) do
+        use Bobot.API
+
+        unquote(block)
+      end
+    end
+  end
+
+  defmacro defcall(name, vars \\ [], do: block) do
+    quote do
+      def call(unquote(name), unquote(vars)) do
+        unquote(block)
+      end
+
+      # Fallback
+      def call(call_api_name, params) do
+        raise("API Call does not match: #{call_api_name}, #{inspect params}")
+      end
+    end
+  end
+
+
 
 end

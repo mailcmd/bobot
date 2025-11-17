@@ -27,6 +27,19 @@ defmodule Bobot.DSL.Base.Templates do
     end
   end
 
+  def save("defapi", params, assigns) do
+    name = String.to_atom(params["name"])
+    case get_in(assigns[:bots], [name]) do
+      nil ->
+        {:ok, "Bot created succesfully!", %{
+          name: String.to_atom(params["name"])
+        }}
+
+      _ ->
+        {:error, "Already exists an API with this name!", nil}
+    end
+  end
+
   def save("hooks", params, _assigns) do
     hooks = [
       start_block: String.to_atom(params["start_block"]),
@@ -56,7 +69,26 @@ defmodule Bobot.DSL.Base.Templates do
       _ ->
         {:error, "Already exists a block with this name!", nil}
     end
-
   end
 
+  def save("defcall", params, assigns) do
+    name = String.to_atom(params["name"])
+    case get_in(assigns[:current_api], [:calls, name]) do
+      nil ->
+        prms =
+          case String.trim(params["params"]) do
+            "" -> []
+            prm -> "[#{prm}]" |> Code.string_to_quoted() |> elem(1)
+          end
+
+        {:ok, nil, %{
+          name => %{
+            params: prms,
+            call: []
+          }
+        }}
+      _ ->
+        {:error, "Already exists a block with this name!", nil}
+    end
+  end
 end

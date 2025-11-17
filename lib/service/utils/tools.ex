@@ -107,61 +107,6 @@ defmodule Bobot.Tools do
     |> String.trim()
   end
 
-  def ast_extract_components(
-    {:__block__, [],  [
-      {:import, _, [{:__aliases__, _, [:Bobot, :DSL, :Base]}]},
-      {:defbot, _,
-        [
-          name,
-          settings,
-          [ do: block ]
-        ]
-      }
-    ]}) do
-
-    settings = settings |> Macro.to_string() |> Code.eval_string() |> elem(0)
-
-    {name,
-      block
-      |> Macro.prewalk(%{name: name, settings: settings}, fn
-        {:hooks, _, [hooks]} = node, acc ->
-          {
-            node,
-            put_in(acc, [:hooks], hooks)
-          }
-        {:defblock, _, [block_name, [do: block]]} = node, acc ->
-          block =
-            case block do
-              {:__block__, _, block} -> block
-              block -> [block]
-            end
-          {
-            node,
-            acc
-              |> put_inx([:blocks, block_name, :params], [])
-              |> put_inx([:blocks, block_name, :block], block)
-          }
-        {:defblock, _, [block_name, params, [do: block]]} = node, acc ->
-          block =
-            case block do
-              {:__block__, _, block} -> block
-              block -> [block]
-            end
-          {
-            node,
-            acc
-              |> put_inx([:blocks, block_name, :params], params)
-              |> put_inx([:blocks, block_name, :block], block)
-          }
-        node, acc ->
-          {node, acc}
-      end)
-      |> elem(1)
-    }
-  end
-
-  def ast_extract_components(_), do: []
-
   def eval_source_code(str) do
     case Code.string_to_quoted(str) do
       {:error, {[{:line, nline} | _], {message, _}, line}} ->

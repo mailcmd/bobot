@@ -9,6 +9,7 @@ defmodule BobotWeb.Components do
   attr :icon, :string, default: nil
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(disabled form name value)
+  attr :"icon-pos", :string, default: "right"
 
   slot :inner_block, required: true
 
@@ -26,7 +27,7 @@ defmodule BobotWeb.Components do
     >
       <%= render_slot(@inner_block) %>
       <%= if @icon != nil do %>
-      <.icon name={"hero-#{@icon}"} class="ml-1 h-4 w-4" />
+      <.icon name={"hero-#{@icon}"} class={"ml-1 h-4 w-4 float-#{assigns[:"icon-pos"]}"} />
       <% end %>
     </button>
     """

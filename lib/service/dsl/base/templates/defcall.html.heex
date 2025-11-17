@@ -1,0 +1,16 @@
+<form phx-submit="save:defcall">
+  <.input_hidden name="ope" value="put" />
+  <ul class="mb-5">
+    <li>
+      <.input name="name" label="Block name" required pattern="[a-z_0-9]+" 
+        placeholder="You can use a-z, 0-9 and _" title="You can use a-z, 0-9 and _"/>
+    </li>
+    <li>
+      <.input name="params" label="Block param(s)" placeholder="Ex: [id, name]" pattern="(|[a-z0-9_]+|\[[a-z0-9_\, ]+\])"
+        title="Can be empty, a var name, or many vars closed by [] and separated by ,"/>
+    </li>
+  </ul>
+  <.small_button class="float-right" icon="hand-thumb-up-solid" type="submit">
+    Save
+  </.small_button>
+</form>

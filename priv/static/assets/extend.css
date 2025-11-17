@@ -84,6 +84,14 @@ input[required], select[required] {
   padding-bottom: 4px;
 }
 
+.invert {
+  filter: invert(0.9);
+}
+
+.blur {
+  filter: blur(1px);
+}
+
 #bobot_editor.readonly::before, #bobot_editor.readonly .editor-status-bar {
   background-color: black;
   color: darkgray;
