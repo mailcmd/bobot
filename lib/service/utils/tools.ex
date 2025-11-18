@@ -1,4 +1,15 @@
 defmodule Bobot.Tools do
+
+  defmacro apply_if(value, expr, ope) do
+    quote do
+      if unquote(expr) do
+        unquote(value) |> unquote(ope)
+      else
+        unquote(value)
+      end
+    end
+  end
+
   def map_extract_fields(map, fields, new_map \\ [])
   def map_extract_fields(_map, [], new_map), do: new_map
   def map_extract_fields(map, [{key, title, fun} | rest], new_map) do
@@ -97,13 +108,13 @@ defmodule Bobot.Tools do
     end
   end
 
-  def ast_to_source(ast) do
+  def ast_to_source(ast, opts \\ [parentheses: :remove]) do
     ast
     |> Enum.map(&Macro.to_string/1)
     |> Enum.join("\n")
     |> Code.format_string!(line_length: 150, force_do_end_blocks: true)
     |> Enum.join("")
-    |> String.replace(~r/[\(\)]/, " ")
+    |> apply_if(opts[:parentheses] == :remove, String.replace(~r/[\(\)]/, " "))
     |> String.trim()
   end
 

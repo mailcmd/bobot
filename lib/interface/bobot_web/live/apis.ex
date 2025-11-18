@@ -346,8 +346,7 @@ defmodule BobotWeb.Apis do
     import Bobot.DSL.Base
 
     defapi :#{api[:name]} do
-      @impl true
-      #{Bobot.Tools.ast_to_source(api[:code])}
+      #{Bobot.Tools.ast_to_source([api[:code]], parentheses: :keep)}
     end
     """
     |> Code.format_string!()

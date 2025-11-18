@@ -203,7 +203,6 @@ defmodule Bobot.DSL.Base do
         use Bobot.API
         require Logger
 
-        @impl true
         unquote(block)
       end
     end
@@ -211,6 +210,7 @@ defmodule Bobot.DSL.Base do
 
   defmacro defcall(name, vars \\ [], do: block) do
     quote do
+      @impl true
       def call(unquote(name), unquote(vars)) do
         unquote(block)
       end

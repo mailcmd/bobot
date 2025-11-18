@@ -1,10 +1,9 @@
 <.flash_group flash={@flash} />
 
 <header class="h-12 flex items-center gap-x-2 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
-  <div class="invert bg-white rounded-lg p-0 px-1 opacity-50">
-    <img class="inline-block mt-1" src={~p"/images/bobot.png"} width="30" />
-    <div class="float-right inline-block text-black py-1.5 pl-2">Bobot v<%= Application.spec(:bobot, :vsn) %></div>
-  </div>
+  <.tiny_logo>
+    Bobot v<%= Application.spec(:bobot, :vsn) %>
+  </.tiny_logo>
 
   <.small_button 
     class="ml-auto float-right mr-0.5" type="button" onclick="location.href='/bots'" icon="wrench-mini">
@@ -18,9 +17,7 @@
 
 </header>
 
-<main class="grid flex-grow place-content-center bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">    
-  <div class="blur">
-    <img class="invert" src={~p"/images/bobot.png"} width="500" style="height: 500px !important; opacity: 20%;"/>
-  </div>
+<main class="relative flex flex-grow place-content-center bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">    
+  <.bg_logo/>
 </main>
 

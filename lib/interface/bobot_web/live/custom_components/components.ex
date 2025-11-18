@@ -5,6 +5,28 @@ defmodule BobotWeb.Components do
   # alias Phoenix.LiveView.JS
   use Gettext, backend: BobotWeb.Gettext
 
+  def bg_logo(assigns) do
+    ~H"""
+    <div class="grid place-content-center blur absolute top-0 left-0 w-full h-full">
+      <img class="invert" src={"/images/bobot.png"} style="width: 100%; height: 100% !important; opacity: 20%;"/>
+    </div>
+    """
+  end
+
+  slot :inner_block
+
+  def tiny_logo(assigns) do
+    ~H"""
+    <div class="float-left font-bold invert rounded-lg p-0 pl-1 pr-4">
+      <img class="inline-block mt-1" src={"/images/bobot.png"} width="30" />
+      <div class="float-right inline-block text-black py-1.5 pl-2 pr-2">
+        <%= render_slot(@inner_block) %>
+      </div>
+    </div>
+    """
+  end
+
+
   attr :type, :string, default: "button"
   attr :icon, :string, default: nil
   attr :class, :any, default: nil

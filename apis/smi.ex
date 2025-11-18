@@ -2,6 +2,7 @@ import Bobot.DSL.Base
 
 defapi :smi do
 
+  import Bobot.Tools
 
   @url "http://190.1.0.3:7531/smi/"
   # @url "http://186.189.240.9:3580/smi/"
@@ -13,6 +14,7 @@ defapi :smi do
     %{authentication: :ok}
   end
 
+  @impl true
   defcall :find_user, message do
     url = "#{@url}def.get_dev_info.php?action=findUser&decfile=&devkey=&fname=undefined&ifindex=&json=1&code=#{message}"
       |> URI.encode()
@@ -102,7 +104,6 @@ defapi :smi do
   end
 
   defp process_docsis(user, signal_url) do
-    IO.inspect(user, limit: :infinity)
     name = user[:denominacion_cli]
     address = "#{user[:calle_loc]} #{user[:numero_loc]}"
     table1 = user
