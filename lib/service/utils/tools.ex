@@ -108,7 +108,9 @@ defmodule Bobot.Tools do
     end
   end
 
-  def ast_to_source(ast, opts \\ [parentheses: :remove]) do
+  def ast_to_source(ast, opts \\ [parentheses: :keep])
+  def ast_to_source(ast, opts) when is_tuple(ast), do: ast_to_source([ast], opts)
+  def ast_to_source(ast, opts) do
     ast
     |> Enum.map(&Macro.to_string/1)
     |> Enum.join("\n")

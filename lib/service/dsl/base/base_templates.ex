@@ -15,14 +15,26 @@ defmodule Bobot.DSL.Base.Templates do
 
   def save("defbot", params, assigns) do
     name = String.to_atom(params["name"])
-    case get_in(assigns[:bots], [name]) do
-      nil ->
-        {:ok, "Bot created succesfully!", %{
+    cond do
+      # New BOT
+      (assigns[:bots] == nil and get_in(assigns[:bots], [name]) == nil)
+      or
+      # Edit BOT
+      assigns[:bots] != nil ->
+        {:ok, "Bot defined succesfully!", %{
           name: String.to_atom(params["name"]),
-          type: String.to_atom(params["type"])
+          type: String.to_atom(params["type"]),
+          use_apis: (params["use_apis"] || "")
+            |> String.split(",", trim: true)
+            |> Enum.map(&String.trim/1)
+            |> Enum.map(&String.to_atom/1),
+          use_libs: (params["use_libs"] || "")
+            |> String.split(",", trim: true)
+            |> Enum.map(&String.trim/1)
+            |> Enum.map(&String.to_atom/1)
         }}
 
-      _ ->
+      true ->
         {:error, "Already exists a bot with this name!", nil}
     end
   end
@@ -31,12 +43,25 @@ defmodule Bobot.DSL.Base.Templates do
     name = String.to_atom(params["name"])
     case get_in(assigns[:bots], [name]) do
       nil ->
-        {:ok, "Bot created succesfully!", %{
+        {:ok, "API created succesfully!", %{
           name: String.to_atom(params["name"])
         }}
 
       _ ->
         {:error, "Already exists an API with this name!", nil}
+    end
+  end
+
+  def save("deflib", params, assigns) do
+    name = String.to_atom(params["name"])
+    case get_in(assigns[:bots], [name]) do
+      nil ->
+        {:ok, "LIB created succesfully!", %{
+          name: String.to_atom(params["name"])
+        }}
+
+      _ ->
+        {:error, "Already exists a LIB with this name!", nil}
     end
   end
 

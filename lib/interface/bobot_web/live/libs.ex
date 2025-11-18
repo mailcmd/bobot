@@ -1,11 +1,11 @@
-defmodule BobotWeb.Apis do
+defmodule BobotWeb.Libs do
   use BobotWeb, :live_view
   import BobotWeb.Components
   import BobotWeb.WebTools
 
   @doc """
   Assigns:
-  - apis: %{
+  - libs: %{
     <name>: %{
       name: <name>,
       code: <ast>
@@ -21,12 +21,12 @@ defmodule BobotWeb.Apis do
       }
     }
 
-  - current_api: nil
+  - current_lib: nil
   """
 
-  @apis_dir Application.compile_env(:bobot, :apis_dir)
+  @libs_dir Application.compile_env(:bobot, :libs_dir)
 
-  @blank_api %{
+  @blank_lib %{
     name: nil,
     code: nil,
     changed: false
@@ -35,10 +35,10 @@ defmodule BobotWeb.Apis do
   def mount(_params, _session, socket) do
 
     {:ok, socket
-      |> assign(apis: get_apis())
+      |> assign(libs: get_libs())
       |> assign(modal: %{})
       |> assign(editor_status_bar: "")
-      |> assign(current_api: nil)
+      |> assign(current_lib: nil)
     }
   end
 
@@ -47,11 +47,11 @@ defmodule BobotWeb.Apis do
   ################################################################################################
 
   ## Specific SHOW for defbot
-  def handle_event("show:defapi", _params, socket) do
+  def handle_event("show:deflib", _params, socket) do
     {:noreply, socket
       |> open_modal(%{
-        template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "defapi"},
-        title: "New API..."
+        template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "deflib"},
+        title: "New Lib..."
       })
     }
   end
@@ -61,20 +61,20 @@ defmodule BobotWeb.Apis do
   ################################################################################################
 
   ## Specific SAVE for new_bot
-  def handle_event("save:defapi", params, socket) do
+  def handle_event("save:deflib", params, socket) do
     assigns = socket.assigns
-    {result, message, def} = apply(Bobot.DSL.Base.Templates, :save, ["defapi", params, assigns])
+    {result, message, def} = apply(Bobot.DSL.Base.Templates, :save, ["deflib", params, assigns])
 
     socket =
       case result do
         :ok ->
-          current_api =
-            @blank_api
+          current_lib =
+            @blank_lib
             |> put_in([:name], def[:name])
 
           socket
-            |> assign(current_api: current_api)
-            |> assign(apis: Map.put(assigns[:apis], def[:name], current_api))
+            |> assign(current_lib: current_lib)
+            |> assign(libs: Map.put(assigns[:libs], def[:name], current_lib))
 
         :error ->
           socket
@@ -93,31 +93,31 @@ defmodule BobotWeb.Apis do
 
   ##############
   ### SELECT BOT
-  def handle_event("select-api", params, socket) do
-    name = params["api_name"] |> String.replace(" *", "") |> String.to_atom()
+  def handle_event("select-lib", params, socket) do
+    name = params["lib_name"] |> String.replace(" *", "") |> String.to_atom()
     {:noreply, socket
-      |> assign(current_api: socket.assigns[:apis][name])
+      |> assign(current_lib: socket.assigns[:libs][name])
     }
   end
 
   ##############
   ### SAVE BOT
-  def handle_event("save-api", _params, socket) do
-    current_api = socket.assigns[:current_api]
-    {result, message, apis, current_api} =
-      case save_api(current_api) do
+  def handle_event("save-lib", _params, socket) do
+    current_lib = socket.assigns[:current_lib]
+    {result, message, libs, current_lib} =
+      case save_lib(current_lib) do
         :ok ->
-          api_name = current_api[:name]
-          current_api = Map.put(current_api, :changed, false)
-          {:ok, "API saved!", put_in(socket.assigns[:apis], [api_name], current_api), current_api}
+          lib_name = current_lib[:name]
+          current_lib = Map.put(current_lib, :changed, false)
+          {:ok, "API saved!", put_in(socket.assigns[:libs], [lib_name], current_lib), current_lib}
 
         {:error, err} ->
-          {:error, "There was a problem storing API (#{err})", socket.assigns[:apis], socket.assigns[:current_api]}
+          {:error, "There was a problem storing LIB (#{err})", socket.assigns[:libs], socket.assigns[:current_lib]}
       end
 
     {:noreply, socket
-      |> update(:apis, fn _ -> apis end)
-      |> assign(current_api: current_api)
+      |> update(:libs, fn _ -> libs end)
+      |> assign(current_lib: current_lib)
       |> assign(last_result: result)
       |> put_message(message)
     }
@@ -125,41 +125,41 @@ defmodule BobotWeb.Apis do
 
   ##############
   ### CLOSE API (no ctrl key)
-  def handle_event("close-api", %{"value" => "false"}, socket) do
-    if socket.assigns[:current_api][:changed] do
+  def handle_event("close-lib", %{"value" => "false"}, socket) do
+    if socket.assigns[:current_lib][:changed] do
       {:noreply, socket
         |> assign(last_result: :error)
         |> put_message("You made changes, save them before close or [CTRL+click] to close without save.", 5000)
       }
     else
-      handle_event("close-api", %{"value" => "true"}, socket)
+      handle_event("close-lib", %{"value" => "true"}, socket)
     end
 
   end
   ##############
   ### CLOSE API (with ctrl key)
-  def handle_event("close-api", _params, socket) do
-    changed = socket.assigns[:current_api][:changed]
+  def handle_event("close-lib", _params, socket) do
+    changed = socket.assigns[:current_lib][:changed]
     {:noreply, socket
       |> assign(last_result: changed && :error || :ok)
       |> put_message(changed && "Changes discarded!" || nil)
-      |> assign(current_api: nil)
+      |> assign(current_lib: nil)
     }
   end
 
   ###############
   ### COMPILE API
-  def handle_event("compile-api", _params, socket) do
+  def handle_event("compile-lib", _params, socket) do
     {{result, message}, real_errors} =
       Code.with_diagnostics(fn ->
         try do
-          socket.assigns[:current_api]
-            |> api_to_string()
+          socket.assigns[:current_lib]
+            |> lib_to_string()
             |> Code.compile_string()
           {:ok, "API compiled OK!"}
         rescue
           _ ->
-            {:error, "There was a problem compiling the API!"}
+            {:error, "There was a problem compiling the LIB!"}
         end
       end)
 
@@ -184,13 +184,13 @@ defmodule BobotWeb.Apis do
             nline -> nline
           end
 
-        text = api_to_string(socket.assigns[:current_api])
+        text = lib_to_string(socket.assigns[:current_lib])
 
         {:noreply, socket
           |> assign(last_result: result)
           |> put_message(message)
           |> push_event("js-exec", %{ js: """
-            editor_open('Compile error for #{socket.assigns[:current_api][:name]}', `#{text}`, true);
+            editor_open('Compile error for #{socket.assigns[:current_lib][:name]}', `#{text}`, true);
             editor_set_status_bar('#{error_message}', #{nline}, true);
           """ })
         }
@@ -199,12 +199,12 @@ defmodule BobotWeb.Apis do
 
   ###############
   ### VIEW API
-  def handle_event("view-api", _params, socket) do
-    text = api_to_string(socket.assigns[:current_api])
+  def handle_event("view-lib", _params, socket) do
+    text = lib_to_string(socket.assigns[:current_lib])
 
     {:noreply, socket
       |> push_event("js-exec", %{ js: """
-        editor_open('#{socket.assigns[:current_api][:name]}', `#{text}`, false);
+        editor_open('#{socket.assigns[:current_lib][:name]}', `#{text}`, false);
       """ })
     }
 
@@ -234,21 +234,21 @@ defmodule BobotWeb.Apis do
         }
 
       ast ->
-        new_call =
+        new_lib  =
           ast
           |> Bobot.Tools.ast_to_source()
           |> Code.string_to_quoted()
 
-        name = socket.assigns[:current_api][:name]
-        original_api =
-          "#{@apis_dir}/#{name}.ex"
+        name = socket.assigns[:current_lib][:name]
+        original_lib =
+          "#{@libs_dir}/#{name}.ex"
           |> Bobot.Tools.ast_from_file()
           |> List.wrap()
           |> Bobot.Tools.ast_to_source()
           |> Code.string_to_quoted()
 
         {result, message} =
-          if original_api != new_call do
+          if original_lib != new_lib do
             {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
           else
             {:ok, nil}
@@ -276,16 +276,18 @@ defmodule BobotWeb.Apis do
           """ })
         }
 
-      new_call ->
-        new_api =
-          {:__block__, [],  new_call}
+      new_lib ->
+        new_lib =
+          {:__block__, [],  new_lib}
           |> ast_extract_components()
           |> elem(1)
-          |> Map.put(:changed, true)
+          # |> Map.put(:changed, true)
+
+        save_lib(new_lib)
 
         {:noreply, socket
           |> assign(last_result: :ok)
-          |> assign(current_api: new_api)
+          |> assign(current_lib: new_lib)
           |> push_event("js-exec", %{ js: """
             if (#{params["ctrl"]}) bobot_editor.close();
           """ })
@@ -313,7 +315,7 @@ defmodule BobotWeb.Apis do
   defp ast_extract_components(
     {:__block__, [],  [
       {:import, _, [{:__aliases__, _, [:Bobot, :DSL, :Base]}]},
-      {:defapi, _,
+      {:deflib, _,
         [
           name,
           [ do: block ]
@@ -325,28 +327,28 @@ defmodule BobotWeb.Apis do
   end
   defp ast_extract_components(_), do: []
 
-  def get_apis() do
-    "#{@apis_dir}/*.ex"
+  def get_libs() do
+    "#{@libs_dir}/*.ex"
     |> Path.wildcard()
     |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
     |> Stream.map(fn ast -> ast_extract_components(ast) end)
     |> Enum.into([])
-    |> Enum.filter(fn api -> api != [] end)
+    |> Enum.filter(fn lib -> lib != [] end)
     |> Enum.into(%{})
   end
 
-  def save_api(api) do
-    filename = "#{@apis_dir}/#{api[:name]}.ex"
-    save_api(api, filename)
+  def save_lib(lib) do
+    filename = "#{@libs_dir}/#{lib[:name]}.ex"
+    save_lib(lib, filename)
   end
-  def save_api(api, filename), do: File.write(filename, api_to_string(api))
+  def save_lib(lib, filename), do: File.write(filename, lib_to_string(lib))
 
-  def api_to_string(api) do
+  def lib_to_string(lib) do
     """
     import Bobot.DSL.Base
 
-    defapi :#{api[:name]} do
-      #{Bobot.Tools.ast_to_source([api[:code]], parentheses: :keep)}
+    deflib :#{lib[:name]} do
+      #{Bobot.Tools.ast_to_source([lib[:code]], parentheses: :keep)}
     end
     """
     |> Code.format_string!()

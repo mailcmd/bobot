@@ -1,18 +1,23 @@
 <.flash_group flash={@flash} />
 
-<header class="h-12 flex items-center gap-x-2 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
+<header class="h-12 flex items-center gap-x-1 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
   <.tiny_logo>
     Bobot v<%= Application.spec(:bobot, :vsn) %>
   </.tiny_logo>
 
   <.small_button 
-    class="ml-auto float-right mr-0.5" type="button" onclick="location.href='/bots'" icon="wrench-mini">
+    class="ml-auto float-right" type="button" onclick="location.href='/bots'" icon="wrench-mini">
     Bots
   </.small_button>
 
   <.small_button 
-    class="float-right mr-0.5" type="button" onclick="location.href='/apis'" icon="arrows-right-left">
+    class="float-right" type="button" onclick="location.href='/apis'" icon="arrows-right-left">
     APIs
+  </.small_button>
+
+  <.small_button 
+    class="float-right" type="button" onclick="location.href='/libs'" icon="arrows-right-left">
+    Libs
   </.small_button>
 
 </header>

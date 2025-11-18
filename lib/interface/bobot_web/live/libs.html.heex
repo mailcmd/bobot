@@ -2,44 +2,44 @@
 
 <header class="h-12 flex items-center gap-x-1 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
   
-    <.small_button :if={@current_api == nil} class="no-text"
+    <.small_button :if={@current_lib == nil} class="no-text"
       type="button" onclick="location.href='/'" icon="arrow-long-left" icon-pos="left">      
     </.small_button>
 
-    <.small_button :if={@current_api != nil} class="no-text" 
-    type="button" phx-click="close-api" icon="x-mark" onclick="this.value=event.ctrlKey">
+    <.small_button :if={@current_lib != nil} class="no-text" 
+    type="button" phx-click="close-lib" icon="x-mark" onclick="this.value=event.ctrlKey">
     </.small_button>
 
-    <.tiny_logo :if={@current_api != nil}>
-      API: <%= "#{@current_api[:name]}" %>
+    <.tiny_logo :if={@current_lib != nil}>
+      LIB: <%= "#{@current_lib[:name]}" %>
     </.tiny_logo>
 
-    <form phx-change="select-api">
-    <.select :if={@current_api == nil} inline={true} label="Select API" 
-      name="api_name" 
-      options={@apis |> Map.keys()}
-      value={@current_api[:name]} small={true}
+    <form phx-change="select-lib">
+    <.select :if={@current_lib == nil} inline={true} label="Select LIB" 
+      name="lib_name" 
+      options={@libs |> Map.keys()}
+      value={@current_lib[:name]} small={true}
       class="!bg-purple-100 !rounded"/>
     </form>
 
-    <.small_button :if={@current_api == nil} value="modal:New API..."
-      type="button" phx-click="show:defapi" icon="plus-circle-mini">
-      New API
+    <.small_button :if={@current_lib == nil} value="modal:New LIB..."
+      type="button" phx-click="show:deflib" icon="plus-circle-mini">
+      New LIB
     </.small_button>
 
-    <.small_button :if={@current_api != nil}
-      class={[@current_api[:changed] && "animate-color" || "", "ml-auto float-right"]} type="button" 
-      phx-click="save-api" icon="folder-arrow-down-solid">
+    <.small_button :if={@current_lib != nil}
+      class={[@current_lib[:changed] && "animate-color" || "", "ml-auto float-right"]} type="button" 
+      phx-click="save-lib" icon="folder-arrow-down-solid">
       Save
     </.small_button>
 
-    <.small_button :if={@current_api != nil}
-      class="float-right" type="button" phx-click="view-api" icon="credit-card-solid">
-      View API
+    <.small_button :if={@current_lib != nil}
+      class="float-right" type="button" phx-click="view-lib" icon="credit-card-solid">
+      View LIB
     </.small_button>
 
-    <.small_button :if={@current_api != nil}
-      class="float-right" type="button" phx-click="compile-api" icon="cpu-chip-solid">
+    <.small_button :if={@current_lib != nil}
+      class="float-right" type="button" phx-click="compile-lib" icon="cpu-chip-solid">
       Compile
     </.small_button>
 

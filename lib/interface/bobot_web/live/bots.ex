@@ -23,6 +23,8 @@ defmodule BobotWeb.Bots do
       hooks: [ <kwlist> ],
       settings: %{
         type: <type>,
+        use_apis: [<atoms_list>],
+        use_libs: [<atoms_list>],
         config: [ <kwlist> ]
       }
     },
@@ -75,7 +77,7 @@ defmodule BobotWeb.Bots do
     {:noreply, socket
       |> open_modal(%{
         template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "defbot"},
-        title: "New bot..."
+        title: "Bot defs..."
       })
     }
   end
@@ -126,10 +128,24 @@ defmodule BobotWeb.Bots do
       case result do
         :ok ->
           current_bot =
-            @blank_bot
-            |> put_in([:name], def[:name])
-            |> put_in([:settings, :type], def[:type])
-            |> put_in([:settings, :config], [])
+            case assigns[:current_bot] do
+              nil ->
+                @blank_bot
+                |> put_in([:name], def[:name])
+                |> put_in([:settings, :type], def[:type])
+                |> put_in([:settings, :use_apis], def[:use_apis])
+                |> put_in([:settings, :use_libs], def[:use_libs])
+                |> put_in([:settings, :config], [])
+
+              cb ->
+                cb
+                |> put_in([:name], def[:name])
+                |> put_in([:settings, :type], def[:type])
+                |> put_in([:settings, :use_apis], def[:use_apis])
+                |> put_in([:settings, :use_libs], def[:use_libs])
+                |> put_in([:changed], true)
+            end
+
 
           socket
             |> assign(current_bot: current_bot)
@@ -600,7 +616,7 @@ defmodule BobotWeb.Bots do
   end
   defp ast_extract_components(_), do: []
 
-  defp get_sentencies() do
+  def get_sentencies() do
     Bobot.Tools.get_modules(~r/Bobot\.DSL\.(.+?)\.Tools/)
       |> Enum.map(fn mod -> mod.info(:sentencies) end)
       |> List.flatten()
@@ -619,16 +635,24 @@ defmodule BobotWeb.Bots do
 
   def save_bot(bot) do
     filename = "#{@bots_dir}/#{bot[:name]}.ex"
+    # IO.puts bot_to_string(bot)
     save_bot(bot, filename)
   end
   def save_bot(bot, filename), do: File.write(filename, bot_to_string(bot))
 
   def bot_to_string(bot) do
+    except = [:hooks]
+    no_parens =
+      get_sentencies()
+      |> Enum.map(fn {k, _} -> {String.to_atom(k), :*} end)
+      |> Enum.filter(fn {k, _} -> k not in except end)
     """
     import Bobot.DSL.Base
 
     defbot :#{bot[:name]}, [
         type: :#{bot[:settings][:type]},
+        use_apis: #{inspect bot[:settings][:use_apis]},
+        use_libs: #{inspect bot[:settings][:use_libs]},
         config: #{inspect bot[:settings][:config]}
       ] do
 
@@ -637,7 +661,7 @@ defmodule BobotWeb.Bots do
       #{bot_blocks_to_source(bot[:blocks])}
     end
     """
-    |> Code.format_string!()
+    |> Code.format_string!(locals_without_parens: no_parens)
     |> Enum.join("")
   end
 

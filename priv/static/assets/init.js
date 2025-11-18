@@ -10,6 +10,10 @@ setTimeout(()=>{
         fixedWidthGutter: true,
         newLineMode: 'unix'
     });
+    editor.session.setOptions({
+        tabSize: 2,       // Set the number of spaces for indentation (e.g., 4)
+        useSoftTabs: true // Use spaces for indentation instead of tabs
+    });
     editor.setKeyboardHandler("ace/keyboard/vscode");
     editor.commands.addCommand({
         name: 'commit',

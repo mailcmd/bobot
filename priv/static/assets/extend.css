@@ -11,6 +11,14 @@ html {
     overflow-x: hidden;
 }
 
+header {
+  overflow: hidden;
+}
+
+header > button.small-button {
+  height: 150%;
+}
+
 main {
   max-height: calc(100vh - 48px);
 }
@@ -54,14 +62,41 @@ button.small-button {
 }
 
 button.small-button.no-text {
-  min-width: 2.5rem;
+  min-width: 1rem;
 }
 
-input[required], select[required] {
+button.small-button.no-text > span {
+  margin-left: 0;
+}
+
+input[required]:not([readonly]), select[required]:not([readonly]) {
   outline-width: 1px;
   outline-color: blueviolet;
   outline-style: solid;
 }
+
+input[readonly] {
+  background-color: #ccc;
+  color: #777;
+  outline-color: #ccc;
+  border-color:  #ccc;
+  --tw-ring-color: #ccc;
+}
+
+input[readonly]:focus {
+  border-width: 0;  
+  outline-width: 0;
+  --tw-ring-color: #ccc;
+}
+
+/* 
+select > option[selected] {
+  background-color: #9b63df;
+  color: white;
+  font-weight: bolder;
+  border-radius: 3px;
+} */
+
 
 .h-fit-content {
   height: fit-content;

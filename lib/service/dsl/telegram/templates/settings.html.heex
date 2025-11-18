@@ -26,15 +26,6 @@
           }
           />
     </li>
-    <li>
-      <.input name="use_api" label="API module" pattern="[A-Za-z_\.]*" 
-        value={
-          is_list(@current_bot[:settings]) 
-            && "#{get_in(@current_bot, [:settings, :config, :use_api])}" 
-            || ""
-        }
-        placeholder="You can use A-Z and a-z"/>
-    </li>
   </ul>
   <.small_button class="float-right" icon="hand-thumb-up-solid" type="submit">
     Save

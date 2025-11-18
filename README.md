@@ -4,10 +4,11 @@
 
 - [x] Move render_table from telegram to tools
 - [x] Make assigns variable more specific for every step
-- [ ] Base: call_http 
+- [x] Base: call_http 
 - [ ] Make the API Creator interface
       [ ] defapi 
       [ ] defcall 
+- [ ] Duplicate BOT y API
 - [ ] Telegram: add send_image 
 - [ ] Interface web: add Telegram "command ..." as blocks
 - [ ] Base: add task schedule that trigger blocks every time period

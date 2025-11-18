@@ -20,6 +20,7 @@ defmodule BobotWeb.Router do
     get "/", PageController, :home
     get "/bots", PageController, :bots
     get "/apis", PageController, :apis
+    get "/libs", PageController, :libs
   end
 
   # Other scopes may use custom stacks.

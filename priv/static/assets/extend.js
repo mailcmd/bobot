@@ -39,7 +39,7 @@ function editor_set_title(title) {
 
 function editor_set_status_bar(text, goto_line = null, select_line = true) {
     document.querySelector('#editor-status-bar > .info').innerHTML = text;
-    if (goto_line) editor_gotoline(goto_line, select_line);
+    if (goto_line) setTimeout(() => editor_gotoline(goto_line, select_line), 500);
 }
 
 function editor_clear_status_bar() {

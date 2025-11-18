@@ -14,4 +14,8 @@ defmodule BobotWeb.PageController do
   def apis(conn, _params) do
     live_render(conn, BobotWeb.Apis, layout: false, session: %{})
   end
+
+  def libs(conn, _params) do
+    live_render(conn, BobotWeb.Libs, layout: false, session: %{})
+  end
 end

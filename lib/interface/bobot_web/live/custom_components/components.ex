@@ -40,7 +40,7 @@ defmodule BobotWeb.Components do
     <button
       type={@type}
       class={[
-        "small-button text-white bg-purple-800 hover:bg-purple-800 focus:outline-none focus:ring-0",
+        "small-button text-white bg-purple-800 hover:bg-purple-800 focus:outline-none focus:ring-1",
         "dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900",
         "font-medium rounded text-xs p-1.5 text-center items-center disabled:text-gray-400",
         @class
@@ -87,7 +87,11 @@ defmodule BobotWeb.Components do
     ~H"""
     <div class={[@inline && "inline-grid" || "grid", "mb-5 grid grid-cols-3"]}>
       <label for={@name} class="block text-xs px-2 py-3 align-middle text-right font-medium text-gray-900 dark:text-white"><%= @label %></label>
-      <input type={@type} id={@name} name={@name} value={@value} placeholder={@placeholder} {@rest}  autocomplete="off" class="col-span-2 block bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-purple-500 focus:border-purple-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-purple-500 dark:focus:border-purple-500"/>
+      <input type={@type} id={@name} name={@name} value={@value} placeholder={@placeholder}
+        autocomplete="off" {@rest}
+        class="col-span-2 block bg-gray-50 border border-gray-300 text-gray-900
+        text-xs rounded-lg focus:ring-purple-500 focus:border-purple-500 p-2.5
+        disabled:bg-gray-300 disabled:text-gray-600"/>
     </div>
     """
   end
@@ -118,7 +122,7 @@ defmodule BobotWeb.Components do
         class={[
           "block text-xs px-2 py-3 align-middle text-right font-medium",
         ]}><%= @label %></label>
-      <select id={@name} name={@name}
+      <select id={@name} name={@name} value={@value}
         class={[
           "block w-full p-2.5 col-span-2 bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg",
           "focus:ring-purple-500 focus:border-purple-500 place-self-center dark:bg-gray-700 dark:border-gray-600",
@@ -132,7 +136,43 @@ defmodule BobotWeb.Components do
               {val, text} -> {val, text}
               val -> {val, val}
             end) do %>
-          <option value={value} selected={@value == value}><%= text %></option>
+          <option value={value} selected={@value == value}><%= "#{text}" %></option>
+        <% end %>
+      </select>
+    </div>
+    """
+  end
+
+  attr :name, :string, default: nil
+  attr :label, :string, default: ""
+  attr :class, :string, default: nil
+  attr :options, :list, default: []
+  attr :inline, :boolean, default: false
+  attr :small, :boolean, default: false
+  attr :value, :string, default: ""
+  attr :rest, :global, include: ~w(required)
+
+  def multi_select(assigns) do
+    ~H"""
+    <div class={[@inline && "inline-grid" || "grid", "grid-cols-3 place-items-stretch"]}>
+      <label for={@name}
+        class={[
+          "block text-xs px-2 py-3 align-middle text-right font-medium",
+        ]}><%= @label %></label>
+      <select id={@name} name={@name} multiple
+        class={[
+          "block w-full p-2.5 col-span-2 bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg",
+          "focus:ring-purple-500 focus:border-purple-500 place-self-center dark:bg-gray-700 dark:border-gray-600",
+          "dark:placeholder-gray-400 dark:text-white dark:focus:ring-purple-500 dark:focus:border-purple-500",
+          @small && "!h-8 !p-1",
+          @class
+        ]}
+      >
+        <%= for {value, text} <- @options |> Enum.map(fn
+              {val, text} -> {val, text}
+              val -> {val, val}
+            end) do %>
+          <option value={value} selected={value in @value}><%= text %></option>
         <% end %>
       </select>
     </div>

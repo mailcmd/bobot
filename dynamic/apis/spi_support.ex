@@ -1,11 +1,10 @@
-defmodule Bobot.API.SPISupport do
-  use Bobot.API
-  require Logger
+import Bobot.DSL.Base
+
+defapi :spi_support do
 
   @url "https://spiprovisioning.com/spi-support-tool/backend/proxy.php"
 
-  @impl true
-  def call(:authenticate, muid) do
+  defcall :authenticate, muid do
     with  {:ok, %Tesla.Env{body: body}} <- Tesla.get("#{@url}?action=login&muid=#{muid}"),
           %{result: user_data} <- Jason.decode!(body, keys: :atoms) do
       group_channel = user_data[:channels]
@@ -19,7 +18,7 @@ defmodule Bobot.API.SPISupport do
     end
   end
 
-  def call(:send_message, [user, channel, message]) do
+  defcall :send_message, [user, channel, message] do
     mid = System.os_time(:millisecond)
     "#{@url}?action=send&from_telegram=yes&mid=#{mid}&user=#{user}&channel=#{channel}&message=#{message}"
       |> URI.encode()
@@ -32,7 +31,7 @@ defmodule Bobot.API.SPISupport do
       end
   end
 
-  def call(:send_image, [user, channel, image]) do
+  defcall :send_image, [user, channel, image] do
     mid = System.os_time(:millisecond)
     Tesla.client([
         {Tesla.Middleware.FormUrlencoded,
@@ -52,12 +51,6 @@ defmodule Bobot.API.SPISupport do
         {:error, _} -> %{last_message: :error}
         {:ok, _} -> %{last_message: :ok}
       end
-  end
-
-  # Fallback
-  def call(call_api_name, params) do
-    Logger.log(:warning, "[API] API Call does not match: #{call_api_name}, #{inspect params}")
-    %{}
   end
 
 end

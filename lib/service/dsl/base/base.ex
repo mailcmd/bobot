@@ -36,6 +36,63 @@ defmodule Bobot.DSL.Base do
   ## UTILS
   ################################################################################################
 
+  def try_apis([], _, _), do: %{error: :api_call_not_found}
+  def try_apis([api | apis], id, params) do
+    try do
+      api = String.to_existing_atom("Elixir.Bobot.API.#{api |> to_string() |> Macro.camelize()}")
+      api.call(id, params)
+    rescue
+      _ ->
+       try_apis(apis, id, params)
+    end
+  end
+
+  @http_default_opts [
+    method: :get,
+    auth: :none,
+    post_data: %{}
+  ]
+
+  def http_request(url, opts \\ []) do
+    opts = Keyword.merge(@http_default_opts, opts)
+
+    url = url
+      |> URI.encode()
+      |> URI.encode(&(&1 != ?#))
+
+    client =
+      case opts[:auth] do
+        :none ->
+          []
+        :basic ->
+          [ {Tesla.Middleware.BasicAuth, %{username: opts[:username], password: opts[:password]}} ]
+      end
+      ++
+      case opts[:method] do
+        :post -> [
+            {Tesla.Middleware.FormUrlencoded,
+              encode: &Plug.Conn.Query.encode/1,
+              decode: &Plug.Conn.Query.decode/1
+            }
+          ]
+
+        _ -> []
+      end
+
+    result =
+      case opts[:method] do
+        :get -> Tesla.get(Tesla.client(client), url)
+        :post -> Tesla.post(Tesla.client(client), url, opts[:post_data])
+      end
+
+    with  {:ok, %Tesla.Env{body: body}} <- result,
+          {:ok, json} <- Jason.decode(body, keys: :atoms) do
+      json
+    else
+      error -> %{error: error}
+    end
+  end
+
 
   ################################################################################################
   ## MACROS BOT
@@ -46,12 +103,15 @@ defmodule Bobot.DSL.Base do
     name = {:__aliases__, [alias: false], [:Bobot, :Bot, name]}
     type = Keyword.fetch!(opts, :type)
     config = Keyword.get(opts, :config, [])
+    use_apis = Keyword.get(opts, :use_apis, [])
+    use_libs = Keyword.get(opts, :use_libs, [])
     quote do
       defmodule unquote(name) do
         use Bobot.Bot,
           type: unquote(type),
+          use_apis: unquote(use_apis),
+          use_libs: unquote(use_libs),
           config: unquote(config)
-
         unquote(block)
       end
     end
@@ -184,10 +244,18 @@ defmodule Bobot.DSL.Base do
   defmacro call_api(id, opts \\ []) do
     params = Keyword.get(opts, :params, nil)
     quote do
-      api = __MODULE__.__info__(:attributes) |> Keyword.get(:bot_api) |> hd()
-      res = api.call(unquote(id), unquote(params))
-      # new_assigns = put_in(Bobot.Bot.Assigns.get_all(var!(sess_id)), [id], res)
+      apis = __MODULE__.__info__(:attributes) |> Keyword.get(:bot_apis) |> hd()
+      res = try_apis(apis, unquote(id), unquote(params))
       Bobot.Bot.Assigns.put_in(var!(sess_id), [unquote(id)], res)
+    end
+  end
+
+  # HTTP
+  defmacro call_http(url, opts \\ []) do
+    store_key = Keyword.fetch!(opts, :store_in)
+    quote do
+      res = http_request(unquote(url), unquote(opts))
+      Bobot.Bot.Assigns.put_in(var!(sess_id), [unquote(store_key)], res)
     end
   end
 
@@ -217,6 +285,20 @@ defmodule Bobot.DSL.Base do
     end
   end
 
+
+  ################################################################################################
+  ## MACROS LIB
+  ################################################################################################
+
+  defmacro deflib(name, do: block) do
+    name = name |> to_string() |> Macro.camelize() |> String.to_atom()
+    name = {:__aliases__, [alias: false], [:Bobot, :Lib, name]}
+    quote do
+      defmodule unquote(name) do
+        unquote(block)
+      end
+    end
+  end
 
 
 end

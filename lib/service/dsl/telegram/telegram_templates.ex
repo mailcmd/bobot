@@ -10,8 +10,7 @@ defmodule Bobot.DSL.Telegram.Templates do
       token: params["token"],
       session_ttl: String.to_integer(params["session_ttl"]),
       max_bot_concurrency: 1000,
-      expire_message: params["expire_message"],
-      use_api: String.to_atom(params["use_api"])
+      expire_message: params["expire_message"]
     ]}
   end
 

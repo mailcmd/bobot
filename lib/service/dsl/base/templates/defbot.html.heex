@@ -1,11 +1,34 @@
 <form phx-submit="save:defbot">
   <ul class="mb-5">
     <li>
-      <.input name="name" label="Bot name" required pattern="[a-z]+" 
-        placeholder="You can use a-z"/>
+      <.input name="name" label="Bot name" required pattern="[a-z_]+" value={@current_bot[:name]}
+        readonly={@current_bot != nil} placeholder="You can use a-z and _"/>
     </li>
     <li>
-      <.select name="type" label="Type" options={[{"telegram", "Telegram"}]}/>
+      <.select name="type" label="Type" options={[{"telegram", "Telegram"}]}  
+        value={"#{get_in(@current_bot, [:settings, :type])}"}/>
+    </li>
+    <li>
+      <.multi_select name="use_apis" label="API modules" class="mt-2"
+        value={
+          is_list(@current_bot[:settings]) 
+            && get_in(@current_bot, [:settings, :use_apis]) 
+            || []
+        }
+        options={BobotWeb.Apis.get_apis() |> Map.keys()}
+      />
+
+    </li>
+    <li>
+      <.multi_select name="use_libs" label="LIB modules"  class="mt-2" 
+        value={
+          is_list(@current_bot[:settings]) 
+            && get_in(@current_bot, [:settings, :use_libs])
+            || []
+        }
+        options={BobotWeb.Libs.get_libs() |> Map.keys()}
+      />
+
     </li>
   </ul>
   <.small_button class="float-right" icon="hand-thumb-up-solid" type="submit">

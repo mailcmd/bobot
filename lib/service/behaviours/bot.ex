@@ -5,7 +5,7 @@ defmodule Bobot.Bot do
       |> Enum.reverse()
       |> hd()
 
-      type = opts
+    type = opts
       |> Keyword.fetch!(:type)
       |> to_string()
       |> Macro.camelize()
@@ -13,22 +13,36 @@ defmodule Bobot.Bot do
     type_module = String.to_atom("Elixir.Bobot.DSL.#{type}")
     Code.ensure_compiled!(type_module)
 
+    apis = Keyword.get(opts, :use_apis)
+    libs = Keyword.get(opts, :use_libs)
+
+    import_libs = Enum.map(libs, fn module ->
+      module = String.to_atom("Elixir.Bobot.Lib.#{module |> to_string() |> Macro.camelize()}")
+      Code.ensure_compiled!(module)
+      quote do
+        import unquote(module)
+      end
+    end)
+
     config = Keyword.get(opts, :config, [])
-    api = Keyword.get(config, :use_api)
 
     quote do
       @after_compile unquote(__MODULE__)
 
       Module.register_attribute(__MODULE__, :bot_name, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_config, persist: true, accumulate: false)
-      Module.register_attribute(__MODULE__, :bot_api, persist: true, accumulate: false)
+      Module.register_attribute(__MODULE__, :bot_apis, persist: true, accumulate: false)
+      Module.register_attribute(__MODULE__, :bot_libs, persist: true, accumulate: false)
       @bot_name unquote(name)
       @bot_config unquote(config)
-      @bot_api unquote(api)
+      @bot_apis unquote(apis)
+      @bot_libs unquote(libs)
 
       import Bobot.DSL.Base
       use unquote(type_module), config: unquote(config)
       import Bobot.Tools
+
+      unquote(import_libs)
     end
   end
 

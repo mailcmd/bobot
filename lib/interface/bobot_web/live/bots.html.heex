@@ -1,10 +1,18 @@
 <.flash_group flash={@flash} />
 
-<header class="h-12 flex items-center gap-x-2 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
+<header class="h-12 flex items-center gap-x-1 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
   
     <.small_button :if={@current_bot == nil} class="no-text"
       type="button" onclick="location.href='/'" icon="arrow-long-left" icon-pos="left">      
     </.small_button>
+
+    <.small_button :if={@current_bot != nil} class="no-text" 
+      type="button" phx-click="close-bot" icon="x-mark"  onclick="this.value=event.ctrlKey">
+    </.small_button>
+
+    <.tiny_logo :if={@current_bot != nil}>
+      BOT: <%= "#{@current_bot[:name]}" %>
+    </.tiny_logo>
 
     <form phx-change="select-bot">
     <.select :if={@current_bot == nil} inline={true} label="Select Bot" 
@@ -14,50 +22,45 @@
       class="!bg-purple-100 !rounded"/>
     </form>
 
-    <.small_button :if={@current_bot == nil} value="modal:New bot..."
+    <.small_button :if={@current_bot == nil} 
       type="button" phx-click="show:defbot" icon="plus-circle-mini">
       New bot
     </.small_button>
 
-    <.tiny_logo :if={@current_bot != nil}>
-      BOT: <%= "#{@current_bot[:name]}" %>
-    </.tiny_logo>
+    <.small_button :if={@current_bot != nil} 
+      class="ml-auto float-right" type="button" phx-click="show:defbot" icon="adjustments-horizontal">
+      Bot Def.
+    </.small_button>
 
     <.small_button :if={@current_bot != nil} 
-      class="ml-auto float-right mr-0.5" type="button" phx-click="show:settings" icon="cog-mini">
+      class="float-right" type="button" phx-click="show:settings" icon="cog-mini">
       Settings
     </.small_button>
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class="float-right mr-0.5" type="button" phx-click="show:hooks" icon="link">
+      class="float-right" type="button" phx-click="show:hooks" icon="link">
       Set hooks
     </.small_button>
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class="float-right mr-0.5" type="button" phx-click="show:defblock" icon="cube-mini">
+      class="float-right" type="button" phx-click="show:defblock" icon="cube-mini">
       Add block
     </.small_button>
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class={[@current_bot[:changed] && "animate-color" || "", "float-right mr-0.5"]} type="button" 
+      class={[@current_bot[:changed] && "animate-color" || "", "float-right"]} type="button" 
       phx-click="save-bot" icon="folder-arrow-down-solid">
       Save
     </.small_button>
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class="float-right mr-0.5" type="button" phx-click="view-bot" icon="credit-card-solid">
+      class="float-right" type="button" phx-click="view-bot" icon="credit-card-solid">
       View bot
     </.small_button>
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class="float-right mr-0.5" type="button" phx-click="compile-bot" icon="cpu-chip-solid">
+      class="float-right" type="button" phx-click="compile-bot" icon="cpu-chip-solid">
       Compile
-    </.small_button>
-
-    <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class="float-right mr-0.5" type="button" phx-click="close-bot" icon="x-mark"
-      onclick="this.value=event.ctrlKey">
-      Close
     </.small_button>
 
 </header>
