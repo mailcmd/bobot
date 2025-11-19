@@ -234,21 +234,15 @@ defmodule BobotWeb.Libs do
         }
 
       ast ->
-        new_lib  =
-          ast
-          |> Bobot.Tools.ast_to_source()
-          |> Code.string_to_quoted()
+        new_lib = {:__block__, [], ast}
 
         name = socket.assigns[:current_lib][:name]
         original_lib =
           "#{@libs_dir}/#{name}.ex"
           |> Bobot.Tools.ast_from_file()
-          |> List.wrap()
-          |> Bobot.Tools.ast_to_source()
-          |> Code.string_to_quoted()
 
         {result, message} =
-          if original_lib != new_lib do
+          if not Bobot.Tools.ast_equals(original_lib, new_lib) do
             {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
           else
             {:ok, nil}

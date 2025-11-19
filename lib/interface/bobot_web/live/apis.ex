@@ -234,21 +234,15 @@ defmodule BobotWeb.Apis do
         }
 
       ast ->
-        new_call =
-          ast
-          |> Bobot.Tools.ast_to_source()
-          |> Code.string_to_quoted()
+        new_api = {:__block__, [], ast}
 
         name = socket.assigns[:current_api][:name]
         original_api =
           "#{@apis_dir}/#{name}.ex"
           |> Bobot.Tools.ast_from_file()
-          |> List.wrap()
-          |> Bobot.Tools.ast_to_source()
-          |> Code.string_to_quoted()
 
         {result, message} =
-          if original_api != new_call do
+          if not Bobot.Tools.ast_equals(original_api, new_api) do
             {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
           else
             {:ok, nil}
@@ -342,14 +336,20 @@ defmodule BobotWeb.Apis do
   def save_api(api, filename), do: File.write(filename, api_to_string(api))
 
   def api_to_string(api) do
+    no_parens =
+      BobotWeb.Bots.get_sentencies()
+      |> Enum.map(fn {k, _} -> {String.to_atom(k), :*} end)
+      # |> IO.inspect
+      # |> Enum.filter(fn {k, _} -> k not in except end)
+
     """
     import Bobot.DSL.Base
 
     defapi :#{api[:name]} do
-      #{Bobot.Tools.ast_to_source([api[:code]], parentheses: :keep)}
+      #{Bobot.Tools.ast_to_source([api[:code]], no_parens: no_parens)}
     end
     """
-    |> Code.format_string!()
+    |> Code.format_string!(locals_without_parens: no_parens)
     |> Enum.join("")
   end
 

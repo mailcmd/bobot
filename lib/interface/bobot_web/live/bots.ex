@@ -254,10 +254,6 @@ defmodule BobotWeb.Bots do
     name = params["bot_name"] |> String.replace(" *", "") |> String.to_atom()
     {:noreply, socket
       |> assign(current_bot: socket.assigns[:bots][name])
-      # |> push_event("js-exec", %{ js: """
-      #   block_connect('start', 'addresses_menu');
-      #   block_connect('start', 'first_contact');
-      # """ })
     }
   end
 
@@ -409,24 +405,17 @@ defmodule BobotWeb.Bots do
         }
 
       ast ->
-        new_block =
-          ast
-          |> Bobot.Tools.ast_to_source()
-          |> Code.string_to_quoted()
-
         case socket.assigns[:current_block] do
           ## If it is a complete bot
           nil ->
+            new_block = {:__block__, [], ast}
             name = socket.assigns[:current_bot][:name]
             original_bot =
               "#{@bots_dir}/#{name}.ex"
               |> Bobot.Tools.ast_from_file()
-              |> List.wrap()
-              |> Bobot.Tools.ast_to_source()
-              |> Code.string_to_quoted()
 
             {result, message} =
-              if original_bot != new_block do
+              if not Bobot.Tools.ast_equals(original_bot, new_block) do
                 {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
               else
                 {:ok, nil}
@@ -442,13 +431,11 @@ defmodule BobotWeb.Bots do
 
           ## If it is just a block
           name ->
-            original_block =
-              socket.assigns[:current_bot][:blocks][name][:block]
-              |> Bobot.Tools.ast_to_source()
-              |> Code.string_to_quoted()
+            new_block = ast
+            original_block = socket.assigns[:current_bot][:blocks][name][:block]
 
             {result, block_name, message} =
-              if original_block != new_block do
+              if not Bobot.Tools.ast_equals(original_block, new_block) do
                 {:error, name, "You made changes, save them before close or [CTRL+click] to close without save."}
               else
                 {:ok, nil, nil}
@@ -646,6 +633,7 @@ defmodule BobotWeb.Bots do
       get_sentencies()
       |> Enum.map(fn {k, _} -> {String.to_atom(k), :*} end)
       |> Enum.filter(fn {k, _} -> k not in except end)
+
     """
     import Bobot.DSL.Base
 

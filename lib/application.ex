@@ -2,8 +2,11 @@ defmodule Bobot.Application do
   @moduledoc false
 
   use Application
+  require Logger
+
   @bots_dir Application.compile_env(:bobot, :bots_dir)
   @apis_dir Application.compile_env(:bobot, :apis_dir)
+  @libs_dir Application.compile_env(:bobot, :libs_dir)
 
   @impl Application
   def start(_type, _args) do
@@ -17,7 +20,19 @@ defmodule Bobot.Application do
     end)
 
     Path.wildcard("#{@apis_dir}/*.ex") |> Enum.map(fn filename ->
-      Code.compile_file(filename)
+      try do
+        Code.compile_file(filename)
+      rescue
+        error -> Logger.log(:error, "[BOBOT] There was a problem compiling #{filename} (#{inspect error})")
+      end
+    end)
+
+    Path.wildcard("#{@libs_dir}/*.ex") |> Enum.map(fn filename ->
+      try do
+        Code.compile_file(filename)
+      rescue
+        error -> Logger.log(:error, "[BOBOT] There was a problem compiling #{filename} (#{inspect error})")
+      end
     end)
 
     children = [

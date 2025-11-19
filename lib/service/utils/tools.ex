@@ -108,15 +108,32 @@ defmodule Bobot.Tools do
     end
   end
 
-  def ast_to_source(ast, opts \\ [parentheses: :keep])
+  def ast_to_source(ast, opts \\ [parens: :keep])
   def ast_to_source(ast, opts) when is_tuple(ast), do: ast_to_source([ast], opts)
   def ast_to_source(ast, opts) do
+    no_parens =
+      Keyword.get(opts, :no_parens, [])
+      |> Enum.map(fn {k,_} -> "#{k}" end)
+
     ast
-    |> Enum.map(&Macro.to_string/1)
-    |> Enum.join("\n")
-    |> Code.format_string!(line_length: 150, force_do_end_blocks: true)
-    |> Enum.join("")
-    |> apply_if(opts[:parentheses] == :remove, String.replace(~r/[\(\)]/, " "))
+    # |> Enum.map(&Macro.to_string/1)
+    |> Enum.map( fn a ->
+      a
+      |> Code.quoted_to_algebra()
+      |> Inspect.Algebra.format(:infinity)
+      |> Kernel.++(["\n"])
+    end)
+    |> List.flatten()
+    |> remove_parens(no_parens)
+    |> IO.iodata_to_binary()
+    # |> Enum.join("\n")
+    # |> Code.format_string!([
+    #   line_length: 150,
+    #   force_do_end_blocks: true,
+    #   locals_without_parens: Keyword.get(opts, :no_parens, [])
+    # ])
+    # |> Enum.join("")
+    # |> apply_if(opts[:parens] == :remove, String.replace(~r/[\(\)]/, " "))
     |> String.trim()
   end
 
@@ -139,4 +156,44 @@ defmodule Bobot.Tools do
       node, acc -> {node, acc}
     end) |> elem(1)
   end
+
+  def ast_equals(ast1, ast2) do
+    ast_remove_metadata(ast1) == ast_remove_metadata(ast2)
+  end
+
+  def ast_remove_metadata(ast) do
+    Macro.prewalk(ast, fn
+      {name, metadata, Elixir} when is_list(metadata) ->
+        {name, [], nil}
+      {name, metadata, args} when is_list(metadata) ->
+        {name, [], args}
+      {name, metadata, Elixir}  ->
+        {name, metadata, nil}
+      other ->
+        other
+    end)
+  end
+
+  def remove_parens([], _), do: []
+  def remove_parens([item, "(" | list], sentencies) do
+    if item in sentencies do
+      [item, " "] ++ remove_parens_h(list, sentencies, 0)
+    else
+      [item, "("] ++ remove_parens(list, sentencies)
+    end
+  end
+  def remove_parens([item | list], sentencies),
+    do: [item] ++ remove_parens(list, sentencies)
+
+  def remove_parens_h([], _, _), do: []
+  def remove_parens_h([")" | list], sentencies, 0),
+    do: [" "] ++ remove_parens(list, sentencies)
+
+  def remove_parens_h(["(" | list], sentencies, n),
+    do: ["("] ++ remove_parens_h(list, sentencies, n+1)
+  def remove_parens_h([")" | list], sentencies, n),
+    do: [")"] ++ remove_parens_h(list, sentencies, n-1)
+  def remove_parens_h([item | list], sentencies, n),
+    do: [item] ++ remove_parens_h(list, sentencies, n)
+
 end

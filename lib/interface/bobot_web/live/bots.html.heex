@@ -128,7 +128,7 @@
           <%= for {key, value} <- @current_bot[:settings][:config] do %>
           <tr class="border-1 border-b border-purple-400">
             <td class="p-1 pl-2 font-bold"><%= key %></td>
-            <td class="p-1 pr-2 text-right whitespace-normal"><%= Macro.to_string(value) %></td>
+            <td class="p-1 pr-2 text-right whitespace-normal" style="overflow-wrap: break-word;"><%= Macro.to_string(value) %></td>
           </tr>
           <% end %>
         </tbody>
