@@ -57,6 +57,24 @@ dialog .close {
   color: white;
 }
 
+button[keyb] {
+  position: relative;
+}
+
+button[keyb]:not([keyb-hide])::after {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  content: "(" attr(keyb) ")";
+  font-variant: sub;
+}
+/* 
+button[keyb]:not([keyb-hide])::after {
+  content: "(" attr(keyb) ")";
+  padding-left: 2px;
+  font-variant: sub;
+} */
+
 button.small-button {
   min-width: 6rem;
 }

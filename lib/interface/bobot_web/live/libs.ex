@@ -234,12 +234,12 @@ defmodule BobotWeb.Libs do
         }
 
       ast ->
-        new_lib = {:__block__, [], ast}
+        [
+          {:import, _, [{:__aliases__, [alias: false], [:Bobot, :DSL, :Base]}]},
+          {:defapi, _, [ _, [ do: new_lib ] ] }
+        ] = ast
 
-        name = socket.assigns[:current_lib][:name]
-        original_lib =
-          "#{@libs_dir}/#{name}.ex"
-          |> Bobot.Tools.ast_from_file()
+        original_lib = socket.assigns[:current_api][:code]
 
         {result, message} =
           if not Bobot.Tools.ast_equals(original_lib, new_lib) do

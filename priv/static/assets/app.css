@@ -16175,6 +16175,10 @@ select {
   margin: 0.5rem;
 }
 
+.m-4 {
+  margin: 1rem;
+}
+
 .-my-4 {
   margin-top: -1rem;
   margin-bottom: -1rem;
@@ -16250,6 +16254,22 @@ select {
 
 .mt-3 {
   margin-top: 0.75rem;
+}
+
+.ml-0 {
+  margin-left: 0px;
+}
+
+.-ml-1 {
+  margin-left: -0.25rem;
+}
+
+.-ml-4 {
+  margin-left: -1rem;
+}
+
+.-ml-2 {
+  margin-left: -0.5rem;
 }
 
 .block {

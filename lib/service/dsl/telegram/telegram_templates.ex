@@ -2,7 +2,7 @@ defmodule Bobot.DSL.Telegram.Templates do
   # import Phoenix.Component
 
   def show("settings", assigns) do
-    Phoenix.Template.render(BobotWeb.Templates, "settings", "html", assigns)
+    Phoenix.Template.render(BobotWeb.DSLTemplates, "settings", "html", assigns)
   end
 
   def save("settings", params, _assigns) do

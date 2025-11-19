@@ -408,11 +408,13 @@ defmodule BobotWeb.Bots do
         case socket.assigns[:current_block] do
           ## If it is a complete bot
           nil ->
-            new_block = {:__block__, [], ast}
-            name = socket.assigns[:current_bot][:name]
+            new_block = ast
+
+            current_bot = socket.assigns[:current_bot]
             original_bot =
-              "#{@bots_dir}/#{name}.ex"
-              |> Bobot.Tools.ast_from_file()
+              current_bot
+              |> bot_to_string()
+              |> Bobot.Tools.quote_string()
 
             {result, message} =
               if not Bobot.Tools.ast_equals(original_bot, new_block) do
@@ -646,24 +648,24 @@ defmodule BobotWeb.Bots do
 
       hooks #{Macro.to_string(bot[:hooks])}
 
-      #{bot_blocks_to_source(bot[:blocks])}
+      #{bot_blocks_to_source(bot[:blocks], no_parens: no_parens)}
     end
     """
     |> Code.format_string!(locals_without_parens: no_parens)
     |> Enum.join("")
   end
 
-  defp bot_blocks_to_source(blocks) when is_map(blocks) do
-     blocks |> Enum.map(fn {n, b} -> Map.put(b, :name, n) end) |> bot_blocks_to_source()
+  defp bot_blocks_to_source(blocks, no_parens) when is_map(blocks) do
+     blocks |> Enum.map(fn {n, b} -> Map.put(b, :name, n) end) |> bot_blocks_to_source(no_parens)
   end
-  defp bot_blocks_to_source([]), do: ""
-  defp bot_blocks_to_source([block | blocks]) do
+  defp bot_blocks_to_source([], _), do: ""
+  defp bot_blocks_to_source([block | blocks], no_parens) do
     """
     defblock :#{block[:name]}#{block[:params] != [] && ", #{Macro.to_string(block[:params])}" || ""} do
-      #{Bobot.Tools.ast_to_source(block[:block])}
+      #{Bobot.Tools.ast_to_source(block[:block], no_parens)}
     end
 
-    #{bot_blocks_to_source(blocks)}
+    #{bot_blocks_to_source(blocks, no_parens)}
     """
   end
 

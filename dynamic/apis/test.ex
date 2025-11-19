@@ -1,8 +1,7 @@
 import Bobot.DSL.Base
 
 defapi :test do
-
-  defcall :is_first_contact, phone do
+  defcall :is_first_contact, phone, when: is_binary(phone) do
     %{
       first_contact: false,
       menu: ["Terrada 1254", "Salta 98", "Zelarrayán 279", "San Martín 133"],
@@ -12,16 +11,11 @@ defapi :test do
   end
 
   defcall :is_first_contact, _ do
-    %{
-      first_contact: true,
-      menu: [],
-      correct_item: -1,
-      id: -1
-    }
+    %{first_contact: true, menu: [], correct_item: -1, id: -1}
   end
 
   defcall :client_status, _id do
-    %{ status: :suspend }
+    %{status: :suspend}
   end
 
   defcall :addresses_menu, id do
@@ -35,5 +29,4 @@ defapi :test do
   defcall :save_interaction, _params do
     %{}
   end
-
 end

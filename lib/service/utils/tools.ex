@@ -108,7 +108,7 @@ defmodule Bobot.Tools do
     end
   end
 
-  def ast_to_source(ast, opts \\ [parens: :keep])
+  def ast_to_source(ast, opts \\ [])
   def ast_to_source(ast, opts) when is_tuple(ast), do: ast_to_source([ast], opts)
   def ast_to_source(ast, opts) do
     no_parens =
@@ -158,6 +158,8 @@ defmodule Bobot.Tools do
   end
 
   def ast_equals(ast1, ast2) do
+    # IO.inspect ast_remove_metadata(ast1)
+    # IO.inspect ast_remove_metadata(ast2)
     ast_remove_metadata(ast1) == ast_remove_metadata(ast2)
   end
 

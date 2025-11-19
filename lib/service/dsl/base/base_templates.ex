@@ -6,7 +6,7 @@ defmodule Bobot.DSL.Base.Templates do
   ################################################################################################
 
   def show(sentency, assigns) do
-    Phoenix.Template.render(BobotWeb.Templates, sentency, "html", assigns)
+    Phoenix.Template.render(BobotWeb.DSLTemplates, sentency, "html", assigns)
   end
 
   ################################################################################################

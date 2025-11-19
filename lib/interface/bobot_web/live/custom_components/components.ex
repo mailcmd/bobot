@@ -30,8 +30,8 @@ defmodule BobotWeb.Components do
   attr :type, :string, default: "button"
   attr :icon, :string, default: nil
   attr :class, :any, default: nil
-  attr :rest, :global, include: ~w(disabled form name value)
   attr :"icon-pos", :string, default: "right"
+  attr :rest, :global, include: ~w(disabled form name value keyb keyb-hide)
 
   slot :inner_block, required: true
 
@@ -49,7 +49,7 @@ defmodule BobotWeb.Components do
     >
       <%= render_slot(@inner_block) %>
       <%= if @icon != nil do %>
-      <.icon name={"hero-#{@icon}"} class={"ml-1 h-4 w-4 float-#{assigns[:"icon-pos"]}"} />
+      <.icon name={"hero-#{@icon}"} class={"-ml-2 h-4 w-4 float-#{assigns[:"icon-pos"]}"} />
       <% end %>
     </button>
     """
@@ -81,7 +81,7 @@ defmodule BobotWeb.Components do
   attr :placeholder, :string, default: ""
   attr :value, :string, default: ""
   attr :inline, :boolean, default: false
-  attr :rest, :global, include: ~w(required pattern)
+  attr :rest, :global, include: ~w(required pattern keyb keyb-hide)
 
   def input(assigns) do
     ~H"""
@@ -113,11 +113,12 @@ defmodule BobotWeb.Components do
   attr :inline, :boolean, default: false
   attr :small, :boolean, default: false
   attr :value, :string, default: ""
+  attr :"container-class", :string, default: ""
   attr :rest, :global, include: ~w(required)
 
   def select(assigns) do
     ~H"""
-    <div class={[@inline && "inline-grid" || "grid", "grid-cols-3 place-items-stretch"]}>
+    <div class={[@inline && "inline-grid" || "grid", "grid-cols-3 place-items-stretch", assigns[:"container-class"]]}>
       <label for={@name}
         class={[
           "block text-xs px-2 py-3 align-middle text-right font-medium",

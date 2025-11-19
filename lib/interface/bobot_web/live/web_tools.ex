@@ -3,6 +3,10 @@ defmodule BobotWeb.WebTools do
   import Phoenix.LiveView
   import Phoenix.Component
 
+  def include(template, assigns) do
+    Phoenix.Template.render(BobotWeb.Templates, template, "html", assigns)
+  end
+
   def put_message(socket, message, timeout \\ 3500)
   def put_message(socket, nil, _), do: socket
   def put_message(socket, message, timeout) do

@@ -234,12 +234,12 @@ defmodule BobotWeb.Apis do
         }
 
       ast ->
-        new_api = {:__block__, [], ast}
+        [
+          {:import, _, [{:__aliases__, [alias: false], [:Bobot, :DSL, :Base]}]},
+          {:defapi, _, [ _, [ do: new_api ] ] }
+        ] = ast
 
-        name = socket.assigns[:current_api][:name]
-        original_api =
-          "#{@apis_dir}/#{name}.ex"
-          |> Bobot.Tools.ast_from_file()
+        original_api = socket.assigns[:current_api][:code]
 
         {result, message} =
           if not Bobot.Tools.ast_equals(original_api, new_api) do

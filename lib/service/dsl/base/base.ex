@@ -276,7 +276,16 @@ defmodule Bobot.DSL.Base do
     end
   end
 
-  defmacro defcall(name, vars \\ [], do: block) do
+  defmacro defcall(name, do: block) do
+    quote do
+      @impl true
+      def call(unquote(name), nil) do
+        unquote(block)
+      end
+    end
+  end
+
+  defmacro defcall(name, vars, do: block) do
     quote do
       @impl true
       def call(unquote(name), unquote(vars)) do
@@ -284,6 +293,25 @@ defmodule Bobot.DSL.Base do
       end
     end
   end
+
+  defmacro defcall(name, vars, [when: expr], do: block) do
+    quote do
+      @impl true
+      def call(unquote(name), unquote(vars)) when unquote(expr) do
+        unquote(block)
+      end
+    end
+  end
+
+  # defmacro defcall(name, vars \\ [], do: block) do
+
+  #   quote do
+  #     @impl true
+  #     def call(unquote(name), unquote(vars)) when unquote(guards_expr) do
+  #       unquote(block)
+  #     end
+  #   end
+  # end
 
 
   ################################################################################################
