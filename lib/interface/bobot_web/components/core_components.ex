@@ -115,7 +115,7 @@ defmodule BobotWeb.CoreComponents do
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "rounded fixed bottom-2 right-0 mr-2 w-64 z-50 p-2 text-white",
+        "rounded fixed -bottom-1 right-0 left-0 m-auto w-64 z-50 p-2 pb-4 text-white",
         @kind == :info && "bg-emerald-600",
         @kind == :error && "bg-red-600"
       ]}

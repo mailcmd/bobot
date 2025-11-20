@@ -1,13 +1,25 @@
 # Bobot
 
+A tool where YOU are the smart one!! 
+A tool where YOU are the one who thinks!!
+A tool where YOU're still the smart one!!
+A tool where YOU remain the smart one!!
+A tool for those who prefer to keep using their brains!!
+A tool where YOU are the one who solves problems!!
+A tool where YOU are the one who creates solutions!!
+A tool where YOU are the one who invent solutions!!
+A tool where YOU are the one who build solutions!!
+
+
+
 ## TODO
 
 - [x] Move render_table from telegram to tools
 - [x] Make assigns variable more specific for every step
 - [x] Base: call_http 
-- [ ] Make the API Creator interface
-      [ ] defapi 
-      [ ] defcall 
+- [x] Make the API Creator interface
+      [x] defapi 
+      [x] defcall 
 - [ ] Duplicate BOT y API
 - [ ] Telegram: add send_image 
 - [ ] Interface web: add Telegram "command ..." as blocks

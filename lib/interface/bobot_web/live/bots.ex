@@ -11,7 +11,19 @@ defmodule BobotWeb.Bots do
   }
 
   - bots: %{
-    <name>: %{
+    <name>: <name>
+    ...
+  }
+
+  - modal: %{
+      title: <string>,
+      template: %{
+        module: <module>,
+        sentency: <string>
+      }
+    }
+
+  - current_bot: %{
       name: <name>,
       blocks: %{
         <block_name>: %{
@@ -27,19 +39,7 @@ defmodule BobotWeb.Bots do
         use_libs: [<atoms_list>],
         config: [ <kwlist> ]
       }
-    },
-    ...
-  }
-
-  - modal: %{
-      title: <string>,
-      template: %{
-        module: <module>,
-        sentency: <string>
-      }
     }
-
-  - current_bot: nil
   - box_status: "maximized"
   """
 
@@ -52,14 +52,13 @@ defmodule BobotWeb.Bots do
   }
 
   @bots_dir Application.compile_env(:bobot, :bots_dir)
-  @active_bots Application.compile_env(:bobot, :telegram_bots, [])
 
   def mount(_params, _session, socket) do
 
     {:ok, socket
       |> assign(sentencies: get_sentencies())
-      |> assign(bots: get_bots())
-      |> assign(active_bots: @active_bots)
+      |> assign(bots: Bobot.Config.get_available_bots())
+      |> assign(active_bots: Bobot.Config.get_active_bots())
       |> assign(modal: %{})
       |> assign(box_status: "maximized")
       |> assign(editor_status_bar: "")
@@ -149,13 +148,13 @@ defmodule BobotWeb.Bots do
 
           socket
             |> assign(current_bot: current_bot)
-            |> assign(bots: Map.put(assigns[:bots], def[:name], current_bot))
 
         :error ->
           socket
       end
 
     {:noreply, socket
+      |> update(:bots, fn bots -> put_in(bots, [def[:name]], def[:name]) end)
       |> assign(last_result: result)
       |> close_modal()
       |> put_message(message)
@@ -253,7 +252,7 @@ defmodule BobotWeb.Bots do
   def handle_event("select-bot", params, socket) do
     name = params["bot_name"] |> String.replace(" *", "") |> String.to_atom()
     {:noreply, socket
-      |> assign(current_bot: socket.assigns[:bots][name])
+      |> assign(current_bot: load_bot(name))
     }
   end
 
@@ -261,19 +260,17 @@ defmodule BobotWeb.Bots do
   ### SAVE BOT
   def handle_event("save-bot", _params, socket) do
     current_bot = socket.assigns[:current_bot]
-    {result, message, bots, current_bot} =
+    {result, message, current_bot} =
       case save_bot(current_bot) do
         :ok ->
-          bot_name = current_bot[:name]
           current_bot = Map.put(current_bot, :changed, false)
-          {:ok, "Bot saved!", put_in(socket.assigns[:bots], [bot_name], current_bot), current_bot}
+          {:ok, "Bot saved!", current_bot}
 
         {:error, err} ->
-          {:error, "There was a problem storing bot (#{err})", socket.assigns[:bots], socket.assigns[:current_bot]}
+          {:error, "There was a problem storing bot (#{err})", socket.assigns[:current_bot]}
       end
 
     {:noreply, socket
-      |> update(:bots, fn _ -> bots end)
       |> assign(current_bot: current_bot)
       |> assign(last_result: result)
       |> put_message(message)
@@ -612,14 +609,11 @@ defmodule BobotWeb.Bots do
       |> Enum.into(%{})
   end
 
-  defp get_bots() do
-    "#{@bots_dir}/*.ex"
-    |> Path.wildcard()
-    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
-    |> Stream.map(fn ast -> ast_extract_components(ast) end)
-    |> Enum.into([])
-    |> Enum.filter(fn bot -> bot != [] end)
-    |> Enum.into(%{})
+  defp load_bot(name) do
+    "#{@bots_dir}/#{name}.ex"
+    |> Bobot.Tools.ast_from_file()
+    |> ast_extract_components()
+    |> elem(1)
   end
 
   def save_bot(bot) do
@@ -639,7 +633,7 @@ defmodule BobotWeb.Bots do
     """
     import Bobot.DSL.Base
 
-    defbot :#{bot[:name]}, [
+    defbot :#{bot[:name]}, [ ## WARNING: You MUST not touch the 'defbot ...' line!!!
         type: :#{bot[:settings][:type]},
         use_apis: #{inspect bot[:settings][:use_apis]},
         use_libs: #{inspect bot[:settings][:use_libs]},

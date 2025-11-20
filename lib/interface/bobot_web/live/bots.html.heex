@@ -15,7 +15,7 @@
     </.tiny_logo>
 
     <form phx-change="select-bot">
-    <.select :if={@current_bot == nil} inline={true} label="Select Bot" 
+    <.select :if={@current_bot == nil} inline={true} label="Select Bot" keyb="F2"
       name="bot_name" 
       options={@bots |> Map.keys() |> Enum.map(fn b -> (b in @active_bots) && "#{b} *" || b end)}
       value={@current_bot[:name]} small={true}

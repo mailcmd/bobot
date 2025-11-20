@@ -114,7 +114,7 @@ defmodule BobotWeb.Components do
   attr :small, :boolean, default: false
   attr :value, :string, default: ""
   attr :"container-class", :string, default: ""
-  attr :rest, :global, include: ~w(required)
+  attr :rest, :global, include: ~w(required keyb keyb-hide)
 
   def select(assigns) do
     ~H"""
@@ -123,7 +123,7 @@ defmodule BobotWeb.Components do
         class={[
           "block text-xs px-2 py-3 align-middle text-right font-medium",
         ]}><%= @label %></label>
-      <select id={@name} name={@name} value={@value}
+      <select id={@name} name={@name} value={@value} {@rest}
         class={[
           "block w-full p-2.5 col-span-2 bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg",
           "focus:ring-purple-500 focus:border-purple-500 place-self-center dark:bg-gray-700 dark:border-gray-600",
@@ -180,5 +180,22 @@ defmodule BobotWeb.Components do
     """
   end
 
+  attr :name, :string, default: nil
+  attr :label, :string, default: ""
+  attr :value, :string, default: ""
+  attr :class, :string, default: ""
+  attr :checked, :boolean, default: false
+  attr :rest, :global
+
+  def checkbox(assigns) do
+    ~H"""
+    <div class={["flex items-center", @class]}>
+      <input id={@name} name={@name} type="checkbox" value={@value} {@rest} checked={@checked}
+        class="w-4 h-4 border border-purple-500 border-2 rounded bg-neutral-secondary-medium
+               text-purple-500 focus:ring-0 focus:ring-brand-soft">
+      <label for={@name} class="select-none ms-2 font-medium text-heading"><%= @label %></label>
+    </div>
+    """
+  end
 
 end

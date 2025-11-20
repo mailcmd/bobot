@@ -35,7 +35,7 @@ defmodule BobotWeb.Libs do
   def mount(_params, _session, socket) do
 
     {:ok, socket
-      |> assign(libs: get_libs())
+      |> assign(libs: Bobot.Config.get_available_libs())
       |> assign(modal: %{})
       |> assign(editor_status_bar: "")
       |> assign(current_lib: nil)
@@ -74,7 +74,7 @@ defmodule BobotWeb.Libs do
 
           socket
             |> assign(current_lib: current_lib)
-            |> assign(libs: Map.put(assigns[:libs], def[:name], current_lib))
+            |> assign(libs: Map.put(assigns[:libs], def[:name], def[:name]))
 
         :error ->
           socket
@@ -96,7 +96,7 @@ defmodule BobotWeb.Libs do
   def handle_event("select-lib", params, socket) do
     name = params["lib_name"] |> String.replace(" *", "") |> String.to_atom()
     {:noreply, socket
-      |> assign(current_lib: socket.assigns[:libs][name])
+      |> assign(current_lib: load_lib(name))
     }
   end
 
@@ -104,19 +104,18 @@ defmodule BobotWeb.Libs do
   ### SAVE BOT
   def handle_event("save-lib", _params, socket) do
     current_lib = socket.assigns[:current_lib]
-    {result, message, libs, current_lib} =
+    {result, message, current_lib} =
       case save_lib(current_lib) do
         :ok ->
           lib_name = current_lib[:name]
           current_lib = Map.put(current_lib, :changed, false)
-          {:ok, "API saved!", put_in(socket.assigns[:libs], [lib_name], current_lib), current_lib}
+          {:ok, "API saved!", current_lib}
 
         {:error, err} ->
-          {:error, "There was a problem storing LIB (#{err})", socket.assigns[:libs], socket.assigns[:current_lib]}
+          {:error, "There was a problem storing LIB (#{err})", socket.assigns[:current_lib]}
       end
 
     {:noreply, socket
-      |> update(:libs, fn _ -> libs end)
       |> assign(current_lib: current_lib)
       |> assign(last_result: result)
       |> put_message(message)
@@ -321,14 +320,21 @@ defmodule BobotWeb.Libs do
   end
   defp ast_extract_components(_), do: []
 
-  def get_libs() do
+  def get_available_libs() do
     "#{@libs_dir}/*.ex"
     |> Path.wildcard()
     |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
     |> Stream.map(fn ast -> ast_extract_components(ast) end)
     |> Enum.into([])
     |> Enum.filter(fn lib -> lib != [] end)
-    |> Enum.into(%{})
+    |> Enum.map(fn {name, _} -> name end)
+  end
+
+  defp load_lib(name) do
+    "#{@libs_dir}/#{name}.ex"
+    |> Bobot.Tools.ast_from_file()
+    |> ast_extract_components()
+    |> elem(1)
   end
 
   def save_lib(lib) do
@@ -341,7 +347,7 @@ defmodule BobotWeb.Libs do
     """
     import Bobot.DSL.Base
 
-    deflib :#{lib[:name]} do
+    deflib :#{lib[:name]} do ## WARNING: You MUST not touch the 'deflib ...' line!!!
       #{Bobot.Tools.ast_to_source([lib[:code]], parentheses: :keep)}
     end
     """

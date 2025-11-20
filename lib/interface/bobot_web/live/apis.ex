@@ -35,7 +35,7 @@ defmodule BobotWeb.Apis do
   def mount(_params, _session, socket) do
 
     {:ok, socket
-      |> assign(apis: get_apis())
+      |> assign(apis: Bobot.Config.get_available_apis())
       |> assign(modal: %{})
       |> assign(editor_status_bar: "")
       |> assign(current_api: nil)
@@ -74,7 +74,7 @@ defmodule BobotWeb.Apis do
 
           socket
             |> assign(current_api: current_api)
-            |> assign(apis: Map.put(assigns[:apis], def[:name], current_api))
+            |> assign(apis: Map.put(assigns[:apis], def[:name], def[:name]))
 
         :error ->
           socket
@@ -96,7 +96,7 @@ defmodule BobotWeb.Apis do
   def handle_event("select-api", params, socket) do
     name = params["api_name"] |> String.replace(" *", "") |> String.to_atom()
     {:noreply, socket
-      |> assign(current_api: socket.assigns[:apis][name])
+      |> assign(current_api: load_api(name))
     }
   end
 
@@ -104,19 +104,17 @@ defmodule BobotWeb.Apis do
   ### SAVE BOT
   def handle_event("save-api", _params, socket) do
     current_api = socket.assigns[:current_api]
-    {result, message, apis, current_api} =
+    {result, message, current_api} =
       case save_api(current_api) do
         :ok ->
-          api_name = current_api[:name]
           current_api = Map.put(current_api, :changed, false)
-          {:ok, "API saved!", put_in(socket.assigns[:apis], [api_name], current_api), current_api}
+          {:ok, "API saved!", current_api}
 
         {:error, err} ->
-          {:error, "There was a problem storing API (#{err})", socket.assigns[:apis], socket.assigns[:current_api]}
+          {:error, "There was a problem storing API (#{err})", socket.assigns[:current_api]}
       end
 
     {:noreply, socket
-      |> update(:apis, fn _ -> apis end)
       |> assign(current_api: current_api)
       |> assign(last_result: result)
       |> put_message(message)
@@ -319,14 +317,21 @@ defmodule BobotWeb.Apis do
   end
   defp ast_extract_components(_), do: []
 
-  def get_apis() do
+  def get_available_apis() do
     "#{@apis_dir}/*.ex"
     |> Path.wildcard()
     |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
     |> Stream.map(fn ast -> ast_extract_components(ast) end)
     |> Enum.into([])
     |> Enum.filter(fn api -> api != [] end)
-    |> Enum.into(%{})
+    |> Enum.map(fn {name, _} -> name end)
+  end
+
+  defp load_api(name) do
+    "#{@apis_dir}/#{name}.ex"
+    |> Bobot.Tools.ast_from_file()
+    |> ast_extract_components()
+    |> elem(1)
   end
 
   def save_api(api) do
@@ -345,7 +350,7 @@ defmodule BobotWeb.Apis do
     """
     import Bobot.DSL.Base
 
-    defapi :#{api[:name]} do
+    defapi :#{api[:name]} do ## WARNING: You MUST not touch the 'defapi ...' line!!!
       #{Bobot.Tools.ast_to_source([api[:code]], no_parens: no_parens)}
     end
     """

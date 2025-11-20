@@ -5,8 +5,14 @@
     Bobot v<%= Application.spec(:bobot, :vsn) %>
   </.tiny_logo>
 
+  <.small_button form="form" type="submit" 
+    class={[@changed && "animate-color" || "", "ml-auto float-right"]} 
+    icon="folder-arrow-down-solid"  keyb="F2">
+    Save
+  </.small_button>
+
   <.small_button 
-    class="ml-auto float-right" type="button" onclick="location.href='/bots'" 
+    class="float-right" type="button" onclick="location.href='/bots'" 
     icon="wrench-mini" keyb="F9">
     Bots
   </.small_button>
@@ -25,7 +31,31 @@
 
 </header>
 
-<main class="relative flex flex-grow place-content-center bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">    
+<main class="relative flex flex-grow place-content-center bg-gray-200 text-gray-900">    
   <.bg_logo/>
+  <form id="form" phx-submit="home-submit"  phx-change="bot-state-change">
+    <div class="grid grid-cols-3 gap-4 py-4 align-start absolute top-0 left-0 right-0 bottom-0 
+                place-content-start bg-transparent z-1 justify-items-center">    
+      <span class="home-list" content="bots">
+        <div :for={bot <- Bobot.Config.get_available_bots()}
+          class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 border-2 border-purple-400 bg-white rounded-lg">
+          <%= "#{bot}" %>
+          <.checkbox class="float-right" name={bot} value={bot} checked={bot in @active_bots}/>
+        </div>
+      </span>
+      <span class="home-list" content="apis">
+        <div :for={api <- Bobot.Config.get_available_apis()}
+          class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 pr-10 border-2 border-purple-400 bg-white rounded-lg">
+          <%= "#{api}" %>
+        </div>
+      </span>
+      <span class="home-list" content="libs">
+        <div :for={lib <- Bobot.Config.get_available_libs()}
+          class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 pr-10 border-2 border-purple-400 bg-white rounded-lg">
+          <%= "#{lib}" %>
+        </div>
+      </span>
+    </div>
+  </form>
 </main>
 

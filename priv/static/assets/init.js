@@ -6,16 +6,19 @@ setTimeout(()=>{
         window.editor = ace.edit("bobot-editor-text");
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/elixir");
+        editor.setKeyboardHandler("ace/keyboard/vscode");
         editor.setOptions({
             printMarginColumn: 98,
             fixedWidthGutter: true,
-            newLineMode: 'unix'
-        });
-        editor.session.setOptions({
+            newLineMode: 'unix',
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true,
             tabSize: 2,       // Set the number of spaces for indentation (e.g., 4)
             useSoftTabs: true // Use spaces for indentation instead of tabs
         });
-        editor.setKeyboardHandler("ace/keyboard/vscode");
+
+        // Keyboard Commands
         editor.commands.addCommand({
             name: 'commit',
             bindKey: {
@@ -52,19 +55,41 @@ setTimeout(()=>{
             },
             readOnly: false 
         });
+
+        // Status Bar
         const StatusBar = ace.require("ace/ext/statusbar").StatusBar;
         window.editor_status_bar = new StatusBar(editor, document.getElementById("editor-status-bar"));
+
+        // Autocompletion
+        // window.lang_tools = ace.require("ace/ext/language_tools");
+        // lang_tools.addCompleter({
+        //     getCompletions: function(editor, session, pos, prefix, callback) {
+        //         // Logic to generate Elixir-specific suggestions based on `prefix`
+        //         // For example, you could provide suggestions for common Elixir modules or functions.
+        //         var elixirWords = ["def", "defblock", "defcall", "fn", "module", "import", "use", "alias", "with", "case", "cond", "if", "unless"];
+        //         console.log(elixirWords.map(function(word) {
+        //             return { caption: word, value: word, meta: "Elixir keyword" };
+        //         }))
+        //         callback(null, elixirWords.map(function(word) {
+        //             return { caption: word, value: word, meta: "Elixir keyword" };
+        //         }));
+        //     }
+        // });
     }
 
     window.addEventListener('keydown', function(e) {
-        console.log(e.key, e.ctrlKey);
         let keyb = e.key;
         if (e.ctrlKey) keyb = 'CTRL+' + keyb;
-        let bt = document.querySelector('button[keyb="'+keyb+'"]');
+        let bt = document.querySelector('*[keyb="'+keyb+'"]');
+        // console.log(e.key, e.ctrlKey, bt);
         
         if (bt) {
             e.preventDefault();
+            bt.focus();
             bt.click()
+            if (bt.tagName == 'SELECT') {
+                bt.showPicker();
+            }
         }
     });
 

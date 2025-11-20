@@ -15,7 +15,12 @@ defmodule Bobot.Application do
     #   local_port: Keyword.fetch!(config, :local_port)
     # ]
 
-    Enum.map(Application.get_env(:bobot, :telegram_bots, []), fn name ->
+    Code.compile_file("config/bobot_config.ex")
+    bobot_config = Bobot.Config.__info__(:attributes)
+
+    telegram_bots = Keyword.get(bobot_config, :telegram_bots, [])
+
+    Enum.map(telegram_bots, fn name ->
       Code.compile_file("#{@bots_dir}/#{name}.ex")
     end)
 
@@ -46,21 +51,9 @@ defmodule Bobot.Application do
       # {Telegram.Poller, bots: [{Bobot.Engine.Telegram, bot_config}]},
     ]
     ++
-    Enum.map(Application.get_env(:bobot, :telegram_bots, []), fn name ->
-      bot_module = ("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}"
-        |> String.to_existing_atom)
-      bot_config = :attributes |> bot_module.__info__() |> Keyword.fetch!(:bot_config)
-      token = Keyword.fetch!(bot_config, :token)
-      session_ttl = Keyword.fetch!(bot_config, :session_ttl)
-      expire_message = Keyword.get(bot_config, :expire_message, "👏")
-      commands_as_message = Keyword.get(bot_config, :commands_as_message, false)
-      :timer.apply_after(3_000, fn ->
-        Bobot.Engine.Telegram.Storage.set_token_data(token, :module, bot_module)
-        Bobot.Engine.Telegram.Storage.set_token_data(token, :session_ttl, session_ttl)
-        Bobot.Engine.Telegram.Storage.set_token_data(token, :expire_message, expire_message)
-        Bobot.Engine.Telegram.Storage.set_token_data(token, :commands_as_message, commands_as_message)
-      end)
-      {Telegram.Poller, bots: [{Bobot.Engine.Telegram, bot_config}]}
+    Enum.map(telegram_bots, fn name ->
+      ## For every telegram bot...
+      init_telegram_bot(name)
     end)
 
     opts = [strategy: :one_for_one, name: Bobot.Supervisor]
@@ -74,5 +67,27 @@ defmodule Bobot.Application do
     BobotWeb.Endpoint.config_change(changed, removed)
     :ok
   end
+
+  ################################################################################################
+  ################################################################################################
+  ################################################################################################
+
+  def init_telegram_bot(name) do
+    bot_module = ("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}"
+      |> String.to_existing_atom)
+    bot_config = :attributes |> bot_module.__info__() |> Keyword.fetch!(:bot_config)
+    token = Keyword.fetch!(bot_config, :token)
+    session_ttl = Keyword.fetch!(bot_config, :session_ttl)
+    expire_message = Keyword.get(bot_config, :expire_message, "👏")
+    commands_as_message = Keyword.get(bot_config, :commands_as_message, false)
+    :timer.apply_after(3_000, fn ->
+      Bobot.Engine.Telegram.Storage.set_token_data(token, :module, bot_module)
+      Bobot.Engine.Telegram.Storage.set_token_data(token, :session_ttl, session_ttl)
+      Bobot.Engine.Telegram.Storage.set_token_data(token, :expire_message, expire_message)
+      Bobot.Engine.Telegram.Storage.set_token_data(token, :commands_as_message, commands_as_message)
+    end)
+    {Telegram.Poller, bots: [{Bobot.Engine.Telegram, bot_config}]}
+  end
+
 
 end

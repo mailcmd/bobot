@@ -57,23 +57,17 @@ dialog .close {
   color: white;
 }
 
-button[keyb] {
+*[keyb] {
   position: relative;
 }
 
-button[keyb]:not([keyb-hide])::after {
+*[keyb]:not([keyb-hide])::after {
   position: absolute;
   top: 4px;
   left: 4px;
   content: "(" attr(keyb) ")";
   font-variant: sub;
 }
-/* 
-button[keyb]:not([keyb-hide])::after {
-  content: "(" attr(keyb) ")";
-  padding-left: 2px;
-  font-variant: sub;
-} */
 
 button.small-button {
   min-width: 6rem;
@@ -107,15 +101,6 @@ input[readonly]:focus {
   --tw-ring-color: #ccc;
 }
 
-/* 
-select > option[selected] {
-  background-color: #9b63df;
-  color: white;
-  font-weight: bolder;
-  border-radius: 3px;
-} */
-
-
 .h-fit-content {
   height: fit-content;
 }
@@ -129,6 +114,15 @@ select > option[selected] {
 }
 .w-96 {
   width: 24rem;
+}
+
+.home-list::before {
+  content: attr(content);
+  width: 100%;
+  display: inline-block;
+  text-align: center;
+  text-transform: capitalize;
+  font-weight: bolder;
 }
 
 .ace_editor {
