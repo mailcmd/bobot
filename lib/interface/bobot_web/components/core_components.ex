@@ -115,7 +115,7 @@ defmodule BobotWeb.CoreComponents do
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
-        "rounded fixed -bottom-1 right-0 left-0 m-auto w-64 z-50 p-2 pb-4 text-white",
+        "rounded fixed -bottom-1 right-0 left-0 m-auto w-80 z-50 p-2 pb-4 text-white",
         @kind == :info && "bg-emerald-600",
         @kind == :error && "bg-red-600"
       ]}
@@ -127,7 +127,7 @@ defmodule BobotWeb.CoreComponents do
         <%= @title %>
       </p>
       <p class="mt-2 text-sm leading-5"><%= msg %></p>
-      <button type="button" class="group absolute top-1 right-1 p-2" aria-label={gettext("close")}>
+      <button type="button" class="group absolute top-0 right-1 p-2" aria-label={gettext("close")}>
         <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
       </button>
     </div>

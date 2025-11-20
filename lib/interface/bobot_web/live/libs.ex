@@ -3,6 +3,8 @@ defmodule BobotWeb.Libs do
   import BobotWeb.Components
   import BobotWeb.WebTools
 
+  Code.ensure_compiled!(Bobot.Config)
+
   @doc """
   Assigns:
   - libs: %{
@@ -107,7 +109,6 @@ defmodule BobotWeb.Libs do
     {result, message, current_lib} =
       case save_lib(current_lib) do
         :ok ->
-          lib_name = current_lib[:name]
           current_lib = Map.put(current_lib, :changed, false)
           {:ok, "API saved!", current_lib}
 
@@ -305,7 +306,36 @@ defmodule BobotWeb.Libs do
   ## Private tools
   ################################################################################################
 
-  defp ast_extract_components(
+  defp load_lib(name) do
+    "#{@libs_dir}/#{name}.ex"
+    |> Bobot.Tools.ast_from_file()
+    |> ast_extract_components()
+    |> elem(1)
+  end
+
+  defp save_lib(lib) do
+    filename = "#{@libs_dir}/#{lib[:name]}.ex"
+    save_lib(lib, filename)
+  end
+  defp save_lib(lib, filename), do: File.write(filename, lib_to_string(lib))
+
+  defp lib_to_string(lib) do
+    """
+    import Bobot.DSL.Base
+
+    deflib :#{lib[:name]} do ## WARNING: You MUST not touch the 'deflib ...' line!!!
+      #{Bobot.Tools.ast_to_source([lib[:code]], parentheses: :keep)}
+    end
+    """
+    |> Code.format_string!()
+    |> Enum.join("")
+  end
+
+  ################################################################################################
+  ## Public tools
+  ################################################################################################
+
+  def ast_extract_components(
     {:__block__, [],  [
       {:import, _, [{:__aliases__, _, [:Bobot, :DSL, :Base]}]},
       {:deflib, _,
@@ -318,41 +348,5 @@ defmodule BobotWeb.Libs do
 
     {name, %{name: name, code: block} }
   end
-  defp ast_extract_components(_), do: []
-
-  def get_available_libs() do
-    "#{@libs_dir}/*.ex"
-    |> Path.wildcard()
-    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
-    |> Stream.map(fn ast -> ast_extract_components(ast) end)
-    |> Enum.into([])
-    |> Enum.filter(fn lib -> lib != [] end)
-    |> Enum.map(fn {name, _} -> name end)
-  end
-
-  defp load_lib(name) do
-    "#{@libs_dir}/#{name}.ex"
-    |> Bobot.Tools.ast_from_file()
-    |> ast_extract_components()
-    |> elem(1)
-  end
-
-  def save_lib(lib) do
-    filename = "#{@libs_dir}/#{lib[:name]}.ex"
-    save_lib(lib, filename)
-  end
-  def save_lib(lib, filename), do: File.write(filename, lib_to_string(lib))
-
-  def lib_to_string(lib) do
-    """
-    import Bobot.DSL.Base
-
-    deflib :#{lib[:name]} do ## WARNING: You MUST not touch the 'deflib ...' line!!!
-      #{Bobot.Tools.ast_to_source([lib[:code]], parentheses: :keep)}
-    end
-    """
-    |> Code.format_string!()
-    |> Enum.join("")
-  end
-
+  def ast_extract_components(_), do: []
 end

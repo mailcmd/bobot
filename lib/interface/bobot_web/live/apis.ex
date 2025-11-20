@@ -3,6 +3,8 @@ defmodule BobotWeb.Apis do
   import BobotWeb.Components
   import BobotWeb.WebTools
 
+  Code.ensure_compiled!(Bobot.Config)
+
   @doc """
   Assigns:
   - apis: %{
@@ -302,31 +304,6 @@ defmodule BobotWeb.Apis do
   ## Private tools
   ################################################################################################
 
-  defp ast_extract_components(
-    {:__block__, [],  [
-      {:import, _, [{:__aliases__, _, [:Bobot, :DSL, :Base]}]},
-      {:defapi, _,
-        [
-          name,
-          [ do: block ]
-        ]
-      }
-    ]}) do
-
-    {name, %{name: name, code: block} }
-  end
-  defp ast_extract_components(_), do: []
-
-  def get_available_apis() do
-    "#{@apis_dir}/*.ex"
-    |> Path.wildcard()
-    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
-    |> Stream.map(fn ast -> ast_extract_components(ast) end)
-    |> Enum.into([])
-    |> Enum.filter(fn api -> api != [] end)
-    |> Enum.map(fn {name, _} -> name end)
-  end
-
   defp load_api(name) do
     "#{@apis_dir}/#{name}.ex"
     |> Bobot.Tools.ast_from_file()
@@ -334,13 +311,13 @@ defmodule BobotWeb.Apis do
     |> elem(1)
   end
 
-  def save_api(api) do
+  defp save_api(api) do
     filename = "#{@apis_dir}/#{api[:name]}.ex"
     save_api(api, filename)
   end
-  def save_api(api, filename), do: File.write(filename, api_to_string(api))
+  defp save_api(api, filename), do: File.write(filename, api_to_string(api))
 
-  def api_to_string(api) do
+  defp api_to_string(api) do
     no_parens =
       BobotWeb.Bots.get_sentencies()
       |> Enum.map(fn {k, _} -> {String.to_atom(k), :*} end)
@@ -357,5 +334,24 @@ defmodule BobotWeb.Apis do
     |> Code.format_string!(locals_without_parens: no_parens)
     |> Enum.join("")
   end
+
+  ################################################################################################
+  ## Public tools
+  ################################################################################################
+
+  def ast_extract_components(
+    {:__block__, [],  [
+      {:import, _, [{:__aliases__, _, [:Bobot, :DSL, :Base]}]},
+      {:defapi, _,
+        [
+          name,
+          [ do: block ]
+        ]
+      }
+    ]}) do
+
+    {name, %{name: name, code: block} }
+  end
+  def ast_extract_components(_), do: []
 
 end

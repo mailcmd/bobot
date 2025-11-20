@@ -3,6 +3,8 @@ defmodule BobotWeb.Bots do
   import BobotWeb.Components
   import BobotWeb.WebTools
 
+  Code.ensure_compiled!(Bobot.Config)
+
   @doc """
   Assigns:
   - sentencies: %{
@@ -548,7 +550,57 @@ defmodule BobotWeb.Bots do
   ## Private tools
   ################################################################################################
 
-  defp ast_extract_components(
+  defp save_bot(bot) do
+    filename = "#{@bots_dir}/#{bot[:name]}.ex"
+    save_bot(bot, filename)
+  end
+  defp save_bot(bot, filename), do: File.write(filename, bot_to_string(bot))
+
+  defp bot_to_string(bot) do
+    except = [:hooks]
+    no_parens =
+      get_sentencies()
+      |> Enum.map(fn {k, _} -> {String.to_atom(k), :*} end)
+      |> Enum.filter(fn {k, _} -> k not in except end)
+
+    """
+    import Bobot.DSL.Base
+
+    defbot :#{bot[:name]}, [ ## WARNING: You MUST not touch the 'defbot ...' line!!!
+        type: :#{bot[:settings][:type]},
+        use_apis: #{inspect bot[:settings][:use_apis]},
+        use_libs: #{inspect bot[:settings][:use_libs]},
+        config: #{inspect bot[:settings][:config]}
+      ] do
+
+      hooks #{Macro.to_string(bot[:hooks])}
+
+      #{bot_blocks_to_source(bot[:blocks], no_parens: no_parens)}
+    end
+    """
+    |> Code.format_string!(locals_without_parens: no_parens)
+    |> Enum.join("")
+  end
+
+  defp bot_blocks_to_source(blocks, no_parens) when is_map(blocks) do
+     blocks |> Enum.map(fn {n, b} -> Map.put(b, :name, n) end) |> bot_blocks_to_source(no_parens)
+  end
+  defp bot_blocks_to_source([], _), do: ""
+  defp bot_blocks_to_source([block | blocks], no_parens) do
+    """
+    defblock :#{block[:name]}#{block[:params] != [] && ", #{Macro.to_string(block[:params])}" || ""} do
+      #{Bobot.Tools.ast_to_source(block[:block], no_parens)}
+    end
+
+    #{bot_blocks_to_source(blocks, no_parens)}
+    """
+  end
+
+  ################################################################################################
+  ## Public tools
+  ################################################################################################
+
+  def ast_extract_components(
     {:__block__, [],  [
       {:import, _, [{:__aliases__, _, [:Bobot, :DSL, :Base]}]},
       {:defbot, _,
@@ -600,7 +652,7 @@ defmodule BobotWeb.Bots do
       |> elem(1)
     }
   end
-  defp ast_extract_components(_), do: []
+  def ast_extract_components(_), do: []
 
   def get_sentencies() do
     Bobot.Tools.get_modules(~r/Bobot\.DSL\.(.+?)\.Tools/)
@@ -609,58 +661,11 @@ defmodule BobotWeb.Bots do
       |> Enum.into(%{})
   end
 
-  defp load_bot(name) do
+  def load_bot(name) do
     "#{@bots_dir}/#{name}.ex"
     |> Bobot.Tools.ast_from_file()
     |> ast_extract_components()
     |> elem(1)
-  end
-
-  def save_bot(bot) do
-    filename = "#{@bots_dir}/#{bot[:name]}.ex"
-    # IO.puts bot_to_string(bot)
-    save_bot(bot, filename)
-  end
-  def save_bot(bot, filename), do: File.write(filename, bot_to_string(bot))
-
-  def bot_to_string(bot) do
-    except = [:hooks]
-    no_parens =
-      get_sentencies()
-      |> Enum.map(fn {k, _} -> {String.to_atom(k), :*} end)
-      |> Enum.filter(fn {k, _} -> k not in except end)
-
-    """
-    import Bobot.DSL.Base
-
-    defbot :#{bot[:name]}, [ ## WARNING: You MUST not touch the 'defbot ...' line!!!
-        type: :#{bot[:settings][:type]},
-        use_apis: #{inspect bot[:settings][:use_apis]},
-        use_libs: #{inspect bot[:settings][:use_libs]},
-        config: #{inspect bot[:settings][:config]}
-      ] do
-
-      hooks #{Macro.to_string(bot[:hooks])}
-
-      #{bot_blocks_to_source(bot[:blocks], no_parens: no_parens)}
-    end
-    """
-    |> Code.format_string!(locals_without_parens: no_parens)
-    |> Enum.join("")
-  end
-
-  defp bot_blocks_to_source(blocks, no_parens) when is_map(blocks) do
-     blocks |> Enum.map(fn {n, b} -> Map.put(b, :name, n) end) |> bot_blocks_to_source(no_parens)
-  end
-  defp bot_blocks_to_source([], _), do: ""
-  defp bot_blocks_to_source([block | blocks], no_parens) do
-    """
-    defblock :#{block[:name]}#{block[:params] != [] && ", #{Macro.to_string(block[:params])}" || ""} do
-      #{Bobot.Tools.ast_to_source(block[:block], no_parens)}
-    end
-
-    #{bot_blocks_to_source(blocks, no_parens)}
-    """
   end
 
 end

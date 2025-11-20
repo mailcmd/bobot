@@ -1,0 +1,43 @@
+defmodule Bobot.Config do
+  def get_available_bots() do
+    "dynamic/bots//*.ex"
+    |> Path.wildcard()
+    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+    |> Stream.map(fn ast -> BobotWeb.Bots.ast_extract_components(ast) end)
+    |> Enum.into([])
+    |> Enum.filter(fn bot -> bot != [] end)
+    |> Enum.map(fn {name, _} -> name end)
+  end
+
+  def get_available_apis() do
+    "dynamic/apis//*.ex"
+    |> Path.wildcard()
+    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+    |> Stream.map(fn ast -> BobotWeb.Apis.ast_extract_components(ast) end)
+    |> Enum.into([])
+    |> Enum.filter(fn api -> api != [] end)
+    |> Enum.map(fn {name, _} -> name end)
+  end
+
+  def get_available_libs() do
+    "dynamic/libs//*.ex"
+    |> Path.wildcard()
+    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+    |> Stream.map(fn ast -> BobotWeb.Libs.ast_extract_components(ast) end)
+    |> Enum.into([])
+    |> Enum.filter(fn lib -> lib != [] end)
+    |> Enum.map(fn {name, _} -> name end)
+  end
+
+  Module.register_attribute(__MODULE__, :telegram_bots, persist: true, accumulate: false)
+  @telegram_bots []
+
+  ## For future updates where I will support Whatsapp, Discord, etc
+  ## Module.register_attribute(__MODULE__, :whatsapp_bots, persist: true, accumulate: false)
+  ## @whatsapp_bots []
+  ## Module.register_attribute(__MODULE__, :discord_bots, persist: true, accumulate: false)
+  ## @discord_bots []
+
+  # ++ @whatsapp_bots ++ @discord_bots
+  def get_active_bots(), do: @telegram_bots
+end
