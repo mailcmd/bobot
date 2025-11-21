@@ -15,10 +15,10 @@ defmodule Bobot.Application do
     #   local_port: Keyword.fetch!(config, :local_port)
     # ]
 
-    if not File.exists?("config/bobot_config.ex") do
-      File.copy!("config/bobot_config.ex.init", "config/bobot_config.ex")
-    end
-    Code.compile_file("config/bobot_config.ex")
+    # if not File.exists?("config/bobot_config.ex") do
+    #   File.copy!("config/bobot_config.ex.init", "config/bobot_config.ex")
+    # end
+    # Code.compile_file("config/bobot_config.ex")
     bobot_config = Bobot.Config.__info__(:attributes)
 
     telegram_bots = Keyword.get(bobot_config, :telegram_bots, [])

@@ -244,7 +244,7 @@ defmodule Bobot.DSL.Base do
   defmacro call_api(id, opts \\ []) do
     params = Keyword.get(opts, :params, nil)
     quote do
-      apis = __MODULE__.__info__(:attributes) |> Keyword.get(:bot_apis) |> hd()
+      apis = __MODULE__.__info__(:attributes) |> Keyword.get(:bot_apis)
       res = try_apis(apis, unquote(id), unquote(params))
       Bobot.Bot.Assigns.put_in(var!(sess_id), [unquote(id)], res)
     end

@@ -13,8 +13,8 @@ defmodule Bobot.Bot do
     type_module = String.to_atom("Elixir.Bobot.DSL.#{type}")
     Code.ensure_compiled!(type_module)
 
-    apis = Keyword.get(opts, :use_apis)
-    libs = Keyword.get(opts, :use_libs)
+    apis = Keyword.get(opts, :use_apis) || []
+    libs = Keyword.get(opts, :use_libs) || []
 
     import_libs = Enum.map(libs, fn module ->
       module = String.to_atom("Elixir.Bobot.Lib.#{module |> to_string() |> Macro.camelize()}")

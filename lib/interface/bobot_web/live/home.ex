@@ -38,9 +38,6 @@ defmodule BobotWeb.Home do
     now_active_bots = Bobot.Config.get_active_bots()
     new_active_bots = socket.assigns[:active_bots]
 
-    turn_off = :lists.subtract(now_active_bots, new_active_bots)
-    turn_on = :lists.subtract(new_active_bots, now_active_bots)
-
     filename = save_config(new_active_bots)
 
     {{result, message}, real_errors} =
@@ -54,13 +51,31 @@ defmodule BobotWeb.Home do
         end
       end)
 
-    if result == :error do
-      error =
-        real_errors
-        |> Enum.filter(&(&1.severity == :error))
-        |> hd()
-        |> Map.get(:message)
-      Logger.log(:error, "[Bobot][Home] ERROR: #{error}")
+    case result do
+      :error ->
+        error =
+          real_errors
+          |> Enum.filter(&(&1.severity == :error))
+          |> hd()
+          |> Map.get(:message)
+
+        Logger.log(:error, "[Bobot][Home] ERROR: #{error}")
+
+      :ok ->
+        turn_off = :lists.subtract(now_active_bots, new_active_bots)
+        turn_on = :lists.subtract(new_active_bots, now_active_bots)
+
+        Enum.map(turn_off, fn name ->
+          Supervisor.terminate_child(Bobot.Supervisor, name)
+          Supervisor.delete_child(Bobot.Supervisor, name)
+        end)
+
+        Enum.map(turn_on, fn name ->
+          Code.compile_file("#{@bots_dir}/#{name}.ex") |> IO.inspect
+          type = BobotWeb.Bots.load_bot(name)[:settings][:type]  |> IO.inspect
+          child = apply(Bobot.Application, String.to_atom("init_#{type}_bot"), [name])  |> IO.inspect
+          Supervisor.start_child(Bobot.Supervisor, child)  |> IO.inspect
+        end)
     end
 
     {:noreply, socket

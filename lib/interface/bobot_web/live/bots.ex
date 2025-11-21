@@ -3,6 +3,8 @@ defmodule BobotWeb.Bots do
   import BobotWeb.Components
   import BobotWeb.WebTools
 
+  require Bobot.Tools
+
   Code.ensure_compiled!(Bobot.Config)
 
   @doc """
@@ -156,7 +158,7 @@ defmodule BobotWeb.Bots do
       end
 
     {:noreply, socket
-      |> update(:bots, fn bots -> put_in(bots, [def[:name]], def[:name]) end)
+      |> update(:bots, fn bots -> [def[:name] | bots] |> Enum.uniq() end)
       |> assign(last_result: result)
       |> close_modal()
       |> put_message(message)
@@ -258,25 +260,51 @@ defmodule BobotWeb.Bots do
     }
   end
 
-  ##############
-  ### SAVE BOT
-  def handle_event("save-bot", _params, socket) do
-    current_bot = socket.assigns[:current_bot]
-    {result, message, current_bot} =
-      case save_bot(current_bot) do
-        :ok ->
-          current_bot = Map.put(current_bot, :changed, false)
-          {:ok, "Bot saved!", current_bot}
-
-        {:error, err} ->
-          {:error, "There was a problem storing bot (#{err})", socket.assigns[:current_bot]}
-      end
+  ###############
+  ### VIEW BOT
+  def handle_event("view-bot", _params, socket) do
+    text = bot_to_string(socket.assigns[:current_bot])
 
     {:noreply, socket
-      |> assign(current_bot: current_bot)
-      |> assign(last_result: result)
-      |> put_message(message)
+      |> push_event("js-exec", %{ js: """
+        editor_open('#{socket.assigns[:current_bot][:name]}', `#{text}`, true);
+      """ })
     }
+
+  end
+
+  ########################
+  ### SAVE AND COMPILE BOT
+  def handle_event("save-bot", _params, socket) do
+    current_bot = socket.assigns[:current_bot]
+
+    with :ok <- save_bot(current_bot),
+         {:ok, message} <- compile_bot(current_bot[:name]) do
+
+      {:noreply, socket
+        |> update(:current_bot, fn cb -> put_in(cb, [:changed], false) end)
+        |> assign(last_result: :ok)
+        |> put_message(message)
+      }
+    else
+      {{:error, message}, %{message: error_message, nline: nline}} ->
+        text = bot_to_string(current_bot)
+
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message(message)
+          |> push_event("js-exec", %{ js: """
+            editor_open('Compile error for #{current_bot[:name]}', `#{text}`, true);
+            editor_set_status_bar('#{error_message}', #{nline}, true);
+          """ })
+        }
+
+      _ ->
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message("There was a problem storing bot!")
+        }
+    end
   end
 
   ##############
@@ -303,69 +331,61 @@ defmodule BobotWeb.Bots do
     }
   end
 
-  ###############
-  ### COMPILE BOT
-  def handle_event("compile-bot", _params, socket) do
-    {{result, message}, real_errors} =
-      Code.with_diagnostics(fn ->
-        try do
-          socket.assigns[:current_bot]
-            |> bot_to_string()
-            |> Code.compile_string()
-          {:ok, "Bot compiled OK!"}
-        rescue
-          _ ->
-            {:error, "There was a problem compiling the bot!"}
-        end
-      end)
+  # ###############
+  # ### COMPILE BOT
+  # def handle_event("compile-bot", _params, socket) do
+  #   {{result, message}, real_errors} =
+  #     Code.with_diagnostics(fn ->
+  #       try do
+  #         socket.assigns[:current_bot]
+  #           |> bot_to_string()
+  #           |> Code.compile_string()
+  #         {:ok, "Bot compiled OK!"}
+  #       rescue
+  #         error ->
+  #           {:error, "There was a problem compiling the bot! (#{inspect error})"}
+  #       end
+  #     end)
 
-    case {{result, message}, real_errors} do
-      {{:ok, message}, _} ->
-        {:noreply, socket
-          |> assign(last_result: result)
-          |> put_message(message)
-        }
+  #   case {{result, message}, real_errors} do
+  #     {{:ok, message}, _} ->
+  #       {:noreply, socket
+  #         |> assign(last_result: result)
+  #         |> put_message(message)
+  #       }
 
-      {{:error, message}, real_errors} ->
-        error =
-          real_errors
-          |> Enum.filter(&(&1.severity == :error))
-          |> hd()
+  #     {{:error, message}, real_errors} ->
+  #       error =
+  #         real_errors
+  #         |> Enum.filter(&(&1.severity == :error))
 
+  #       error =
+  #         if error == [] do
+  #           %{message: message}
+  #         else
+  #           hd(error)
+  #         end
 
-        error_message = error[:message]
-        nline =
-          case error[:position] do
-            {nline, _} -> nline
-            nline -> nline
-          end
+  #       error_message = error[:message]
+  #       nline =
+  #         case error[:position] do
+  #           {nline, _} -> nline
+  #           nline -> nline
+  #         end
 
-        text = bot_to_string(socket.assigns[:current_bot])
+  #       text = bot_to_string(socket.assigns[:current_bot])
 
-        {:noreply, socket
-          |> assign(last_result: result)
-          |> put_message(message)
-          |> push_event("js-exec", %{ js: """
-            editor_open('Compile error for #{socket.assigns[:current_bot][:name]}', `#{text}`, true);
-            editor_set_status_bar('#{error_message}', #{nline}, true);
-          """ })
-        }
+  #       {:noreply, socket
+  #         |> assign(last_result: result)
+  #         |> put_message(message)
+  #         |> push_event("js-exec", %{ js: """
+  #           editor_open('Compile error for #{socket.assigns[:current_bot][:name]}', `#{text}`, true);
+  #           editor_set_status_bar('#{error_message}', #{nline}, true);
+  #         """ })
+  #       }
 
-    end
-  end
-
-  ###############
-  ### VIEW BOT
-  def handle_event("view-bot", _params, socket) do
-    text = bot_to_string(socket.assigns[:current_bot])
-
-    {:noreply, socket
-      |> push_event("js-exec", %{ js: """
-        editor_open('#{socket.assigns[:current_bot][:name]}', `#{text}`, true);
-      """ })
-    }
-
-  end
+  #   end
+  # end
 
   ##############
   ### BLOCK MNG
@@ -476,14 +496,20 @@ defmodule BobotWeb.Bots do
               |> elem(1)
               |> Map.put(:changed, true)
 
-            {:noreply, socket
-              |> assign(last_result: :ok)
-              |> assign(current_bot: new_bot)
-              |> push_event("js-exec", %{ js: """
-                if (#{params["ctrl"]}) bobot_editor.close();
-              """ })
-              |> put_message("Change commited!", 5000)
-            }
+            if new_bot[:unknown] != nil do
+              {:noreply, socket
+                |> assign(last_result: :error)
+                |> put_message("ERROR: You MUST NOT put code out of a 'defblock...'!!", 3500)
+                |> push_event("js-exec", %{ js: """
+                  editor_set_status_bar('ERROR: #{new_bot[:unknown] |> hd() |> Macro.to_string()} is out of a block!!');
+                """ })
+              }
+            else
+              ## All ok then I save and compile the bot
+              handle_event("save-bot", %{}, socket
+                |> assign(current_bot: new_bot)
+              )
+            end
 
           ## If it is just a block
           name ->
@@ -596,6 +622,37 @@ defmodule BobotWeb.Bots do
     """
   end
 
+  defp compile_bot(name) do
+    filename = "#{@bots_dir}/#{name}.ex"
+    case Bobot.Tools.compile_file(filename) do
+      {{:ok, _}, _} ->
+        {:ok, "Bot compiled OK!"}
+
+      {{:error, error}, diagnostic} ->
+        message = "There was a problem compiling the bot! (#{inspect error})"
+
+        real_error =
+          diagnostic
+          |> Enum.filter(&(&1.severity == :error))
+
+        real_error =
+          if real_error == [] do
+            %{message: message}
+          else
+            hd(real_error)
+          end
+
+        diagnostic_message = real_error[:message]
+        nline =
+          case error[:position] do
+            {nline, _} -> nline
+            nline -> nline
+          end
+
+        {{:error, message}, %{nline: nline, message: diagnostic_message}}
+    end
+  end
+
   ################################################################################################
   ## Public tools
   ################################################################################################
@@ -617,37 +674,54 @@ defmodule BobotWeb.Bots do
     {name,
       block
       |> Macro.prewalk(%{name: name, settings: settings}, fn
-        {:hooks, _, [hooks]} = node, acc ->
+        {:hooks, _, [hooks]}, acc ->
           {
-            node,
+            [], #node,
             put_in(acc, [:hooks], hooks)
           }
-        {:defblock, _, [block_name, [do: block]]} = node, acc ->
+        {:defblock, _, [block_name, [do: block]]}, acc ->
           block =
             case block do
               {:__block__, _, block} -> block
               block -> [block]
             end
           {
-            node,
+            [], #node,
             acc
               |> Bobot.Tools.put_inx([:blocks, block_name, :params], [])
               |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
           }
-        {:defblock, _, [block_name, params, [do: block]]} = node, acc ->
+        {:defblock, _, [block_name, params, [do: block]]}, acc ->
           block =
             case block do
               {:__block__, _, block} -> block
               block -> [block]
             end
           {
-            node,
+            [], #node,
             acc
               |> Bobot.Tools.put_inx([:blocks, block_name, :params], params)
               |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
           }
-        node, acc ->
+
+        {:__block__, _, _}, %{hooks: _hooks} = acc ->
+          {[], acc}
+
+        {:__block__, _, _}, %{blocks: _blocks} = acc ->
+          {[], acc}
+
+        {:__block__, _, _} = node, acc ->
           {node, acc}
+
+        node, acc -> # {node, acc}
+          {
+            node,
+            acc
+              |> update_in([:unknown], fn
+                nil -> [node]
+                unknown -> Enum.reverse([node | unknown])
+              end)
+          }
       end)
       |> elem(1)
     }

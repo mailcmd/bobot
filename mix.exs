@@ -31,6 +31,13 @@ defmodule Bobot.MixProject do
   #
   # Type `mix help deps` for examples and options.
   defp deps do
+    ## Please, sorry for this, I NEED TO DO IT before app start.
+    if not File.exists?("config/bobot_config.ex") do
+      File.copy!("config/bobot_config.ex.init", "config/bobot_config.ex")
+    end
+    Code.compile_file("config/bobot_config.ex")
+
+
     [
       {:phoenix, "~> 1.7.14"},
       {:phoenix_html, "~> 4.1"},

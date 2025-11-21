@@ -58,7 +58,7 @@ defmodule Bobot.Engine.Telegram do
       end)
       |> Enum.into(%{})
 
-    # If it IS NOT a command run start_bot
+    # If IT IS NOT a command run start_bot
     if Storage.get_token_data(token, :commands_as_message) or not match?([%{"type" => "bot_command"}], get_in(chat.update, ["message", "entities"])) do
       module = Storage.get_token_data(token, :module)
       sess_id = random_id()
@@ -88,6 +88,7 @@ defmodule Bobot.Engine.Telegram do
   end
 
   @impl Telegram.ChatBot
+  ###########
   ## VOICE
   def handle_update(%{"message" => %{"message_id" => message_id, "voice" => _voice}}, token, chat_id) do
     Logger.log(:notice, "#{@log_prefix} Received voice!")
@@ -102,6 +103,8 @@ defmodule Bobot.Engine.Telegram do
     )
     {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
   end
+
+  ###########
   ## COMMANDS
   def handle_update(%{"message" => %{"text" => command, "chat" => %{"id" => chat_id}, "entities" => [%{"type" => "bot_command"}], }} = update, token, chat_id)
     when byte_size(command) > 0 do
@@ -131,6 +134,8 @@ defmodule Bobot.Engine.Telegram do
     end
     {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
   end
+
+  ###########
   ## MESSAGES
   def handle_update(%{"message" => %{"text" => text, "chat" => %{"id" => chat_id}}}, token, chat_id)
     when byte_size(text) > 0 do
@@ -146,6 +151,8 @@ defmodule Bobot.Engine.Telegram do
       {:ok, chat_id, 1}
     end
   end
+
+  ###########
   ## IMAGES
   def handle_update(%{"message" => %{"document" => %{"file_id" => file_id, "mime_type" => _mime_type}, "chat" => %{"id" => chat_id}}}, token, chat_id) do
     pid =
@@ -173,11 +180,15 @@ defmodule Bobot.Engine.Telegram do
       {:ok, chat_id, 1}
     end
   end
+
+  ###########
   ## PHOTO
   def handle_update(%{"message" => %{"photo" => photos, "chat" => %{"id" => chat_id}}}, token, chat_id) do
     [%{"file_id" => file_id} | _] = Enum.reverse(photos)
     handle_update(%{"message" => %{"document" => %{"file_id" => file_id, "mime_type" => ""}, "chat" => %{"id" => chat_id}}}, token, chat_id)
   end
+
+  ###########
   ## BUTTONS
   def handle_update(%{"callback_query" => %{ "data" => text, "message" =>  %{"chat" => %{"id" => chat_id}}}}, token, chat_id)
     when byte_size(text) > 0 do
@@ -194,6 +205,7 @@ defmodule Bobot.Engine.Telegram do
     end
   end
 
+  ###########
   ## UNKNOWN
   def handle_update(update, token, chat_id) do
     Logger.log(:warning, "#{@log_prefix} unknow getUpdate() message: #{inspect update}")

@@ -32,6 +32,17 @@ setTimeout(()=>{
             readOnly: false 
         });    
         editor.commands.addCommand({
+            name: 'commit2',
+            bindKey: {
+                win: 'F2'
+            },
+            exec: function(editor) {
+                let e = new MouseEvent('click', {bubbles: true, cancelable: true})
+                bobot_editor.querySelector('button.commit').dispatchEvent(e);
+            },
+            readOnly: false 
+        });    
+        editor.commands.addCommand({
             name: 'cancel',
             bindKey: {
                 win: 'Esc',

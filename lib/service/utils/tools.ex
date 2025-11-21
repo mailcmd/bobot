@@ -198,4 +198,16 @@ defmodule Bobot.Tools do
   def remove_parens_h([item | list], sentencies, n),
     do: [item] ++ remove_parens_h(list, sentencies, n)
 
+  @spec compile_file(filename::String.t) ::
+        {{:ok, message::String.t}, diag::list()} | {{:error, message::String.t}, diag::list()}
+  def compile_file(filename) do
+    Code.with_diagnostics(fn ->
+      try do
+        Code.compile_file(filename)
+        {:ok, "File #{filename} compiled OK!"}
+      rescue
+        error -> {:error, "#{error}"}
+      end
+    end)
+  end
 end

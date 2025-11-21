@@ -15,7 +15,7 @@
             && get_in(@current_bot, [:settings, :use_apis]) 
             || []
         }
-        options={Bobot.Config.get_available_apis() |> Map.keys()}
+        options={Bobot.Config.get_available_apis()}
       />
 
     </li>
@@ -26,7 +26,7 @@
             && get_in(@current_bot, [:settings, :use_libs])
             || []
         }
-        options={Bobot.Config.get_available_libs() |> Map.keys()}
+        options={Bobot.Config.get_available_libs()}
       />
 
     </li>

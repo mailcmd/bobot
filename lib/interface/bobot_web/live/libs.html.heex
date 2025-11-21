@@ -15,30 +15,30 @@
     </.tiny_logo>
 
     <form phx-change="select-lib">
-    <.select :if={@current_lib == nil} inline={true} label="Select LIB" 
+    <.select :if={@current_lib == nil} inline={true} label="Select LIB"  keyb="F2"
       name="lib_name" 
-      options={@libs |> Map.keys()}
+      options={@libs}
       value={@current_lib[:name]} small={true}
       class="!bg-purple-100 !rounded" container-class="bg-purple-800 py-4 px-2"/>
     </form>
 
-    <.small_button :if={@current_lib == nil} value="modal:New LIB..."
+    <.small_button :if={@current_lib == nil} value="modal:New LIB..."  keyb="F1"
       type="button" phx-click="show:deflib" icon="plus-circle-mini">
       New LIB
     </.small_button>
 
-    <.small_button :if={@current_lib != nil}
+    <.small_button :if={@current_lib != nil}  keyb="F2"
       class={[@current_lib[:changed] && "animate-color" || "", "ml-auto float-right"]} type="button" 
       phx-click="save-lib" icon="folder-arrow-down-solid">
       Save
     </.small_button>
 
-    <.small_button :if={@current_lib != nil}
+    <.small_button :if={@current_lib != nil}  keyb="F4"
       class="float-right" type="button" phx-click="view-lib" icon="credit-card-solid">
       View LIB
     </.small_button>
 
-    <.small_button :if={@current_lib != nil}
+    <.small_button :if={@current_lib != nil}  keyb="F9"
       class="float-right" type="button" phx-click="compile-lib" icon="cpu-chip-solid">
       Compile
     </.small_button>

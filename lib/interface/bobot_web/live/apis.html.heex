@@ -15,30 +15,30 @@
     </.tiny_logo>
 
     <form phx-change="select-api">
-    <.select :if={@current_api == nil} inline={true} label="Select API" 
+    <.select :if={@current_api == nil} inline={true} label="Select API" keyb="F2"
       name="api_name" 
-      options={@apis |> Map.keys()}
+      options={@apis}
       value={@current_api[:name]} small={true}
       class="!bg-purple-100 !rounded" container-class="bg-purple-800 py-4 px-2"/>
     </form>
 
-    <.small_button :if={@current_api == nil} value="modal:New API..."
+    <.small_button :if={@current_api == nil} value="modal:New API..."  keyb="F1"
       type="button" phx-click="show:defapi" icon="plus-circle-mini">
       New API
     </.small_button>
 
-    <.small_button :if={@current_api != nil}
+    <.small_button :if={@current_api != nil}  keyb="F2"
       class={[@current_api[:changed] && "animate-color" || "", "ml-auto float-right"]} type="button" 
       phx-click="save-api" icon="folder-arrow-down-solid">
       Save
     </.small_button>
 
-    <.small_button :if={@current_api != nil}
+    <.small_button :if={@current_api != nil}  keyb="F4"
       class="float-right" type="button" phx-click="view-api" icon="credit-card-solid">
       Edit 
     </.small_button>
 
-    <.small_button :if={@current_api != nil}
+    <.small_button :if={@current_api != nil}  keyb="F9"
       class="float-right" type="button" phx-click="compile-api" icon="cpu-chip-solid">
       Compile
     </.small_button>
