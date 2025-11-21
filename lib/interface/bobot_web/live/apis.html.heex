@@ -27,22 +27,23 @@
       New API
     </.small_button>
 
+    <.small_button :if={@current_api != nil}  keyb="F4"
+      class="ml-auto float-right" type="button" phx-click="view-api" icon="credit-card-solid">
+      Edit 
+    </.small_button>
+
     <.small_button :if={@current_api != nil}  keyb="F2"
-      class={[@current_api[:changed] && "animate-color" || "", "ml-auto float-right"]} type="button" 
+      class={[@current_api[:changed] && "animate-color" || "", "float-right"]} type="button" 
       phx-click="save-api" icon="folder-arrow-down-solid">
       Save
     </.small_button>
 
-    <.small_button :if={@current_api != nil}  keyb="F4"
-      class="float-right" type="button" phx-click="view-api" icon="credit-card-solid">
-      Edit 
-    </.small_button>
-
+<!-- 
     <.small_button :if={@current_api != nil}  keyb="F9"
       class="float-right" type="button" phx-click="compile-api" icon="cpu-chip-solid">
       Compile
     </.small_button>
-
+-->
 </header>
 
 <main class="flex relative flex-grow bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">  

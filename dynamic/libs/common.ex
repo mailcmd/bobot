@@ -1,5 +1,6 @@
 import Bobot.DSL.Base
 
+## WARNING: You MUST not touch the 'deflib ...' line!!!
 deflib :common do
   def is_command?([47 | _]) do
     true

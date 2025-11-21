@@ -102,29 +102,55 @@ defmodule BobotWeb.Libs do
     }
   end
 
-  ##############
-  ### SAVE BOT
-  def handle_event("save-lib", _params, socket) do
-    current_lib = socket.assigns[:current_lib]
-    {result, message, current_lib} =
-      case save_lib(current_lib) do
-        :ok ->
-          current_lib = Map.put(current_lib, :changed, false)
-          {:ok, "API saved!", current_lib}
-
-        {:error, err} ->
-          {:error, "There was a problem storing LIB (#{err})", socket.assigns[:current_lib]}
-      end
+  ###############
+  ### VIEW LIB
+  def handle_event("view-lib", _params, socket) do
+    text = lib_to_string(socket.assigns[:current_lib])
 
     {:noreply, socket
-      |> assign(current_lib: current_lib)
-      |> assign(last_result: result)
-      |> put_message(message)
+      |> push_event("js-exec", %{ js: """
+        editor_open('#{socket.assigns[:current_lib][:name]}', `#{text}`, false);
+      """ })
     }
+
   end
 
   ##############
-  ### CLOSE API (no ctrl key)
+  ### SAVE LIB
+  def handle_event("save-lib", _params, socket) do
+    current_lib = socket.assigns[:current_lib]
+    with :ok <- save_lib(current_lib),
+         {:ok, message} <- compile_lib(current_lib[:name]) do
+
+      {:noreply, socket
+        |> update(:current_lib, fn ca -> put_in(ca, [:changed], false) end)
+        |> assign(last_result: :ok)
+        |> put_message(message)
+      }
+
+    else
+      {{:error, message}, %{message: error_message, nline: nline}} ->
+        text = lib_to_string(current_lib)
+
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message(message)
+          |> push_event("js-exec", %{ js: """
+            editor_open('Compile error for #{current_lib[:name]}', `#{text}`, true);
+            editor_set_status_bar('#{error_message}', #{nline}, true);
+          """ })
+        }
+
+      _ ->
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message("There was a problem storing the Lib!")
+        }
+    end
+  end
+
+  ##############
+  ### CLOSE LIB (no ctrl key)
   def handle_event("close-lib", %{"value" => "false"}, socket) do
     if socket.assigns[:current_lib][:changed] do
       {:noreply, socket
@@ -137,7 +163,7 @@ defmodule BobotWeb.Libs do
 
   end
   ##############
-  ### CLOSE API (with ctrl key)
+  ### CLOSE LIB (with ctrl key)
   def handle_event("close-lib", _params, socket) do
     changed = socket.assigns[:current_lib][:changed]
     {:noreply, socket
@@ -148,7 +174,7 @@ defmodule BobotWeb.Libs do
   end
 
   ###############
-  ### COMPILE API
+  ### COMPILE LIB
   def handle_event("compile-lib", _params, socket) do
     {{result, message}, real_errors} =
       Code.with_diagnostics(fn ->
@@ -156,7 +182,7 @@ defmodule BobotWeb.Libs do
           socket.assigns[:current_lib]
             |> lib_to_string()
             |> Code.compile_string()
-          {:ok, "API compiled OK!"}
+          {:ok, "LIB compiled OK!"}
         rescue
           _ ->
             {:error, "There was a problem compiling the LIB!"}
@@ -197,19 +223,6 @@ defmodule BobotWeb.Libs do
     end
   end
 
-  ###############
-  ### VIEW API
-  def handle_event("view-lib", _params, socket) do
-    text = lib_to_string(socket.assigns[:current_lib])
-
-    {:noreply, socket
-      |> push_event("js-exec", %{ js: """
-        editor_open('#{socket.assigns[:current_lib][:name]}', `#{text}`, false);
-      """ })
-    }
-
-  end
-
   ##############
   ### BLOCK MNG
   def handle_event("operation-editor", %{"operation" => "cancel", "ctrl" => "true"}, socket) do
@@ -236,10 +249,10 @@ defmodule BobotWeb.Libs do
       ast ->
         [
           {:import, _, [{:__aliases__, [alias: false], [:Bobot, :DSL, :Base]}]},
-          {:defapi, _, [ _, [ do: new_lib ] ] }
+          {:deflib, _, [ _, [ do: new_lib ] ] }
         ] = ast
 
-        original_lib = socket.assigns[:current_api][:code]
+        original_lib = socket.assigns[:current_lib][:code]
 
         {result, message} =
           if not Bobot.Tools.ast_equals(original_lib, new_lib) do
@@ -277,16 +290,10 @@ defmodule BobotWeb.Libs do
           |> elem(1)
           # |> Map.put(:changed, true)
 
-        save_lib(new_lib)
-
-        {:noreply, socket
-          |> assign(last_result: :ok)
+        ## I save and compile the bot
+        handle_event("save-lib", %{}, socket
           |> assign(current_lib: new_lib)
-          |> push_event("js-exec", %{ js: """
-            if (#{params["ctrl"]}) bobot_editor.close();
-          """ })
-          |> put_message("Change commited!", 5000)
-        }
+        )
     end
   end
 
@@ -330,6 +337,18 @@ defmodule BobotWeb.Libs do
     |> Code.format_string!()
     |> Enum.join("")
   end
+
+  defp compile_lib(name) do
+    filename = "#{@libs_dir}/#{name}.ex"
+    case Bobot.Tools.compile_file(filename) do
+      {:ok, _} ->
+        {:ok, "Lib compiled OK!"}
+
+      {{:error, error}, error_data} ->
+        {{:error, "There was a problem compiling the Lib (#{error})"}, error_data}
+    end
+  end
+
 
   ################################################################################################
   ## Public tools

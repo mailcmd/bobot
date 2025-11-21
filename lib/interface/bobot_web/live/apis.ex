@@ -102,25 +102,51 @@ defmodule BobotWeb.Apis do
     }
   end
 
-  ##############
-  ### SAVE BOT
-  def handle_event("save-api", _params, socket) do
-    current_api = socket.assigns[:current_api]
-    {result, message, current_api} =
-      case save_api(current_api) do
-        :ok ->
-          current_api = Map.put(current_api, :changed, false)
-          {:ok, "API saved!", current_api}
-
-        {:error, err} ->
-          {:error, "There was a problem storing API (#{err})", socket.assigns[:current_api]}
-      end
+  ###############
+  ### VIEW API
+  def handle_event("view-api", _params, socket) do
+    text = api_to_string(socket.assigns[:current_api])
 
     {:noreply, socket
-      |> assign(current_api: current_api)
-      |> assign(last_result: result)
-      |> put_message(message)
+      |> push_event("js-exec", %{ js: """
+        editor_open('#{socket.assigns[:current_api][:name]}', `#{text}`, false);
+      """ })
     }
+
+  end
+
+  ##############
+  ### SAVE API
+  def handle_event("save-api", _params, socket) do
+    current_api = socket.assigns[:current_api]
+    with :ok <- save_api(current_api),
+         {:ok, message} <- compile_api(current_api[:name]) do
+
+      {:noreply, socket
+        |> update(:current_api, fn ca -> put_in(ca, [:changed], false) end)
+        |> assign(last_result: :ok)
+        |> put_message(message)
+      }
+
+    else
+      {{:error, message}, %{message: error_message, nline: nline}} ->
+        text = api_to_string(current_api)
+
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message(message)
+          |> push_event("js-exec", %{ js: """
+            editor_open('Compile error for #{current_api[:name]}', `#{text}`, true);
+            editor_set_status_bar('#{error_message}', #{nline}, true);
+          """ })
+        }
+
+      _ ->
+        {:noreply, socket
+          |> assign(last_result: :error)
+          |> put_message("There was a problem storing the API!")
+        }
+    end
   end
 
   ##############
@@ -145,69 +171,6 @@ defmodule BobotWeb.Apis do
       |> put_message(changed && "Changes discarded!" || nil)
       |> assign(current_api: nil)
     }
-  end
-
-  ###############
-  ### COMPILE API
-  def handle_event("compile-api", _params, socket) do
-    {{result, message}, real_errors} =
-      Code.with_diagnostics(fn ->
-        try do
-          socket.assigns[:current_api]
-            |> api_to_string()
-            |> Code.compile_string()
-          {:ok, "API compiled OK!"}
-        rescue
-          _ ->
-            {:error, "There was a problem compiling the API!"}
-        end
-      end)
-
-    case {{result, message}, real_errors} do
-      {{:ok, message}, _} ->
-        {:noreply, socket
-          |> assign(last_result: result)
-          |> put_message(message)
-        }
-
-      {{:error, message}, real_errors} ->
-        error =
-          real_errors
-          |> Enum.filter(&(&1.severity == :error))
-          |> hd()
-
-
-        error_message = error[:message]
-        nline =
-          case error[:position] do
-            {nline, _} -> nline
-            nline -> nline
-          end
-
-        text = api_to_string(socket.assigns[:current_api])
-
-        {:noreply, socket
-          |> assign(last_result: result)
-          |> put_message(message)
-          |> push_event("js-exec", %{ js: """
-            editor_open('Compile error for #{socket.assigns[:current_api][:name]}', `#{text}`, true);
-            editor_set_status_bar('#{error_message}', #{nline}, true);
-          """ })
-        }
-    end
-  end
-
-  ###############
-  ### VIEW API
-  def handle_event("view-api", _params, socket) do
-    text = api_to_string(socket.assigns[:current_api])
-
-    {:noreply, socket
-      |> push_event("js-exec", %{ js: """
-        editor_open('#{socket.assigns[:current_api][:name]}', `#{text}`, false);
-      """ })
-    }
-
   end
 
   ##############
@@ -270,21 +233,17 @@ defmodule BobotWeb.Apis do
           """ })
         }
 
-      new_call ->
+      new_api ->
         new_api =
-          {:__block__, [],  new_call}
+          {:__block__, [],  new_api}
           |> ast_extract_components()
           |> elem(1)
-          |> Map.put(:changed, true)
+          # |> Map.put(:changed, true)
 
-        {:noreply, socket
-          |> assign(last_result: :ok)
+        ## I save and compile the bot
+        handle_event("save-api", %{}, socket
           |> assign(current_api: new_api)
-          |> push_event("js-exec", %{ js: """
-            if (#{params["ctrl"]}) bobot_editor.close();
-          """ })
-          |> put_message("Change commited!", 5000)
-        }
+        )
     end
   end
 
@@ -334,6 +293,18 @@ defmodule BobotWeb.Apis do
     |> Code.format_string!(locals_without_parens: no_parens)
     |> Enum.join("")
   end
+
+  defp compile_api(name) do
+    filename = "#{@apis_dir}/#{name}.ex"
+    case Bobot.Tools.compile_file(filename) do
+      {:ok, _} ->
+        {:ok, "API compiled OK!"}
+
+      {{:error, error}, error_data} ->
+        {{:error, "There was a problem compiling the API (#{error})"}, error_data}
+    end
+  end
+
 
   ################################################################################################
   ## Public tools

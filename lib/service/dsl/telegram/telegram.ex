@@ -167,7 +167,13 @@ defmodule Bobot.DSL.Telegram do
   ## TERMINATE
   defmacro terminate(message: message) do
     quote do
-      send message: unquote(message)
+      send_message unquote(message)
+      terminate()
+    end
+  end
+
+  defmacro terminate() do
+    quote do
       {_, pid} = settings_get(Bobot.Bot.Assigns.get(var!(sess_id), :chat_id))
       Kernel.send(pid, :stop)
       receive do

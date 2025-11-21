@@ -27,7 +27,9 @@ setTimeout(()=>{
             },
             exec: function(editor) {
                 let e = new MouseEvent('click', {bubbles: true, cancelable: true})
-                bobot_editor.querySelector('button.commit').dispatchEvent(e);
+                let btn = bobot_editor.querySelector('button.commit')
+                btn.dispatchEvent(e);
+                editor.focus();
             },
             readOnly: false 
         });    
@@ -38,7 +40,9 @@ setTimeout(()=>{
             },
             exec: function(editor) {
                 let e = new MouseEvent('click', {bubbles: true, cancelable: true})
-                bobot_editor.querySelector('button.commit').dispatchEvent(e);
+                let btn = bobot_editor.querySelector('button.commit')
+                btn.dispatchEvent(e);
+                editor.focus();
             },
             readOnly: false 
         });    

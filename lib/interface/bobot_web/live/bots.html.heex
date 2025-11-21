@@ -53,17 +53,15 @@
     </.small_button>
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class={[@current_bot[:changed] && "animate-color" || "", "float-right"]} type="button" 
-      phx-click="save-bot" icon="folder-arrow-down-solid"  keyb="F2">
+      class={[( @current_bot[:changed] == true or (
+        (@current_bot[:name] |> module_name() |> Bobot.Tools.get_module_md5() |> IO.inspect) 
+          != 
+        (@current_bot[:name] |> file_name() |> Bobot.Tools.source_file_md5() |> IO.inspect)
+      )) && "animate-color" || "", "float-right"]} 
+      phx-click="save-bot" icon="folder-arrow-down-solid" type="button" keyb="F2">
       Save
     </.small_button>
 
-<!-- 
-    <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
-      class="float-right" type="button" phx-click="compile-bot" icon="cpu-chip-solid" keyb="F9">
-      Compile
-    </.small_button>
--->
 </header>
 
 <main class="relative flex flex-grow bg-gray-200 text-gray-900 dark:bg-gray-900 dark:text-gray-100">  

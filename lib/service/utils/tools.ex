@@ -201,13 +201,64 @@ defmodule Bobot.Tools do
   @spec compile_file(filename::String.t) ::
         {{:ok, message::String.t}, diag::list()} | {{:error, message::String.t}, diag::list()}
   def compile_file(filename) do
-    Code.with_diagnostics(fn ->
-      try do
-        Code.compile_file(filename)
-        {:ok, "File #{filename} compiled OK!"}
-      rescue
-        error -> {:error, "#{error}"}
+    {{result, message}, real_errors} =
+      Code.with_diagnostics(fn ->
+        try do
+          {module, _} = filename
+            |> Code.compile_file()
+            |> hd
+
+          set_module_md5(module, source_file_md5(filename))
+          {:ok, "File #{filename} compiled OK!"}
+        rescue
+          error -> {:error, "#{error}"}
+        end
+      end)
+
+      case {{result, message}, real_errors} do
+        {{:ok, message}, _} ->
+          {:ok, message}
+
+        {{:error, message}, diagnostic} ->
+          real_error =
+            diagnostic
+            |> Enum.filter(&(&1.severity == :error))
+
+          real_error =
+            if real_error == [] do
+              %{message: message}
+            else
+              hd(real_error)
+            end
+
+          diagnostic_message = real_error[:message]
+          nline =
+            case real_error[:position] do
+              {nline, _} -> nline
+              nline -> nline
+            end
+
+          {{:error, message}, %{nline: nline, message: diagnostic_message}}
       end
-    end)
+  end
+
+  def source_file_md5(filename) do
+    filename
+      |> File.read!()
+      |> Code.string_to_quoted()
+      |> ast_remove_metadata()
+      |> :erlang.term_to_binary()
+      |> :erlang.md5()
+  end
+
+  def set_module_md5(module, md5) do
+    :dets.insert(:compile_db, {module, md5})
+  end
+
+  def get_module_md5(module) do
+    case :dets.lookup(:compile_db, module) do
+      [] -> nil
+      [{_, md5}] -> md5
+    end
   end
 end

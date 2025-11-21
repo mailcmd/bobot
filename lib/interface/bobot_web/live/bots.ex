@@ -302,7 +302,7 @@ defmodule BobotWeb.Bots do
       _ ->
         {:noreply, socket
           |> assign(last_result: :error)
-          |> put_message("There was a problem storing bot!")
+          |> put_message("There was a problem storing BOT!")
         }
     end
   end
@@ -331,61 +331,6 @@ defmodule BobotWeb.Bots do
     }
   end
 
-  # ###############
-  # ### COMPILE BOT
-  # def handle_event("compile-bot", _params, socket) do
-  #   {{result, message}, real_errors} =
-  #     Code.with_diagnostics(fn ->
-  #       try do
-  #         socket.assigns[:current_bot]
-  #           |> bot_to_string()
-  #           |> Code.compile_string()
-  #         {:ok, "Bot compiled OK!"}
-  #       rescue
-  #         error ->
-  #           {:error, "There was a problem compiling the bot! (#{inspect error})"}
-  #       end
-  #     end)
-
-  #   case {{result, message}, real_errors} do
-  #     {{:ok, message}, _} ->
-  #       {:noreply, socket
-  #         |> assign(last_result: result)
-  #         |> put_message(message)
-  #       }
-
-  #     {{:error, message}, real_errors} ->
-  #       error =
-  #         real_errors
-  #         |> Enum.filter(&(&1.severity == :error))
-
-  #       error =
-  #         if error == [] do
-  #           %{message: message}
-  #         else
-  #           hd(error)
-  #         end
-
-  #       error_message = error[:message]
-  #       nline =
-  #         case error[:position] do
-  #           {nline, _} -> nline
-  #           nline -> nline
-  #         end
-
-  #       text = bot_to_string(socket.assigns[:current_bot])
-
-  #       {:noreply, socket
-  #         |> assign(last_result: result)
-  #         |> put_message(message)
-  #         |> push_event("js-exec", %{ js: """
-  #           editor_open('Compile error for #{socket.assigns[:current_bot][:name]}', `#{text}`, true);
-  #           editor_set_status_bar('#{error_message}', #{nline}, true);
-  #         """ })
-  #       }
-
-  #   end
-  # end
 
   ##############
   ### BLOCK MNG
@@ -623,34 +568,26 @@ defmodule BobotWeb.Bots do
   end
 
   defp compile_bot(name) do
-    filename = "#{@bots_dir}/#{name}.ex"
+    filename = file_name(name)
     case Bobot.Tools.compile_file(filename) do
-      {{:ok, _}, _} ->
+      {:ok, _} ->
         {:ok, "Bot compiled OK!"}
 
-      {{:error, error}, diagnostic} ->
-        message = "There was a problem compiling the bot! (#{inspect error})"
-
-        real_error =
-          diagnostic
-          |> Enum.filter(&(&1.severity == :error))
-
-        real_error =
-          if real_error == [] do
-            %{message: message}
-          else
-            hd(real_error)
-          end
-
-        diagnostic_message = real_error[:message]
-        nline =
-          case error[:position] do
-            {nline, _} -> nline
-            nline -> nline
-          end
-
-        {{:error, message}, %{nline: nline, message: diagnostic_message}}
+      {{:error, error}, error_data} ->
+        {{:error, "There was a problem compiling the BOT (#{error})"}, error_data}
     end
+  end
+
+  defp module_name(name) do
+    try do
+      String.to_existing_atom("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}")
+    rescue
+      _ -> nil
+    end
+  end
+
+  defp file_name(name) do
+    "#{@bots_dir}/#{name}.ex"
   end
 
   ################################################################################################
@@ -736,7 +673,8 @@ defmodule BobotWeb.Bots do
   end
 
   def load_bot(name) do
-    "#{@bots_dir}/#{name}.ex"
+    name
+    |> file_name()
     |> Bobot.Tools.ast_from_file()
     |> ast_extract_components()
     |> elem(1)

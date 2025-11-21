@@ -15,21 +15,19 @@ defmodule Bobot.Application do
     #   local_port: Keyword.fetch!(config, :local_port)
     # ]
 
-    # if not File.exists?("config/bobot_config.ex") do
-    #   File.copy!("config/bobot_config.ex.init", "config/bobot_config.ex")
-    # end
-    # Code.compile_file("config/bobot_config.ex")
+    :dets.open_file(:compile_db, file: ~c"priv/compile.db")
+
     bobot_config = Bobot.Config.__info__(:attributes)
 
     telegram_bots = Keyword.get(bobot_config, :telegram_bots, [])
 
     Enum.map(telegram_bots, fn name ->
-      Code.compile_file("#{@bots_dir}/#{name}.ex")
+      Bobot.Tools.compile_file("#{@bots_dir}/#{name}.ex")
     end)
 
     Path.wildcard("#{@apis_dir}/*.ex") |> Enum.map(fn filename ->
       try do
-        Code.compile_file(filename)
+        Bobot.Tools.compile_file(filename)
       rescue
         error -> Logger.log(:error, "[BOBOT] There was a problem compiling #{filename} (#{inspect error})")
       end
@@ -37,7 +35,7 @@ defmodule Bobot.Application do
 
     Path.wildcard("#{@libs_dir}/*.ex") |> Enum.map(fn filename ->
       try do
-        Code.compile_file(filename)
+        Bobot.Tools.compile_file(filename)
       rescue
         error -> Logger.log(:error, "[BOBOT] There was a problem compiling #{filename} (#{inspect error})")
       end
