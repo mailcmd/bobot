@@ -59,7 +59,7 @@ end
 
 ```
 
-How to store on bot body?
+How to store a bot body?
 
 ```elixir
 [:block, [:start, {:receive, {:muid, [], Elixir}}], [
@@ -81,7 +81,7 @@ How to store on bot body?
 lbl  sentency          params        
       (atom)        (quoted expr)    
 
-How would example look?
+How would an example look?
 
 ```elixir
 [0, :defblock, [:start, receive: muid]],
@@ -108,3 +108,25 @@ How would example look?
    }
  ]
 }
+
+## NEW Feature for Telegram:
+
+defchannel :<channel_name> do
+  every <pattern> do
+    ...
+  end
+end
+
+'defchannel' action:
+  - Define 'defcommand "/chsub <channel_name>" 
+    Add to DETS {{:subs, <channel_name>}, <chat_id>}
+  - Define 'defcommand "/chunsub <channel_name>" 
+    Remove from DETS {{:subs, <channel_name>}, <chat_id>}
+
+'every' action:
+  - Create a uniq function with block do...end of every (<every_function>)
+  - Add to ETS (every_db) {{:task, <pattern>}, <channel_name>, <every_function>}
+
+We need a background process running that every minute read every_db rows, for each task 
+check time with <pattern> and if it is a match run <every_function> and send the result to
+the <channel_name>. 
