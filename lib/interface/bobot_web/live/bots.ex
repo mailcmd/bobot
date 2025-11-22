@@ -281,11 +281,17 @@ defmodule BobotWeb.Bots do
     with :ok <- save_bot(current_bot),
          {:ok, message} <- compile_bot(current_bot[:name]) do
 
+      text = bot_to_string(current_bot)
       {:noreply, socket
         |> update(:current_bot, fn cb -> put_in(cb, [:changed], false) end)
         |> assign(last_result: :ok)
         |> put_message(message)
-      }
+        |> push_event("js-exec", %{ js: """
+          editor_set_text(`#{text}`);
+          editor_gotoline(0);
+          editor.focus();
+        """ })
+  }
     else
       {{:error, message}, %{message: error_message, nline: nline}} ->
         text = bot_to_string(current_bot)
