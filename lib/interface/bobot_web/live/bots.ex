@@ -444,7 +444,7 @@ defmodule BobotWeb.Bots do
             if new_bot[:unknown] != nil do
               {:noreply, socket
                 |> assign(last_result: :error)
-                |> put_message("ERROR: You MUST NOT put code out of a 'defblock...'!!", 3500)
+                |> put_message("ERROR: You MUST NOT put code out of a block!!", 3500)
                 |> push_event("js-exec", %{ js: """
                   editor_set_status_bar('ERROR: #{new_bot[:unknown] |> hd() |> Macro.to_string()} is out of a block!!');
                 """ })
@@ -546,6 +546,8 @@ defmodule BobotWeb.Bots do
 
       hooks #{Macro.to_string(bot[:hooks])}
 
+      #{bot_commands_to_source(bot[:commands], no_parens: no_parens)}
+
       #{bot_blocks_to_source(bot[:blocks], no_parens: no_parens)}
     end
     """
@@ -553,9 +555,10 @@ defmodule BobotWeb.Bots do
     |> Enum.join("")
   end
 
-  defp bot_blocks_to_source(blocks, no_parens) when is_map(blocks) do
-     blocks |> Enum.map(fn {n, b} -> Map.put(b, :name, n) end) |> bot_blocks_to_source(no_parens)
+  defp bot_blocks_to_source([{_,_}|_] = blocks, no_parens) do
+     blocks |> Enum.map(fn {_, b} -> b end) |> bot_blocks_to_source(no_parens)
   end
+  defp bot_blocks_to_source(nil, _), do: ""
   defp bot_blocks_to_source([], _), do: ""
   defp bot_blocks_to_source([block | blocks], no_parens) do
     """
@@ -564,6 +567,21 @@ defmodule BobotWeb.Bots do
     end
 
     #{bot_blocks_to_source(blocks, no_parens)}
+    """
+  end
+
+  defp bot_commands_to_source(commands, no_parens) when is_map(commands) do
+     commands |> Enum.into([]) |> bot_commands_to_source(no_parens)
+  end
+  defp bot_commands_to_source(nil, _), do: ""
+  defp bot_commands_to_source([], _), do: ""
+  defp bot_commands_to_source([{command, block} | commands], no_parens) do
+    """
+    defcommand #{Macro.to_string(command)} do
+      #{Bobot.Tools.ast_to_source(block, no_parens)}
+    end
+
+    #{bot_commands_to_source(commands, no_parens)}
     """
   end
 
@@ -616,6 +634,7 @@ defmodule BobotWeb.Bots do
             [], #node,
             put_in(acc, [:hooks], hooks)
           }
+
         {:defblock, _, [block_name, [do: block]]}, acc ->
           block =
             case block do
@@ -625,9 +644,24 @@ defmodule BobotWeb.Bots do
           {
             [], #node,
             acc
-              |> Bobot.Tools.put_inx([:blocks, block_name, :params], [])
-              |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
+              |> update_in([:blocks], fn
+                nil -> [%{
+                    params: [],
+                    block: block,
+                    name: block_name
+                  }]
+                blks ->
+                  [ %{
+                    params: [],
+                    block: block,
+                    name: block_name
+                  } | blks]
+              end)
+              # |> Bobot.Tools.put_inx([:blocks, block_name, :params], [])
+              # |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
+              # |> Bobot.Tools.put_inx([:blocks, block_name, :name], block_name)
           }
+
         {:defblock, _, [block_name, params, [do: block]]}, acc ->
           block =
             case block do
@@ -637,8 +671,34 @@ defmodule BobotWeb.Bots do
           {
             [], #node,
             acc
-              |> Bobot.Tools.put_inx([:blocks, block_name, :params], params)
-              |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
+              |> update_in([:blocks], fn
+                nil -> [%{
+                    params: params,
+                    block: block,
+                    name: block_name
+                  }]
+                blks ->
+                  [ %{
+                    params: params,
+                    block: block,
+                    name: block_name
+                  } | blks]
+              end)
+              # |> Bobot.Tools.put_inx([:blocks, block_name, :params], params)
+              # |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
+              # |> Bobot.Tools.put_inx([:blocks, block_name, :name], block_name)
+          }
+
+        {:defcommand, _, [command, [do: block]]}, acc ->
+          block =
+            case block do
+              {:__block__, _, block} -> block
+              block -> [block]
+            end
+          {
+            [], #node,
+            acc
+              |> Bobot.Tools.put_inx([:commands, command], block)
           }
 
         {:__block__, _, _}, %{hooks: _hooks} = acc ->

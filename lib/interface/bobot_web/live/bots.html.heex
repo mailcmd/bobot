@@ -54,9 +54,9 @@
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
       class={[( @current_bot[:changed] == true or (
-        (@current_bot[:name] |> module_name() |> Bobot.Tools.get_module_md5() |> IO.inspect) 
+        (@current_bot[:name] |> module_name() |> Bobot.Tools.get_module_md5()) 
           != 
-        (@current_bot[:name] |> file_name() |> Bobot.Tools.source_file_md5() |> IO.inspect)
+        (@current_bot[:name] |> file_name() |> Bobot.Tools.source_file_md5())
       )) && "animate-color" || "", "float-right"]} 
       phx-click="save-bot" icon="folder-arrow-down-solid" type="button" keyb="F2">
       Save
@@ -69,7 +69,7 @@
 
   <!-- Blocks -->
   <span :if={@current_bot} class="block flex flex-col flex-wrap">
-    <%= for {name, block_data} <- Map.to_list(@current_bot[:blocks]) do %>
+    <%= for %{name: name} = block_data <- @current_bot[:blocks] do %>
     <span class="defblock">
       <div data-block-name={name} class={[
         "flex-none inline-block min-w-64 relative font-mono text-xs h-fit-content m-2 p-2 pr-10",

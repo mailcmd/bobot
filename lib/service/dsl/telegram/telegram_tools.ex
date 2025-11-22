@@ -2,7 +2,7 @@ defmodule Bobot.DSL.Telegram.Tools do
 
   def info(:sentencies) do
     [
-      {"command", %{
+      {"defcommand", %{
         template: Bobot.DSL.Telegram.Templates,
         tools: Bobot.DSL.Telegram.Tools,
         type: :telegram

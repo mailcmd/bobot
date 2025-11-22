@@ -211,7 +211,7 @@ defmodule Bobot.Tools do
           set_module_md5(module, source_file_md5(filename))
           {:ok, "File #{filename} compiled OK!"}
         rescue
-          error -> {:error, "#{error}"}
+          error -> {:error, "#{inspect error}"}
         end
       end)
 

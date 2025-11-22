@@ -29,7 +29,7 @@ setTimeout(()=>{
                 let e = new MouseEvent('click', {bubbles: true, cancelable: true})
                 let btn = bobot_editor.querySelector('button.commit')
                 btn.dispatchEvent(e);
-                editor.focus();
+                setTimeout(()=>editor.focus(), 200);
             },
             readOnly: false 
         });    
@@ -42,7 +42,7 @@ setTimeout(()=>{
                 let e = new MouseEvent('click', {bubbles: true, cancelable: true})
                 let btn = bobot_editor.querySelector('button.commit')
                 btn.dispatchEvent(e);
-                editor.focus();
+                setTimeout(()=>editor.focus(), 200);
             },
             readOnly: false 
         });    

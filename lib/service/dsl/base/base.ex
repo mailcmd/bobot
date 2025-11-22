@@ -153,12 +153,6 @@ defmodule Bobot.DSL.Base do
   end
 
   defmacro defblock(name, opts \\ [], do: block) do
-    quote do
-      block(unquote(name), unquote(opts), do: unquote(block))
-    end
-  end
-
-  defmacro block(name, opts \\ [], do: block) do
     vars = Keyword.get(opts, :receive, nil)
     quote do
       def run(unquote(name), unquote(vars), var!(sess_id)) do

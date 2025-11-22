@@ -10,8 +10,11 @@ function editor_open(title, text, readonly = false) {
     bobot_editor.showModal();
     editor.selection.clearSelection();
     editor_set_readonly(readonly);
-    editor.focus();
     editor_gotoline(0);
+    setTimeout(() => {
+        editor.focus();
+        document.querySelector('.ace_text-input').focus();
+    }, 100);
 }
 
 function editor_set_readonly(readonly) {
@@ -28,6 +31,7 @@ function editor_set_readonly(readonly) {
         bobot_editor.classList.remove('readonly');
         editor_set_status_bar('');
         editor.renderer.$cursorLayer.element.style.display = 'block';
+        editor.focus();
     }    
 }
 

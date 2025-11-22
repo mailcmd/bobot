@@ -73,11 +73,11 @@ defmodule Bobot.DSL.Telegram do
   end
 
   ## COMMAND
-  defmacro command(command, do: block) do
+  defmacro defcommand(command, do: block) do
     quote do
       def run_command(unquote(command), var!(sess_id), assigns) do
         {pid, _engine} = settings_get(Bobot.Bot.Assigns.get(var!(sess_id), :chat_id))
-        Kernel.send(pid, :stop)
+        Kernel.send(pid, :cancel)
         unquote(block)
       end
     end
@@ -196,6 +196,8 @@ defmodule Bobot.DSL.Telegram do
         receive do
           :stop ->
             Process.exit(self(), :kill)
+          :cancel ->
+            call_block @fallback_block
           message ->
             case unquote(extract_re) do
               nil -> message
