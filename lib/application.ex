@@ -15,7 +15,7 @@ defmodule Bobot.Application do
     #   local_port: Keyword.fetch!(config, :local_port)
     # ]
 
-    :dets.open_file(:compile_db, file: ~c"priv/compile.db")
+    :dets.open_file(:static_db, file: ~c"priv/static.db")
 
     bobot_config = Bobot.Config.__info__(:attributes)
 

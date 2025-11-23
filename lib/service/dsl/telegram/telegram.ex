@@ -30,6 +30,21 @@ defmodule Bobot.DSL.Telegram do
 
       import unquote(__MODULE__)
       import Kernel, except: [send: 2]
+
+      Module.register_attribute(__MODULE__, :bot_channels, persist: true, accumulate: true)
+
+      defcommand "/chsub " <> channel do
+        channel_subscribe(
+          String.to_atom(channel),
+          Bobot.Bot.Assigns.get(var!(sess_id), :chat_id)
+        )
+      end
+      defcommand "/chunsub " <> channel do
+        channel_unsubscribe(
+          String.to_atom(channel),
+          Bobot.Bot.Assigns.get(var!(sess_id), :chat_id)
+        )
+      end
     end
   end
 
@@ -49,29 +64,6 @@ defmodule Bobot.DSL.Telegram do
   ## MACROS
   ################################################################################################
 
-  ## SETTINGS
-  defmacro settings_set(key, value) do
-    quote do
-      Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).set_token_data(@token, unquote(key), unquote(value))
-    end
-  end
-  defmacro settings_set([{key, value}]) do
-    quote do
-      settings_set(unquote(key), unquote(value))
-    end
-  end
-
-  defmacro settings_get(key) do
-    quote do
-      Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).get_token_data(@token, unquote(key))
-    end
-  end
-  defmacro settings_remove(key) do
-    quote do
-      Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).remove_token(@token, unquote(key))
-    end
-  end
-
   ## COMMAND
   defmacro defcommand(command, do: block) do
     quote do
@@ -80,6 +72,14 @@ defmodule Bobot.DSL.Telegram do
         Kernel.send(pid, :cancel)
         unquote(block)
       end
+    end
+  end
+
+  ## CHANNEL
+  defmacro defchannel(channel, do: block) do
+    quote do
+      @bot_channels unquote(channel)
+      unquote(block)
     end
   end
 
@@ -229,6 +229,30 @@ defmodule Bobot.DSL.Telegram do
         end
     end
   end
+
+  ## SETTINGS
+  defmacro settings_set(key, value) do
+    quote do
+      Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).set_token_data(@token, unquote(key), unquote(value))
+    end
+  end
+  defmacro settings_set([{key, value}]) do
+    quote do
+      settings_set(unquote(key), unquote(value))
+    end
+  end
+
+  defmacro settings_get(key) do
+    quote do
+      Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).get_token_data(@token, unquote(key))
+    end
+  end
+  defmacro settings_remove(key) do
+    quote do
+      Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).remove_token(@token, unquote(key))
+    end
+  end
+
 
   ###### FOR BACK COMPATIBILITY ######
   defmacro send(message: message) do

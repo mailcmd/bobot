@@ -252,13 +252,22 @@ defmodule Bobot.Tools do
   end
 
   def set_module_md5(module, md5) do
-    :dets.insert(:compile_db, {module, md5})
+    :dets.insert(:static_db, {{:module, module}, md5})
   end
 
   def get_module_md5(module) do
-    case :dets.lookup(:compile_db, module) do
+    case :dets.lookup(:static_db, {:module, module}) do
       [] -> nil
       [{_, md5}] -> md5
     end
   end
+
+  def channel_subscribe(channel, subject) do
+    :dets.insert(:static_db, {{:channel, channel}, subject})
+  end
+
+  def channel_unsubscribe(channel, subject) do
+    :dets.delete_object(:static_db, {{:channel, channel}, subject})
+  end
+
 end

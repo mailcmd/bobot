@@ -109,19 +109,19 @@ How would an example look?
  ]
 }
 
-## NEW Feature for Telegram:
+# NEW Feature for Telegram:
 
-defchannel :<channel_name> do
+defchannel <channel_name> do
   every <pattern> do
     ...
   end
 end
 
-'defchannel' action:
-  - Define 'defcommand "/chsub <channel_name>" 
-    Add to DETS {{:subs, <channel_name>}, <chat_id>}
-  - Define 'defcommand "/chunsub <channel_name>" 
-    Remove from DETS {{:subs, <channel_name>}, <chat_id>}
+WE MUST DEFINE in telegram.ex (DSL)
+- Define 'defcommand "/chsub <channel_name>" 
+  Will add to DETS {{:subs, <channel_name>}, <chat_id>}
+- Define 'defcommand "/chunsub <channel_name>" 
+  Will remove from DETS {{:subs, <channel_name>}, <chat_id>}
 
 'every' action:
   - Create a uniq function with block do...end of every (<every_function>)
@@ -130,3 +130,21 @@ end
 We need a background process running that every minute read every_db rows, for each task 
 check time with <pattern> and if it is a match run <every_function> and send the result to
 the <channel_name>. 
+
+The users of the bot can subscribe to <channel_name> using '/chsub <channel_name>'. 
+Every 'defchannel' must acumulate in the @bot_channels attribute of the bot the <channel_name>. 
+
+Messages to subscriber can come from 2 source: 
+1. An 'every' task: the 'every' task will be linked to its 'defchannel' parent. When its
+   pattern match, that will trigger the call of uniq function and send the result to the 
+   subs of the channel. 
+2. An API call: bobot app will have a REST API callable with a url when will be possible
+   set channel and contain of the message. In this way will be possible to send message to
+   channel subs from external source. 
+
+~~IMPORTANT!!! When init the app we must create a process (genserver) that will subscribe to~~ 
+~~every channel present in the @bot_channels attribute of every active bot.~~ 
+~~When  dinamically we active a bot the genserver will must subscribe~~
+
+
+
