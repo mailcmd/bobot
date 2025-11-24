@@ -33,16 +33,19 @@ defmodule Bobot.Bot do
       Module.register_attribute(__MODULE__, :bot_config, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_apis, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_libs, persist: true, accumulate: false)
-      @bot_name unquote(name)
+      @bot_name unquote(name) |> Macro.underscore() |> String.to_atom()
       @bot_config unquote(config)
       @bot_apis unquote(apis)
       @bot_libs unquote(libs)
+
+      require Logger
 
       import Bobot.DSL.Base
       use unquote(type_module), config: unquote(config)
       import Bobot.Tools
 
       unquote(import_libs)
+
     end
   end
 

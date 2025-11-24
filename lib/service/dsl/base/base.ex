@@ -253,6 +253,19 @@ defmodule Bobot.DSL.Base do
     end
   end
 
+  # EVERY
+  defmacro every(pattern, do: block) do
+    pattern = Macro.escape(pattern)
+    func = Macro.escape(quote do
+      fn (var!(module), var!(channel)) ->
+        Code.eval_quoted(unquote(Macro.escape(block)), [module: var!(module), channel: var!(channel)]) |> elem(0)
+      end
+    end)
+    quote do
+      Bobot.Tools.task_every_add(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
+    end
+  end
+
   ################################################################################################
   ## MACROS API
   ################################################################################################

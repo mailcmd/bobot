@@ -263,11 +263,16 @@ defmodule Bobot.Tools do
   end
 
   def channel_subscribe(channel, subject) do
-    :dets.insert(:static_db, {{:channel, channel}, subject})
+    IO.inspect :dets.insert(:static_db, {{:channel, channel}, subject})
   end
 
   def channel_unsubscribe(channel, subject) do
     :dets.delete_object(:static_db, {{:channel, channel}, subject})
+  end
+
+  def task_every_add(bot_module, channel, quoted_pattern, quoted_func) do
+    # bot = bot_module.__info__(:attributes)[:bot_name] |> hd()
+    :ets.insert(:volatile_db, {:task, bot_module, channel, quoted_pattern, quoted_func})
   end
 
 end

@@ -15,13 +15,23 @@ defmodule Bobot.Application do
     #   local_port: Keyword.fetch!(config, :local_port)
     # ]
 
+    # init static_db
     :dets.open_file(:static_db, file: ~c"priv/static.db")
+
+    # init volatile_db
+    :ets.new(:volatile_db, [
+      :public,
+      :named_table,
+      write_concurrency: true,
+      read_concurrency: true
+    ])
 
     bobot_config = Bobot.Config.__info__(:attributes)
 
     telegram_bots = Keyword.get(bobot_config, :telegram_bots, [])
 
     Enum.map(telegram_bots, fn name ->
+      Logger.log(:notice, "[BOBOT] Compiling #{name} bot...")
       Bobot.Tools.compile_file("#{@bots_dir}/#{name}.ex")
     end)
 
@@ -54,8 +64,11 @@ defmodule Bobot.Application do
     ++
     Enum.map(telegram_bots, fn name ->
       ## For every telegram bot...
+      Logger.log(:notice, "[BOBOT] Initializing #{name} bot...")
       init_telegram_bot(name)
     end)
+    ++
+    [Bobot.Task]
 
     opts = [strategy: :one_for_one, name: Bobot.Supervisor]
     Supervisor.start_link(children, opts)
@@ -76,6 +89,16 @@ defmodule Bobot.Application do
   def init_telegram_bot(name) do
     bot_module = ("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}"
       |> String.to_existing_atom)
+
+    ## check if bot has channels and init
+    bot_channels = :attributes |> bot_module.__info__() |> Keyword.get(:bot_channels, [])
+    Logger.log(:notice, "[BOBOT] Bot #{name} has channels: #{inspect bot_channels}")
+    Enum.each(bot_channels, fn channel ->
+      Logger.log(:notice, "[BOBOT] Bot #{name} init channel #{channel}")
+      bot_module.init_channel(channel)
+    end)
+
+    ## get bot config
     bot_config = :attributes |> bot_module.__info__() |> Keyword.fetch!(:bot_config)
     token = Keyword.fetch!(bot_config, :token)
     session_ttl = Keyword.fetch!(bot_config, :session_ttl)

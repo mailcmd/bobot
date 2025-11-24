@@ -12,7 +12,6 @@ defmodule Bobot.DSL.Telegram do
 
 
   """
-
   defmacro __using__(opts) do
     session_ttl_default = Application.fetch_env!(:bobot, :telegram_bots_defaults)
       |> Keyword.fetch!(:session_ttl)
@@ -34,17 +33,32 @@ defmodule Bobot.DSL.Telegram do
       Module.register_attribute(__MODULE__, :bot_channels, persist: true, accumulate: true)
 
       defcommand "/chsub " <> channel do
-        channel_subscribe(
+        chat_id = var!(assigns)[:chat_id]
+        Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} subscribed to channel #{channel}")
+        Bobot.Tools.channel_subscribe(
           String.to_atom(channel),
-          Bobot.Bot.Assigns.get(var!(sess_id), :chat_id)
+          chat_id
         )
       end
       defcommand "/chunsub " <> channel do
-        channel_unsubscribe(
+        chat_id = var!(assigns)[:chat_id]
+        Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} unsubscribed to channel #{channel}")
+        Bobot.Tools.channel_unsubscribe(
           String.to_atom(channel),
-          Bobot.Bot.Assigns.get(var!(sess_id), :chat_id)
+          chat_id
         )
       end
+
+      def inform_to_subscribers(channel, subscribers, message) do
+        Enum.each(subscribers, fn chat_id ->
+          Telegram.Api.request(@token, "sendMessage",
+            chat_id: chat_id,
+            text: message,
+            parse_mode: "HTML"
+          )
+        end)
+      end
+
     end
   end
 
@@ -67,9 +81,12 @@ defmodule Bobot.DSL.Telegram do
   ## COMMAND
   defmacro defcommand(command, do: block) do
     quote do
-      def run_command(unquote(command), var!(sess_id), assigns) do
-        {pid, _engine} = settings_get(Bobot.Bot.Assigns.get(var!(sess_id), :chat_id))
-        Kernel.send(pid, :cancel)
+      def run_command(unquote(command), var!(sess_id), var!(assigns)) do
+        if var!(sess_id) != nil do
+          chat_id = var!(assigns)[:chat_id]
+          {pid, _engine} = settings_get(chat_id)
+          Kernel.send(pid, :cancel)
+        end
         unquote(block)
       end
     end
@@ -79,7 +96,9 @@ defmodule Bobot.DSL.Telegram do
   defmacro defchannel(channel, do: block) do
     quote do
       @bot_channels unquote(channel)
-      unquote(block)
+      def init_channel(unquote(channel) = var!(channel_name)) do
+        unquote(block)
+      end
     end
   end
 

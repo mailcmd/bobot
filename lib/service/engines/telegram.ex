@@ -58,10 +58,11 @@ defmodule Bobot.Engine.Telegram do
       end)
       |> Enum.into(%{})
 
+    sess_id = random_id()
+
     # If IT IS NOT a command run start_bot
     if Storage.get_token_data(token, :commands_as_message) or not match?([%{"type" => "bot_command"}], get_in(chat.update, ["message", "entities"])) do
       module = Storage.get_token_data(token, :module)
-      sess_id = random_id()
       pid =
         if module do
           spawn(fn ->
@@ -76,11 +77,12 @@ defmodule Bobot.Engine.Telegram do
       else
         Storage.set_token_data(token, chat.id, {pid, self()})
         Storage.set_token_data(token, :sess_id, sess_id)
-        Logger.log(:notice, "#{@log_prefix} Initializing chat with #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
+        Logger.log(:notice, "#{@log_prefix} Initializing chat from #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
         {:ok, chat.id, Storage.get_token_data(token, :session_ttl)}
       end
     # If it is a command (handle_update will manage the command)
     else
+      # Storage.set_token_data(token, :sess_id, sess_id)
       Logger.log(:notice, "#{@log_prefix} Initializing command with #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
       {:ok, chat.id, Storage.get_token_data(token, :session_ttl)}
     end
@@ -107,9 +109,8 @@ defmodule Bobot.Engine.Telegram do
   ###########
   ## COMMANDS
   def handle_update(%{"message" => %{"text" => command, "chat" => %{"id" => chat_id}, "entities" => [%{"type" => "bot_command"}], }} = update, token, chat_id)
-    when byte_size(command) > 0 do
+      when byte_size(command) > 0 do
     Logger.log(:notice, "#{@log_prefix} Received command: #{command}")
-
     # If commands must not be processed trait it as simple text
     if Storage.get_token_data(token, :commands_as_message) do
       handle_update(%{"message" => %{"text" => command, "chat" => %{"id" => chat_id}}}, token, chat_id)

@@ -7,6 +7,11 @@ defmodule Bobot.DSL.Telegram.Tools do
         tools: Bobot.DSL.Telegram.Tools,
         type: :telegram
       }},
+      {"defchannel", %{
+        template: Bobot.DSL.Telegram.Templates,
+        tools: Bobot.DSL.Telegram.Tools,
+        type: :telegram
+      }},
       {"await_response", %{
         template: Bobot.DSL.Telegram.Templates,
         tools: Bobot.DSL.Telegram.Tools,

@@ -19,32 +19,18 @@ defbot :smi,
     fallback_block: :good_bye
   )
 
+  defchannel :test do
+    every {{_, _, _}, {_, _, _}} do
+      "#{module} #{channel}"
+    end
+  end
+
   defcommand "/start " <> algo do
     send_message "Parece que andubo #{algo}"
   end
 
-  defblock :loop do
-    await_response store_in: id
-    send_message "<i>Estoy pensando, esperá unos segundos...</i>"
-    call_api :find_user, params: id
-    call_block session_value([:find_user, :result_type])
-    call_block :loop
-  end
-
-  defblock :good_bye do
-    terminate message: @bot_config[:expire_message]
-  end
-
-  defblock :ftth do
+  defblock :docsis do
     send_message session_value([:find_user, :data])
-  end
-
-  defblock :fall_back do
-    send_message "Lo siento, tengo que resetearme!"
-  end
-
-  defblock :error do
-    send_message "Lo siento no encontré nada o algo salió mal 😢"
   end
 
   defblock :start, receive: muid do
@@ -61,7 +47,27 @@ defbot :smi,
     end
   end
 
-  defblock :docsis do
+  defblock :error do
+    send_message "Lo siento no encontré nada o algo salió mal 😢"
+  end
+
+  defblock :fall_back do
+    send_message "Lo siento, tengo que resetearme!"
+  end
+
+  defblock :ftth do
     send_message session_value([:find_user, :data])
+  end
+
+  defblock :good_bye do
+    terminate message: @bot_config[:expire_message]
+  end
+
+  defblock :loop do
+    await_response store_in: id
+    send_message "<i>Estoy pensando, esperá unos segundos...</i>"
+    call_api :find_user, params: id
+    call_block session_value([:find_user, :result_type])
+    call_block :loop
   end
 end

@@ -61,6 +61,12 @@ defmodule Bobot.DSL.Base.Tools do
         tools: Bobot.DSL.Base.Tools,
         type: :base,
         visible: false
+      }},
+      {"every", %{
+        template: Bobot.DSL.Base.Templates,
+        tools: Bobot.DSL.Base.Tools,
+        type: :base,
+        visible: true
       }}
     ]
   end

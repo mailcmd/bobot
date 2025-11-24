@@ -552,6 +552,8 @@ defmodule BobotWeb.Bots do
 
       hooks #{Macro.to_string(bot[:hooks])}
 
+      #{bot_channels_to_source(bot[:channels], no_parens: no_parens)}
+
       #{bot_commands_to_source(bot[:commands], no_parens: no_parens)}
 
       #{bot_blocks_to_source(bot[:blocks], no_parens: no_parens)}
@@ -591,7 +593,22 @@ defmodule BobotWeb.Bots do
     """
   end
 
-  defp compile_bot(name) do
+  defp bot_channels_to_source(channels, no_parens) when is_map(channels) do
+    channels |> Enum.into([]) |> bot_channels_to_source(no_parens)
+ end
+ defp bot_channels_to_source(nil, _), do: ""
+ defp bot_channels_to_source([], _), do: ""
+ defp bot_channels_to_source([{channel, block} | channels], no_parens) do
+   """
+   defchannel #{Macro.to_string(channel)} do
+     #{Bobot.Tools.ast_to_source(block, no_parens)}
+   end
+
+   #{bot_channels_to_source(channels, no_parens)}
+   """
+ end
+
+ defp compile_bot(name) do
     filename = file_name(name)
     case Bobot.Tools.compile_file(filename) do
       {:ok, _} ->
@@ -707,7 +724,19 @@ defmodule BobotWeb.Bots do
               |> Bobot.Tools.put_inx([:commands, command], block)
           }
 
-        {:__block__, _, _}, %{hooks: _hooks} = acc ->
+          {:defchannel, _, [channel, [do: block]]}, acc ->
+            block =
+              case block do
+                {:__block__, _, block} -> block
+                block -> [block]
+              end
+            {
+              [], #node,
+              acc
+                |> Bobot.Tools.put_inx([:channels, channel], block)
+            }
+
+          {:__block__, _, _}, %{hooks: _hooks} = acc ->
           {[], acc}
 
         {:__block__, _, _}, %{blocks: _blocks} = acc ->

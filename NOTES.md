@@ -119,17 +119,24 @@ end
 
 WE MUST DEFINE in telegram.ex (DSL)
 - Define 'defcommand "/chsub <channel_name>" 
-  Will add to DETS {{:subs, <channel_name>}, <chat_id>}
+  Will add to static_db {{:subs, <channel_name>}, <chat_id>}
 - Define 'defcommand "/chunsub <channel_name>" 
-  Will remove from DETS {{:subs, <channel_name>}, <chat_id>}
+  Will remove from static_db {{:subs, <channel_name>}, <chat_id>}
+
+'defchannel' action:
+  - add to @bot_channels attr the <channel_name>
+  - create the function 'init_channel(<channel_name>)' that run <block>
 
 'every' action:
+  - Add to ETS (volatile_db) {{:task, <pattern>}, <channel_name>, <every_function>}
   - Create a uniq function with block do...end of every (<every_function>)
-  - Add to ETS (every_db) {{:task, <pattern>}, <channel_name>, <every_function>}
 
-We need a background process running that every minute read every_db rows, for each task 
-check time with <pattern> and if it is a match run <every_function> and send the result to
-the <channel_name>. 
+When bobot start will check if every active bot has defined @bot_channels attribute. It it 
+has, then will run 'init_channel(<channel_name>)'. 
+
+Also bobot will start a background process that every minute read volatile_db and for each 
+task that match the current time with <pattern> run <every_function> and send the result to
+the subs of <channel_name>. 
 
 The users of the bot can subscribe to <channel_name> using '/chsub <channel_name>'. 
 Every 'defchannel' must acumulate in the @bot_channels attribute of the bot the <channel_name>. 
@@ -138,7 +145,7 @@ Messages to subscriber can come from 2 source:
 1. An 'every' task: the 'every' task will be linked to its 'defchannel' parent. When its
    pattern match, that will trigger the call of uniq function and send the result to the 
    subs of the channel. 
-2. An API call: bobot app will have a REST API callable with a url when will be possible
+2. An API call: bobot app will have a REST API callable with a url that will 
    set channel and contain of the message. In this way will be possible to send message to
    channel subs from external source. 
 
