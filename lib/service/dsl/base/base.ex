@@ -123,7 +123,7 @@ defmodule Bobot.DSL.Base do
   end
 
   defmacro hooks(opts \\ []) do
-    start = Keyword.fetch!(opts, :start_block)
+    start = Keyword.get(opts, :start_block)
     params = Keyword.get(opts, :start_params_count, 0)
     params = (for l <- ?a..?z, do: <<l>>)
       |> Enum.take(params)
@@ -134,8 +134,8 @@ defmodule Bobot.DSL.Base do
         length(params) == 1 -> hd(params)
         true -> params
       end
-    stop = Keyword.get(opts, :stop_block, nil)
-    fallback = Keyword.fetch!(opts, :fallback_block)
+    stop = Keyword.get(opts, :stop_block)
+    fallback = Keyword.get(opts, :fallback_block)
     quote do
       @fallback_block unquote(fallback)
       def start_bot(unquote(params), var!(sess_id), assigns \\ %{}) do
