@@ -101,19 +101,18 @@ Syntax:
 
 ```Elixir 
 # without parameters (hook start_params_count: 0)
-defblock <name> do 
+defblock <atom_name> do 
   ...
 end
 
 # with parameters 
-defblock <name>, receive: <params> do 
+defblock <atom_name>, receive: <params> do 
   ...
 end
 ```
 
 Notes:
-- `<name>`: atom
-- `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
+- `<params>`: can be `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
 
 ### defcommand
@@ -126,64 +125,60 @@ end
 ```
 
 Notes:
-- `<pattern>`: an Elixir pattern (ex: `"/help " <> topic`)
+- `<pattern>`: an Elixir pattern (ex: `"/help " <> topic`, this example will match commands that
+  start with "/help " and will store in the variable `topic` everything that follows).
 
 
 ### defchannel
 Syntax:
 
 ```Elixir 
-defchannel <name> do 
+defchannel <atom_name> do 
   ...
 end
 ```
-
-Notes:
-- `<pattern>`: an Elixir pattern (ex: `"/help " <> topic`, this example will match commands that
-  start with "/help " and will store in the variable `topic` everything that follows).
 
 ### call_block
 Syntax:
 
 ```Elixir 
 # without parameters
-call_block <name> 
+call_block <atom_name> 
 
 # with parameters 
-call_block <name>, params: <params> 
+call_block <atom_name>, params: <params> 
 ```
 
 Notes:
-- `<name>`: atom
 - `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
 
 ### call_api
-See `defapi` for more details. 
+See `defapi` in **APIs** for more details. 
 
 Syntax:
 
 ```Elixir 
+# The APIs ids are defined inside an API with `defcall` sentency. Se APIs for more details.
+
 # without parameters
-call_api <id> 
+call_api <atom_id> 
 
 # with parameters 
-call_api <id>, params: <params> 
+call_api <atom_id>, params: <params> 
 ```
 
 Notes:
-- `<id>`: atom
 - `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
 ### call_http
 Syntax:
 
 ```Elixir 
-call_http <url>, <opts> 
+call_http <string_url>, <opts> 
 ```
 
 Notes:
-- `<url>`: a string
 - `<opts>`: a list with all or just some of this parameters
   ```elixir
   [
@@ -275,7 +270,6 @@ Notes:
   be: `{{_, _, _}, {_, 0, _}}`. This pattern will match every 1 hour exactly at 0 minutes (00:00, 
   01:00, 02:00, ... etc). 
 
-### session_data
 
 
 
