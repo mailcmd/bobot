@@ -70,8 +70,8 @@ defblock <name>, receive: <params> do
 end
 ```
 
-- <name>: atom
-- <params>: <varname> or [<varname1>, <varname2>, ...]
+- `<name>`: atom
+- `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
 
 
