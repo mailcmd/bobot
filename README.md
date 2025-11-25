@@ -17,14 +17,18 @@ A tool where YOU are the one who build solutions!!
 - [x] Move render_table from telegram to tools
 - [x] Make assigns variable more specific for every step
 - [x] Base: call_http 
-- [x] Make the API Creator interface
+- [x] Make the Creator interface
       [x] defapi 
       [x] defcall 
+- [ ] Default commands: help, chsub, chunsub, chls
 - [ ] Duplicate BOT y API
-- [ ] Telegram: add send_image 
-- [ ] Interface web: add Telegram "command ..." as blocks
-- [ ] Base: add task schedule that trigger blocks every time period
+- [x] Telegram: add send_image 
+- [x] Interface web: add Telegram "command ..." as blocks
+- [ ] Base: add task schedule that trigger actions every time period
+- [ ] API to sent messages to channels
 - [ ] See what can make with connections between blocks
+
+
 ```elixir
   # look for call_block's
   Bobot.Tools.ast_find(b[:loop][:block], :call_block) |> Enum.map( fn {_,_, [x]} -> x end) |> Enum.filter(&is_atom/1)

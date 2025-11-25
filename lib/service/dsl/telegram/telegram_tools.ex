@@ -27,6 +27,11 @@ defmodule Bobot.DSL.Telegram.Tools do
         tools: Bobot.DSL.Telegram.Tools,
         type: :telegram
       }},
+      {"send_image", %{
+        template: Bobot.DSL.Telegram.Templates,
+        tools: Bobot.DSL.Telegram.Tools,
+        type: :telegram
+      }},
       {"send_menu", %{
         template: Bobot.DSL.Telegram.Templates,
         tools: Bobot.DSL.Telegram.Tools,

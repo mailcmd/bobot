@@ -47,7 +47,7 @@ defmodule Bobot.Engine.Telegram do
   def init(chat, token) do
 
     assigns = chat.metadata.chat
-      |> put_in([:sessions_db], Storage)
+      # |> put_in([:sessions_db], Storage)
       |> put_in([:token], token)
       |> Map.delete("id")
       |> put_in([:chat_id], chat.id)
@@ -77,35 +77,19 @@ defmodule Bobot.Engine.Telegram do
       else
         Storage.set_token_data(token, chat.id, {pid, self()})
         Storage.set_token_data(token, :sess_id, sess_id)
-        Logger.log(:notice, "#{@log_prefix} Initializing chat from #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
+        Logger.log(:notice, "#{@log_prefix} Initializing chat with #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
         {:ok, chat.id, Storage.get_token_data(token, :session_ttl)}
       end
     # If it is a command (handle_update will manage the command)
     else
-      # Storage.set_token_data(token, :sess_id, sess_id)
-      Logger.log(:notice, "#{@log_prefix} Initializing command with #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
+      Storage.set_token_data(token, :sess_id, sess_id)
+      Logger.log(:notice, "#{@log_prefix} Initializing command from #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
       {:ok, chat.id, Storage.get_token_data(token, :session_ttl)}
     end
 
   end
 
   @impl Telegram.ChatBot
-  ###########
-  ## VOICE
-  def handle_update(%{"message" => %{"message_id" => message_id, "voice" => _voice}}, token, chat_id) do
-    Logger.log(:notice, "#{@log_prefix} Received voice!")
-    Telegram.Api.request(token, "deleteMessage",
-      chat_id: chat_id,
-      message_id: message_id
-    )
-    Telegram.Api.request(token, "sendMessage",
-      chat_id: chat_id,
-      text: "<i>¡No están permitidos los mensajes de voz!</i>",
-      parse_mode: "HTML"
-    )
-    {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
-  end
-
   ###########
   ## COMMANDS
   def handle_update(%{"message" => %{"text" => command, "chat" => %{"id" => chat_id}, "entities" => [%{"type" => "bot_command"}], }} = update, token, chat_id)
@@ -118,7 +102,7 @@ defmodule Bobot.Engine.Telegram do
     else
       module = Storage.get_token_data(token, :module)
       assigns = get_in(update, ["message", "chat"])
-        |> put_in([:sessions_db], Storage)
+        # |> put_in([:sessions_db], Storage)
         |> put_in([:token], token)
         |> put_in([:chat_id], chat_id)
         |> Enum.map(fn
@@ -128,6 +112,7 @@ defmodule Bobot.Engine.Telegram do
         |> Enum.into(%{})
 
       sess_id = Storage.get_token_data(token, :sess_id)
+      Bobot.Bot.Assigns.set_all(sess_id, assigns)
       pid = spawn(fn ->
         module.run_command(command, sess_id, assigns)
       end)
@@ -204,6 +189,22 @@ defmodule Bobot.Engine.Telegram do
     else
       {:ok, chat_id, 1}
     end
+  end
+
+  ###########
+  ## VOICE
+  def handle_update(%{"message" => %{"message_id" => message_id, "voice" => _voice}}, token, chat_id) do
+    Logger.log(:notice, "#{@log_prefix} Received voice!")
+    Telegram.Api.request(token, "deleteMessage",
+      chat_id: chat_id,
+      message_id: message_id
+    )
+    Telegram.Api.request(token, "sendMessage",
+      chat_id: chat_id,
+      text: "<i>¡No están permitidos los mensajes de voz!</i>",
+      parse_mode: "HTML"
+    )
+    {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
   end
 
   ###########

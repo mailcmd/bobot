@@ -25,8 +25,8 @@ defbot :smi,
     end
   end
 
-  defcommand "/start " <> algo do
-    send_message "Parece que andubo #{algo}"
+  defcommand "/image" do
+    send_image "/download/logo-smi.png"
   end
 
   defblock :docsis do

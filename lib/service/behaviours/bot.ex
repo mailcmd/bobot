@@ -27,8 +27,6 @@ defmodule Bobot.Bot do
     config = Keyword.get(opts, :config, [])
 
     quote do
-      @after_compile unquote(__MODULE__)
-
       Module.register_attribute(__MODULE__, :bot_name, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_config, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_apis, persist: true, accumulate: false)
@@ -49,9 +47,4 @@ defmodule Bobot.Bot do
     end
   end
 
-  defmacro __after_compile__(_env, _) do
-    quote do
-      def run_command(cmd, _), do: IO.inspect(cmd, label: "FALLBACK")
-    end
-  end
 end

@@ -50,6 +50,7 @@ defmodule Bobot.DSL.Base do
   @http_default_opts [
     method: :get,
     auth: :none,
+    return_json: true,
     post_data: %{}
   ]
 
@@ -85,11 +86,15 @@ defmodule Bobot.DSL.Base do
         :post -> Tesla.post(Tesla.client(client), url, opts[:post_data])
       end
 
-    with  {:ok, %Tesla.Env{body: body}} <- result,
-          {:ok, json} <- Jason.decode(body, keys: :atoms) do
-      json
+    if opts[:return_json] do
+      with  {:ok, %Tesla.Env{body: body}} <- result,
+            {:ok, json} <- Jason.decode(body, keys: :atoms) do
+        json
+      else
+        error -> %{error: error}
+      end
     else
-      error -> %{error: error}
+      result
     end
   end
 
@@ -117,7 +122,6 @@ defmodule Bobot.DSL.Base do
     end
   end
 
-  ## BLOCK
   defmacro hooks(opts \\ []) do
     start = Keyword.fetch!(opts, :start_block)
     params = Keyword.get(opts, :start_params_count, 0)
@@ -152,6 +156,7 @@ defmodule Bobot.DSL.Base do
     end
   end
 
+  ## BLOCK
   defmacro defblock(name, opts \\ [], do: block) do
     vars = Keyword.get(opts, :receive, nil)
     quote do
@@ -161,6 +166,34 @@ defmodule Bobot.DSL.Base do
     end
   end
 
+  ## COMMAND
+  defmacro defcommand(command, do: block) do
+    quote do
+      def run_command(unquote(command), var!(sess_id), var!(assigns)) do
+        # if var!(sess_id) != nil do
+        #   chat_id = var!(assigns)[:chat_id]
+        #   case get_token_data(chat_id) do
+        #     {pid, _engine} -> Kernel.send(pid, :cancel)
+        #     _ -> :ok
+        #   end
+        # end
+        unquote(block)
+        # terminate()
+      end
+    end
+  end
+
+  ## CHANNEL
+  defmacro defchannel(channel, do: block) do
+    quote do
+      @bot_channels unquote(channel)
+      def init_channel(unquote(channel) = var!(channel_name)) do
+        unquote(block)
+      end
+    end
+  end
+
+  ################################################################################################
   defmacro call_block(name, opts \\ []) do
     params = Keyword.get(opts, :params, nil)
     quote do
