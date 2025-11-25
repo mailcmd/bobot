@@ -1,36 +1,5 @@
 defmodule Bobot.DSL.Base do
-  @moduledoc """
-  This base module add the following sentencies:
-
-    - bot_config [
-        start_block: <start_block>,
-        start_params: <vars>,
-        stop_block: <stop_block>,
-        fallback_block: <fallback_block>
-      ]
-      [#] Configure the bot's main blocks
-
-    - block [attrs] do ... end
-      [#] Define a block and its logic
-
-    - value_of <key> [, <operator>: value]
-      [#] With just the key, get the value stored in the current session, plus "<operator>: value"
-          eval the expression and return true or false.
-
-    - session_value <key> [, <operator>: value]
-      [#] Same as 'value_of'.
-
-    - store <kw_pairs>
-      [#] Store in session the keyword pairs. You can access this values witn 'value_of' or
-          'session_value'.
-
-    - call_block <block_name> [, params: <params>]
-      [#] Jump bot running flow to the block <block_name>
-
-    - call_api <call_id>, params: <params>
-      [#] Call the api and the map resulting from the call is added to sessions values.
-
-  """
+  @moduledoc false
 
   ################################################################################################
   ## UTILS

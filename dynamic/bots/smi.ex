@@ -9,8 +9,7 @@ defbot :smi,
     token: "8241208776:AAHz1-OjK94w_L0RIuIDoReuaZnJX0IWSXI",
     session_ttl: 300_000,
     max_bot_concurrency: 1000,
-    expire_message: "El tiempo de espera se agotó. Empezá de nuevo.",
-    use_api: Bobot.API.SMI
+    expire_message: "El tiempo de espera se agotó. Empezá de nuevo."
   ] do
   hooks(
     start_block: :start,

@@ -53,9 +53,48 @@ A bot is made up of one or more of the 3 basic blocks defined in Bobot:
     result of the task to the subscribers. A channel is defined with `defchannel` sentency.
 
 
-# DSL specs
+# DSL Base specs
 
-## DSL Base 
+## Static definitions 
+
+This sentencies are used just one time per bot. 
+
+### defbot
+Syntax:
+
+```Elixir 
+defbot <name>,  [
+  type: <atom_type>,
+  use_apis: <list_of_atoms>,
+  use_libs: <list_of_atoms>,
+  config: [ # this config is specific for each type of bot, example below is for type :telegram 
+    token: <string>,
+    session_ttl: <integer_miliseconds>,
+    max_bot_concurrency: <integer>,
+    expire_message: <string>
+  ]
+] do 
+  # Here the code of the bot. See below for sentencies availables
+  ...
+  ...
+end
+```
+
+### hooks
+`hooks` sentency will be defined inside `defbot _ do ... end` block.  
+
+Syntax:
+
+```Elixir 
+  hooks [
+    start_block: <atom_block_name>,
+    start_params_count: <integer>,
+    stop_block: <atom_block_name>,
+    fallback_block: <atom_block_name>
+  ]
+```
+
+## Generic sentencies for bots
 
 ### defblock
 Syntax:
@@ -72,10 +111,171 @@ defblock <name>, receive: <params> do
 end
 ```
 
-Detail:
+Notes:
 - `<name>`: atom
 - `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
+
+### defcommand
+Syntax:
+
+```Elixir 
+defcommand <pattern> do 
+  ...
+end
+```
+
+Notes:
+- `<pattern>`: an Elixir pattern (ex: `"/help " <> topic`)
+
+
+### defchannel
+Syntax:
+
+```Elixir 
+defchannel <name> do 
+  ...
+end
+```
+
+Notes:
+- `<pattern>`: an Elixir pattern (ex: `"/help " <> topic`, this example will match commands that
+  start with "/help " and will store in the variable `topic` everything that follows).
+
+### call_block
+Syntax:
+
+```Elixir 
+# without parameters
+call_block <name> 
+
+# with parameters 
+call_block <name>, params: <params> 
+```
+
+Notes:
+- `<name>`: atom
+- `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
+
+
+### call_api
+See `defapi` for more details. 
+
+Syntax:
+
+```Elixir 
+# without parameters
+call_api <id> 
+
+# with parameters 
+call_api <id>, params: <params> 
+```
+
+Notes:
+- `<id>`: atom
+- `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
+
+### call_http
+Syntax:
+
+```Elixir 
+call_http <url>, <opts> 
+```
+
+Notes:
+- `<url>`: a string
+- `<opts>`: a list with all or just some of this parameters
+  ```elixir
+  [
+    method: :get,         # atoms :get or :post
+    auth: :none,          # atoms :none or :basic 
+    username: "<string>", # if auth: :basic
+    password: "<string>", # if auth: :basic
+    return_json: true,    # if true decode the body response as json and return a map
+                          # if false return the raw body
+    post_data: %{}        # a map with the post parameters 
+  ]
+  ```
+
+### session_data
+Return a map with all the datas accumulated during the session. 
+
+Syntax:
+
+```Elixir 
+session_data() # pay attention at parenthesis, they are mandatory
+
+# You could use it also in this way
+session_data()[:firstname] # :firstname is an example
+```
+
+### session_data
+Return a map with all the datas accumulated during the session. 
+
+Syntax:
+
+```Elixir 
+session_data() # pay attention at parenthesis, they are mandatory
+
+# You could use it also in this way
+session_data()[:firstname] # :firstname is an example
+```
+
+### session_value
+Recover a value from the session. Also allow in the same sentency recover and compare the value to
+return a boolean value (see examples before)
+
+Syntax:
+
+```Elixir 
+session_value <atom_key>[, <expr>]
+
+# Examples
+## get the value
+session_value :firstname 
+## or if you want store it in a variable
+firstname = session_value :firstname 
+
+## compare the value (guessing that session_value :firstname is "jimmy")
+session_value :firstname, is: "jimmy"      # true
+session_value :firstname, is_not: "jimmy"  # false
+session_value :firstname, contains: "mm"   # true
+session_value :firstname, icontains: "MM"  # true (ignore case)
+session_value :firstname, match: ~r/^.i.+/ # true (regex for second letter is "i")
+```
+
+### session_store
+Store one or more values in the session. 
+
+Syntax:
+
+```Elixir 
+session_store <atom_key>, <value>
+# Examples
+session_store {:firstname, "jimmy"}
+session_store firstname: "jimmy"
+session_store firstname: "jimmy", lastname: "carter"
+```
+
+
+### every 
+This sentency must be used inside a `defchannel _ do ... end` block. 
+
+Syntax:
+
+```Elixir 
+every <pattern> do 
+  ...
+end
+```
+
+Notes:
+- `<pattern>`: a special elixir pattern that must match erlang local_time. The erlang local_time
+  function return `{{<year>, <month>, <day>}, {<hour>, <min>, <secs>}}`. A example pattern could 
+  be: `{{_, _, _}, {_, 0, _}}`. This pattern will match every 1 hour exactly at 0 minutes (00:00, 
+  01:00, 02:00, ... etc). 
+
+### session_data
 
 
 
