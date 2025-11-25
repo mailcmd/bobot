@@ -21,16 +21,16 @@ expert, it is important to know al least a little about the fundamentals of Elix
 
 A bot is made up of one or more of the 3 basic blocks defined in Bobot: 
 
-- *block*: A *block* is one of the basic unit to build bots. It is defined with `defblock` 
-    sentency and inside details a secuence of actions. The *blocks* are structures callables that 
-    can be invoked from initial hooks, fron another *block*, or from a *command* (see below). 
+- **block**: A **block** is one of the basic unit to build bots. It is defined with `defblock` 
+    sentency and inside details a secuence of actions. The **blocks** are structures callables that 
+    can be invoked from initial hooks, fron another **block**, or from a **command** (see below). 
 
-- *command*: It is another basic unit. Some bots engine (example Telegram) allow define special
-    message that are *commands*. These *commands* can interrupt the normal flow of the bot and 
-    trigger some specific action. For defining a *command* block it is used `defcommand`. 
+- **command**: It is another basic unit. Some bots engine (example Telegram) allow define special
+    message that are **commands**. These **commands** can interrupt the normal flow of the bot and 
+    trigger some specific action. For defining a **command** block it is used `defcommand`. 
 
-- *channel*: A *channel* is a special block that define a kind of group of news for subscribers. 
-    The user of the bot can send with a special command a subs or unsubs to the *channel* defined.
+- **channel**: A **channel** is a special block that define a kind of group of news for subscribers. 
+    The user of the bot can send with a special command a subs or unsubs to the **channel** defined.
     Inside a channel you can define periodic task that will run every period and will send the 
     result of the task to the subscribers. A channel is defined with `defchannel` sentency.
 
