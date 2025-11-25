@@ -61,17 +61,18 @@ A bot is made up of one or more of the 3 basic blocks defined in Bobot:
 Syntax:
 
 ```Elixir 
+# without parameters (hook start_params_count: 0)
 defblock <name> do 
   ...
 end
-```
-or
-```Elixir 
+
+# with parameters 
 defblock <name>, receive: <params> do 
   ...
 end
 ```
 
+Detail:
 - `<name>`: atom
 - `<params>`: `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
