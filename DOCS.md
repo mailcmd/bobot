@@ -57,7 +57,9 @@ A bot is made up of one or more of the 3 basic blocks defined in Bobot:
 
 ## DSL Base 
 
-**defblock**
+### defblock
+Syntax:
+
 ```Elixir 
 defblock <name> do 
   ...
