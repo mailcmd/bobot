@@ -58,7 +58,7 @@ function editor_set_operation(e, ope) {
 }
 
 function editor_gotoline(nline, select_line = false) {
-    editor.gotoLine(nline);
+    editor.gotoLine(...[nline].flat());
     if (select_line) editor.selection.selectLine();
     editor.focus();
 }

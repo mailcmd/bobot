@@ -287,8 +287,9 @@ defmodule BobotWeb.Bots do
         |> assign(last_result: :ok)
         |> put_message(message)
         |> push_event("js-exec", %{ js: """
+          let {row, column} = editor.getCursorPositionScreen();
           editor_set_text(`#{text}`);
-          editor_gotoline(0);
+          editor_gotoline([row + 1, column])
           editor.focus();
         """ })
   }
@@ -534,6 +535,7 @@ defmodule BobotWeb.Bots do
   defp save_bot(bot, filename), do: File.write(filename, bot_to_string(bot))
 
   defp bot_to_string(bot) do
+
     except = [:hooks]
     no_parens =
       get_sentencies()
@@ -619,14 +621,6 @@ defmodule BobotWeb.Bots do
     end
   end
 
-  defp module_name(name) do
-    try do
-      String.to_existing_atom("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}")
-    rescue
-      _ -> nil
-    end
-  end
-
   defp file_name(name) do
     "#{@bots_dir}/#{name}.ex"
   end
@@ -674,15 +668,12 @@ defmodule BobotWeb.Bots do
                     name: block_name
                   }]
                 blks ->
-                  [ %{
+                  blks ++ [ %{
                     params: [],
                     block: block,
                     name: block_name
-                  } | blks]
+                  } ]
               end)
-              # |> Bobot.Tools.put_inx([:blocks, block_name, :params], [])
-              # |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
-              # |> Bobot.Tools.put_inx([:blocks, block_name, :name], block_name)
           }
 
         {:defblock, _, [block_name, params, [do: block]]}, acc ->
@@ -701,15 +692,12 @@ defmodule BobotWeb.Bots do
                     name: block_name
                   }]
                 blks ->
-                  [ %{
+                  blks ++ [ %{
                     params: params,
                     block: block,
                     name: block_name
-                  } | blks]
+                  }]
               end)
-              # |> Bobot.Tools.put_inx([:blocks, block_name, :params], params)
-              # |> Bobot.Tools.put_inx([:blocks, block_name, :block], block)
-              # |> Bobot.Tools.put_inx([:blocks, block_name, :name], block_name)
           }
 
         {:defcommand, _, [command, [do: block]]}, acc ->

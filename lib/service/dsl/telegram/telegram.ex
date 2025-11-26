@@ -23,6 +23,10 @@ defmodule Bobot.DSL.Telegram do
     max_bot_concurrency = Keyword.get(config, :max_bot_concurrency, 1_000)
 
     quote do
+      @bots_dir Application.compile_env(:bobot, :bots_dir)
+      @apis_dir Application.compile_env(:bobot, :apis_dir)
+      @libs_dir Application.compile_env(:bobot, :libs_dir)
+
       @before_compile unquote(__MODULE__)
 
       @token unquote(token)
@@ -59,6 +63,33 @@ defmodule Bobot.DSL.Telegram do
             parse_mode: "HTML"
           )
         end)
+      end
+
+      def launch() do
+        case Bobot.Tools.compile_file("#{@bots_dir}/#{@bot_name}.ex") do
+          {{:error, message}, _} ->
+            Logger.log(:error, "[BOBOT][HOME] There was a problem compiling #{@bots_dir}/#{@bot_name}.ex (#{message})")
+          _ ->
+            type = @bot_type
+            id = Telegram.Bot.Utils.name(Telegram.Poller.Task, @token)
+
+            Supervisor.start_child(Telegram.Poller,
+              {Bobot.Engine.Telegram, @bot_config}
+            )
+            Supervisor.start_child(Telegram.Poller,
+              Supervisor.child_spec({Telegram.Poller.Task, {Bobot.Engine.Telegram, @token, []}}, id: id)
+            )
+        end
+      end
+
+      def stop() do
+        Supervisor.which_children(Telegram.Poller)
+          |> Enum.each(fn {id, _, _, _} ->
+            if String.contains?("#{id}", @token) do
+              Supervisor.terminate_child(Telegram.Poller, id)
+              Supervisor.delete_child(Telegram.Poller, id)
+            end
+          end)
       end
 
     end
@@ -105,7 +136,8 @@ defmodule Bobot.DSL.Telegram do
     end
   end
 
-  defmacro send_image("http" <> _ = url, opts \\ []) do
+  defmacro send_image(url_filename, opts \\ [])
+  defmacro send_image("http" <> _ = url, opts) do
     download = opts[:download]
     quote do
       photo =
@@ -132,7 +164,7 @@ defmodule Bobot.DSL.Telegram do
       end
     end
   end
-  defmacro send_image(filename) do
+  defmacro send_image(filename, _) do
     quote do
       case File.read(unquote(filename)) do
         {:ok, content} ->

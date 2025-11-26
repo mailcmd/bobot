@@ -3,7 +3,8 @@
 <header class="h-12 flex items-center gap-x-1 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
   
     <.small_button :if={@current_bot == nil} class="no-text" keyb="CTRL+ArrowLeft" keyb-hide
-      type="button" onclick="location.href='/'" icon="arrow-long-left" icon-pos="left">      
+      type="button" onclick="this.querySelector('a').click()" icon="arrow-long-left" icon-pos="left">  
+      <.link navigate={~p"/"}></.link>    
     </.small_button>
 
     <.small_button :if={@current_bot != nil} class="no-text" 
@@ -54,7 +55,7 @@
 
     <.small_button :if={@current_bot != nil} disabled={not is_list(@current_bot[:settings])}
       class={[( @current_bot[:changed] == true or (
-        (@current_bot[:name] |> module_name() |> Bobot.Tools.get_module_md5()) 
+        (@current_bot[:name] |> Bobot.Tools.get_bot_module() |> Bobot.Tools.get_module_md5()) 
           != 
         (@current_bot[:name] |> file_name() |> Bobot.Tools.source_file_md5())
       )) && "animate-color" || "", "float-right"]} 

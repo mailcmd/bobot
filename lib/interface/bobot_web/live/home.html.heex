@@ -5,28 +5,31 @@
     Bobot v<%= Application.spec(:bobot, :vsn) %>
   </.tiny_logo>
 
-  <.small_button form="form" type="submit" 
+  <.small_button form="form" type="submit"
     class={[@changed && "animate-color" || "", "ml-auto float-right"]} 
     icon="folder-arrow-down-solid"  keyb="F2">
     Commit
   </.small_button>
 
   <.small_button 
-    class="float-right" type="button" onclick="location.href='/bots'" 
+    class="float-right" type="button" onclick="this.querySelector('a').click()" 
     icon="wrench-mini" keyb="F9">
     Bots
-  </.small_button>
+    <.link navigate={~p"/bots"}></.link>
+  </.small_button>  
 
   <.small_button 
-    class="float-right" type="button" onclick="location.href='/apis'" 
+    class="float-right" type="button" onclick="this.querySelector('a').click()"
     icon="arrows-right-left" keyb="F10">
     APIs
+    <.link navigate={~p"/apis"}></.link>
   </.small_button>
 
   <.small_button 
-    class="float-right" type="button" onclick="location.href='/libs'" 
+    class="float-right" type="button" onclick="this.querySelector('a').click()"
     icon="book-open" keyb="F11">
     Libs
+    <.link navigate={~p"/libs"}></.link>
   </.small_button>
 
 </header>

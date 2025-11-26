@@ -204,18 +204,6 @@ session_data() # pay attention at parenthesis, they are mandatory
 session_data()[:firstname] # :firstname is an example
 ```
 
-### session_data
-Return a map with all the datas accumulated during the session. 
-
-Syntax:
-
-```Elixir 
-session_data() # pay attention at parenthesis, they are mandatory
-
-# You could use it also in this way
-session_data()[:firstname] # :firstname is an example
-```
-
 ### session_value
 Recover a value from the session. Also allow in the same sentency recover and compare the value to
 return a boolean value (see examples before)
@@ -228,7 +216,7 @@ session_value <atom_key>[, <expr>]
 # Examples
 ## get the value
 session_value :firstname 
-## or if you want store it in a variable
+## or if you want to store the value in a variable
 firstname = session_value :firstname 
 
 ## compare the value (guessing that session_value :firstname is "jimmy")
@@ -271,7 +259,11 @@ Notes:
   01:00, 02:00, ... etc). 
 
 
+# DSL Engines specs
 
+Every engine that is incorporated to Bobot must implement the following sentencies: 
+
+### 
 
 
 

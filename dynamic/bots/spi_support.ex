@@ -1,5 +1,6 @@
 import Bobot.DSL.Base
 
+## WARNING: You MUST not touch the 'defbot ...' line!!!
 defbot :spi_support,
   type: :telegram,
   use_apis: [:spi_support],
@@ -19,66 +20,78 @@ defbot :spi_support,
   )
 
   defblock :start, receive: muid do
-    call_api(:authenticate, params: muid)
+    call_api :authenticate, params: muid
+    IO.inspect(session_data())
 
-    case value_of(:user_data) do
+    case session_value([:authenticate, :user_data]) do
       :error ->
-        terminate(
-          message:
-            "No estás autorizado para usar @SPISupport BOT, envía este ID: <b>#{muid}</b> a los admines"
-        )
+        terminate message:
+                    "No estás autorizado para usar @SPISupport BOT, envía este ID: <b>#{muid}</b> a los admines"
 
-      _ ->
-        call_api(:send_message,
+      user_data ->
+        session_store(current_channel: session_value([:authenticate, :current_channel]))
+        session_store(group_channel: session_value([:authenticate, :group_channel]))
+
+        call_api :send_message,
           params: [
-            value_of([:user_data, :user]),
-            value_of(:current_channel),
-            value_of(:start_message)
+            user_data[:user],
+            session_value(:current_channel),
+            session_value(:start_message)
           ]
-        )
 
-        unpin_message([])
-        send_message("<i>GRUPO DE SOPORTE</i>")
-        pin_message(message_id: value_of(:last_message_id))
-        call_block(:loop)
+        unpin_message []
+        send_message "<i>GRUPO DE SOPORTE</i>"
+        pin_message message_id: session_value(:last_message_id)
+        call_block :loop
     end
   end
 
   defblock :loop do
-    await_response(store_in: message)
+    await_response store_in: message
 
     cond do
       match?({:image, _}, message) ->
         {:image, image} = message
 
-        call_api(:send_image,
-          params: [value_of([:user_data, :user]), value_of(:current_channel), image]
-        )
+        call_api :send_image,
+          params: [
+            session_value([:authenticate, :user_data, :user]),
+            session_value(:current_channel),
+            image
+          ]
 
       is_command?(message) ->
         session_store(
           current_channel:
             build_channel(
               message,
-              value_of(:group_channel),
-              value_of([:user_data, :data, :user, :uid])
+              session_value(:group_channel),
+              session_value([:authenticate, :user_data, :data, :user, :uid])
             )
         )
 
-        operator_name = get_operator_name(message, value_of([:user_data, :data, :providers]))
-        send_message("<i>#{String.upcase(operator_name)}</i>")
-        pin_message(message_id: value_of(:last_message_id))
+        operator_name =
+          get_operator_name(
+            message,
+            session_value([:authenticate, :user_data, :data, :providers])
+          )
+
+        send_message "<i>#{String.upcase(operator_name)}</i>"
+        pin_message message_id: session_value(:last_message_id)
 
       true ->
-        call_api(:send_message,
-          params: [value_of([:user_data, :user]), value_of(:current_channel), message]
-        )
+        call_api :send_message,
+          params: [
+            session_value([:authenticate, :user_data, :user]),
+            session_value(:current_channel),
+            message
+          ]
     end
 
-    call_block(:loop)
+    call_block :loop
   end
 
   defblock :good_bye do
-    terminate(message: @bot_config[:expire_message])
+    terminate message: @bot_config[:expire_message]
   end
 end

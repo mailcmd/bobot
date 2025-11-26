@@ -17,10 +17,18 @@ defmodule BobotWeb.Router do
   scope "/", BobotWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-    get "/bots", PageController, :bots
-    get "/apis", PageController, :apis
-    get "/libs", PageController, :libs
+    # get "/", PageController, :home
+    # get "/bots", PageController, :bots
+    # get "/apis", PageController, :apis
+    # get "/libs", PageController, :libs
+
+    live_session :main do
+      live "/", Home
+      live "/bots", Bots
+      live "/apis", Apis
+      live "/libs", Libs
+    end
+
   end
 
   # Other scopes may use custom stacks.

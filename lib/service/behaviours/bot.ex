@@ -5,8 +5,9 @@ defmodule Bobot.Bot do
       |> Enum.reverse()
       |> hd()
 
-    type = opts
-      |> Keyword.fetch!(:type)
+    bot_type = Keyword.fetch!(opts, :type)
+
+    type = bot_type
       |> to_string()
       |> Macro.camelize()
 
@@ -28,10 +29,12 @@ defmodule Bobot.Bot do
 
     quote do
       Module.register_attribute(__MODULE__, :bot_name, persist: true, accumulate: false)
+      Module.register_attribute(__MODULE__, :bot_type, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_config, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_apis, persist: true, accumulate: false)
       Module.register_attribute(__MODULE__, :bot_libs, persist: true, accumulate: false)
       @bot_name unquote(name) |> Macro.underscore() |> String.to_atom()
+      @bot_type unquote(bot_type)
       @bot_config unquote(config)
       @bot_apis unquote(apis)
       @bot_libs unquote(libs)

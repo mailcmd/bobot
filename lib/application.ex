@@ -26,15 +26,7 @@ defmodule Bobot.Application do
       read_concurrency: true
     ])
 
-    bobot_config = Bobot.Config.__info__(:attributes)
-
-    telegram_bots = Keyword.get(bobot_config, :telegram_bots, [])
-
-    Enum.map(telegram_bots, fn name ->
-      Logger.log(:notice, "[BOBOT] Compiling #{name} bot...")
-      Bobot.Tools.compile_file("#{@bots_dir}/#{name}.ex")
-    end)
-
+    # Compile APIs
     Path.wildcard("#{@apis_dir}/*.ex") |> Enum.map(fn filename ->
       try do
         Bobot.Tools.compile_file(filename)
@@ -43,6 +35,7 @@ defmodule Bobot.Application do
       end
     end)
 
+    # Compile Libs
     Path.wildcard("#{@libs_dir}/*.ex") |> Enum.map(fn filename ->
       try do
         Bobot.Tools.compile_file(filename)
@@ -51,22 +44,42 @@ defmodule Bobot.Application do
       end
     end)
 
+
+    # Compile bots
+    bobot_config = Bobot.Config.__info__(:attributes)
+    telegram_bots = Keyword.get(bobot_config, :telegram_bots, [])
+
+    telegram_bots=
+      Enum.map(telegram_bots, fn name ->
+        Logger.log(:notice, "[BOBOT] Compiling #{name} bot...")
+        case Bobot.Tools.compile_file("#{@bots_dir}/#{name}.ex") do
+          {{:error, message}, _} ->
+            Logger.log(:error, "[BOBOT] There was a problem compiling #{@bots_dir}/#{name}.ex (#{message})")
+            nil
+          _ ->
+            name
+        end
+      end)
+      |> Enum.filter(&(&1 != nil))
+
+    # Set supervisor childrens
     children = [
       {DNSCluster, query: Application.get_env(:bobot, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Bobot.PubSub},
       BobotWeb.Endpoint,
       {Bobot.Bot.Assigns, []},
       {Bobot.Engine.Telegram.Storage, []},
-      {Finch, name: Bobot.Finch}
+      {Finch, name: Bobot.Finch},
       # {Telegram.Webhook, config: webhook_config, bots: [{Bobot.Engine.Telegram, bot_config}]}
       # {Telegram.Poller, bots: [{Bobot.Engine.Telegram, bot_config}]},
+      {
+        Telegram.Poller, bots: Enum.map(telegram_bots, fn name ->
+          ## For every telegram bot...
+          Logger.log(:notice, "[BOBOT] Initializing #{name} bot...")
+          init_telegram_bot(name)
+        end)
+      }
     ]
-    ++
-    Enum.map(telegram_bots, fn name ->
-      ## For every telegram bot...
-      Logger.log(:notice, "[BOBOT] Initializing #{name} bot...")
-      init_telegram_bot(name)
-    end)
     ++
     [Bobot.Task]
 
@@ -87,8 +100,7 @@ defmodule Bobot.Application do
   ################################################################################################
 
   def init_telegram_bot(name) do
-    bot_module = ("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}"
-      |> String.to_existing_atom)
+    bot_module = Bobot.Tools.get_bot_module(name)
 
     ## check if bot has channels and init
     bot_channels = :attributes |> bot_module.__info__() |> Keyword.get(:bot_channels, [])
@@ -110,7 +122,8 @@ defmodule Bobot.Application do
       Bobot.Engine.Telegram.Storage.set_token_data(token, :expire_message, expire_message)
       Bobot.Engine.Telegram.Storage.set_token_data(token, :commands_as_message, commands_as_message)
     end)
-    {Telegram.Poller, bots: [{Bobot.Engine.Telegram, bot_config}]}
+    {Bobot.Engine.Telegram, bot_config}
+    # {Bobot.Engine.Telegram, [{:name, name} | bot_config]}
   end
 
 

@@ -2,8 +2,9 @@
 
 <header class="h-12 flex items-center gap-x-1 bg-purple-500 p-1 text-gray-100 dark:bg-purple-200 dark:text-gray-200">
   
-    <.small_button :if={@current_lib == nil} class="no-text"
-      type="button" onclick="location.href='/'" icon="arrow-long-left" icon-pos="left">      
+    <.small_button :if={@current_lib == nil} class="no-text" keyb="CTRL+ArrowLeft" keyb-hide
+      type="button" onclick="this.querySelector('a').click()" icon="arrow-long-left" icon-pos="left">  
+      <.link navigate={~p"/"}></.link>    
     </.small_button>
 
     <.small_button :if={@current_lib != nil} class="no-text" 

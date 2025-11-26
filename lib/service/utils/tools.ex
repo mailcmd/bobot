@@ -1,4 +1,5 @@
 defmodule Bobot.Tools do
+  @bots_dir Application.compile_env(:bobot, :bots_dir)
 
   defmacro apply_if(value, expr, ope) do
     quote do
@@ -273,6 +274,26 @@ defmodule Bobot.Tools do
   def task_every_add(bot_module, channel, quoted_pattern, quoted_func) do
     # bot = bot_module.__info__(:attributes)[:bot_name] |> hd()
     :ets.insert(:volatile_db, {:task, bot_module, channel, quoted_pattern, quoted_func})
+  end
+
+  def get_bot_module(name) do
+    ("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}" |> String.to_existing_atom)
+  end
+
+  def bot_launch(name) do
+    case compile_file("#{@bots_dir}/#{name}.ex") do
+      {{:error, message}, _} ->
+        {:error, message}
+      _ ->
+        bot_module = get_bot_module(name)
+        bot_module.launch()
+        :ok
+    end
+  end
+
+  def bot_stop(name) do
+    bot_module = get_bot_module(name)
+    bot_module.stop()
   end
 
 end

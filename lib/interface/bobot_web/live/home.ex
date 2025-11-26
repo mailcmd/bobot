@@ -65,16 +65,15 @@ defmodule BobotWeb.Home do
         turn_off = :lists.subtract(now_active_bots, new_active_bots)
         turn_on = :lists.subtract(new_active_bots, now_active_bots)
 
-        Enum.map(turn_off, fn name ->
-          Supervisor.terminate_child(Bobot.Supervisor, name)
-          Supervisor.delete_child(Bobot.Supervisor, name)
-        end)
+        Enum.each(turn_off, fn name -> Bobot.Tools.bot_stop(name) end)
 
-        Enum.map(turn_on, fn name ->
-          Code.compile_file("#{@bots_dir}/#{name}.ex") |> IO.inspect
-          type = BobotWeb.Bots.load_bot(name)[:settings][:type]  |> IO.inspect
-          child = apply(Bobot.Application, String.to_atom("init_#{type}_bot"), [name])  |> IO.inspect
-          Supervisor.start_child(Bobot.Supervisor, child)  |> IO.inspect
+        Enum.each(turn_on, fn name ->
+          case Bobot.Tools.bot_launch(name) do
+            {:error, message} ->
+              Logger.log(:error, "[BOBOT][HOME] There was a problem compiling #{@bots_dir}/#{name}.ex (#{message})")
+            :ok ->
+              :ok
+          end
         end)
     end
 
@@ -151,4 +150,6 @@ defmodule BobotWeb.Home do
     |> Code.format_string!()
     |> Enum.join("")
   end
+
+
 end
