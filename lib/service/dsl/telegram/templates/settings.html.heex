@@ -13,9 +13,9 @@
         value={
           is_list(@current_bot[:settings] |> IO.inspect) 
             && "#{get_in(@current_bot, [:settings, :config, :session_ttl])}" 
-            || "300"
+            || "300000"
         }
-        placeholder="Seconds..."/>
+        placeholder="Miliseconds..."/>
     </li>
     <li>
       <.input name="expire_message" label="Message on expire" 

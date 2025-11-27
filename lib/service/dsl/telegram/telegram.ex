@@ -1,17 +1,6 @@
 defmodule Bobot.DSL.Telegram do
-  @moduledoc """
-  This module add the following sentencies:
+  @moduledoc false
 
-    - command <pattern> do ... end
-      [#] When receive a command compare with <pattern> and if there is match run do ... end block.
-
-    - send_message <message>
-
-    - send_menu <menu>, [message: <message>]
-
-
-
-  """
   defmacro __using__(opts) do
     session_ttl_default = Application.fetch_env!(:bobot, :telegram_bots_defaults)
       |> Keyword.fetch!(:session_ttl)
@@ -41,7 +30,7 @@ defmodule Bobot.DSL.Telegram do
       defcommand "/chsub " <> channel do
         chat_id = var!(assigns)[:chat_id]
         Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} subscribed to channel #{channel}")
-        Bobot.Tools.channel_subscribe(
+        Bobot.Utils.channel_subscribe(
           String.to_atom(channel),
           chat_id
         )
@@ -49,7 +38,7 @@ defmodule Bobot.DSL.Telegram do
       defcommand "/chunsub " <> channel do
         chat_id = var!(assigns)[:chat_id]
         Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} unsubscribed to channel #{channel}")
-        Bobot.Tools.channel_unsubscribe(
+        Bobot.Utils.channel_unsubscribe(
           String.to_atom(channel),
           chat_id
         )
@@ -66,7 +55,7 @@ defmodule Bobot.DSL.Telegram do
       end
 
       def launch() do
-        case Bobot.Tools.compile_file("#{@bots_dir}/#{@bot_name}.ex") do
+        case Bobot.Utils.compile_file("#{@bots_dir}/#{@bot_name}.ex") do
           {{:error, message}, _} ->
             Logger.log(:error, "[BOBOT][HOME] There was a problem compiling #{@bots_dir}/#{@bot_name}.ex (#{message})")
           _ ->
@@ -121,7 +110,7 @@ defmodule Bobot.DSL.Telegram do
   defmacro send_message(message) do
     quote do
       result = Telegram.Api.request(@token, "sendMessage",
-        chat_id: Bobot.Bot.Assigns.get(var!(sess_id), :chat_id),
+        chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
         text: unquote(message),
         parse_mode: "HTML"
       )
@@ -131,7 +120,7 @@ defmodule Bobot.DSL.Telegram do
           _ -> nil
         end
 
-      Bobot.Bot.Assigns.put(var!(sess_id), :last_message_id, msg_id)
+      Bobot.Utils.Assigns.put(var!(sess_id), :last_message_id, msg_id)
       msg_id
     end
   end
@@ -156,7 +145,7 @@ defmodule Bobot.DSL.Telegram do
 
       if photo do
         Telegram.Api.request(@token, "sendPhoto",
-          chat_id: Bobot.Bot.Assigns.get(var!(sess_id), :chat_id),
+          chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
           photo: photo
         )
       else
@@ -169,7 +158,7 @@ defmodule Bobot.DSL.Telegram do
       case File.read(unquote(filename)) do
         {:ok, content} ->
           Telegram.Api.request(@token, "sendPhoto",
-            chat_id: Bobot.Bot.Assigns.get(var!(sess_id), :chat_id),
+            chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
             photo: {:file_content, content, Path.basename(unquote(filename))}
           )
 
@@ -189,7 +178,7 @@ defmodule Bobot.DSL.Telegram do
       } |> Jason.encode!()
 
       result = Telegram.Api.request(@token, "sendMessage",
-        chat_id: Bobot.Bot.Assigns.get(var!(sess_id), :chat_id),
+        chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
         text: unquote(message),
         reply_markup: menu,
         parse_mode: "HTML"
@@ -200,7 +189,7 @@ defmodule Bobot.DSL.Telegram do
           _ -> nil
         end
 
-      Bobot.Bot.Assigns.put(var!(sess_id), :last_message_id, msg_id)
+      Bobot.Utils.Assigns.put(var!(sess_id), :last_message_id, msg_id)
       msg_id
     end
   end
@@ -212,8 +201,8 @@ defmodule Bobot.DSL.Telegram do
     menu = %{inline_keyboard: Keyword.get(opts, :menu, [])} |> Jason.encode!()
     quote do
       Telegram.Api.request(@token, "editMessageText",
-        chat_id: Bobot.Bot.Assigns.get(var!(sess_id), :chat_id),
-        message_id: unquote(msg_id)|| Bobot.Bot.Assigns.get(var!(sess_id), :last_message_id),
+        chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
+        message_id: unquote(msg_id)|| Bobot.Utils.Assigns.get(var!(sess_id), :last_message_id),
         text: unquote(message),
         reply_markup: unquote(menu)
       )
@@ -225,8 +214,8 @@ defmodule Bobot.DSL.Telegram do
     msg_id = Keyword.get(opts, :message_id, nil)
     quote do
       Telegram.Api.request(@token, "pinChatMessage",
-        chat_id: Bobot.Bot.Assigns.get(var!(sess_id), :chat_id),
-        message_id: unquote(msg_id)|| Bobot.Bot.Assigns.get(var!(sess_id), :last_message_id)
+        chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
+        message_id: unquote(msg_id)|| Bobot.Utils.Assigns.get(var!(sess_id), :last_message_id)
       )
     end
   end
@@ -235,28 +224,48 @@ defmodule Bobot.DSL.Telegram do
     msg_id = Keyword.get(opts, :message_id, nil)
     quote do
       Telegram.Api.request(@token, "pinChatMessage",
-        chat_id: Bobot.Bot.Assigns.get(var!(sess_id), :chat_id),
-        message_id: unquote(msg_id)|| Bobot.Bot.Assigns.get(var!(sess_id), :last_message_id)
+        chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
+        message_id: unquote(msg_id)|| Bobot.Utils.Assigns.get(var!(sess_id), :last_message_id)
       )
     end
   end
 
   ## TERMINATE
-  defmacro terminate(message: message) do
+  defmacro break(returning: value) do
     quote do
-      send_message unquote(message)
-      terminate()
+      throw(unquote(value))
+    end
+  end
+
+  defmacro break() do
+    quote do
+      break(returning: nil)
     end
   end
 
   defmacro terminate() do
     quote do
-      {_, pid} = get_token_data(Bobot.Bot.Assigns.get(var!(sess_id), :chat_id))
-      Kernel.send(pid, :stop)
+      chat_id = Bobot.Utils.Assigns.get(var!(sess_id), :chat_id)
+      {_, engine} = get_token_data({:chat, chat_id, :processes})
+      Kernel.send(engine, :stop)
       receive do
-        :stop -> Process.exit(self(), :kill)
-        _ -> Process.exit(self(), :kill)
+        # I need to work more here, for now kill se
+        :stop ->
+          # Also I need remove token data {:chat, <chat_id>, :sess_id} and {:chat, <chat_id>, :processes}
+          Bobot.Utils.Assigns.unset(var!(sess_id))
+          Process.exit(self(), :kill)
+        _ ->
+          # Also I need remove token data {:chat, <chat_id>, :sess_id} and {:chat, <chat_id>, :processes}
+          Bobot.Utils.Assigns.unset(var!(sess_id))
+          Process.exit(self(), :kill)
       end
+    end
+  end
+
+  defmacro terminate(message: message) do
+    quote do
+      send_message unquote(message)
+      terminate()
     end
   end
 
@@ -266,15 +275,17 @@ defmodule Bobot.DSL.Telegram do
     extract_re  = Keyword.get(opts, :extract_re, nil)
     cast  = Keyword.get(opts, :cast_as, nil)
     quote do
-      {pid, engine} = get_token_data(Bobot.Bot.Assigns.get(var!(sess_id), :chat_id))
-      set_token_data(Bobot.Bot.Assigns.get(var!(sess_id), :chat_id), {self(), engine})
+      chat_id = Bobot.Utils.Assigns.get(var!(sess_id), :chat_id)
+      {_, engine} = get_token_data({:chat, chat_id, :processes})
+      set_token_data({:chat, chat_id, :processes}, {self(), engine})
       flush()
       var!(unquote(variables)) =
         receive do
           :stop ->
             Process.exit(self(), :kill)
+            :stop
           :cancel ->
-            call_block @fallback_block
+            :cancel
           message ->
             case unquote(extract_re) do
               nil -> message
@@ -283,35 +294,57 @@ defmodule Bobot.DSL.Telegram do
         end
 
       var!(unquote(variables)) =
-        if unquote(cast) do
-          {var!(unquote(variables)), cast} =
-            if not is_list(var!(unquote(variables))) do
-              {[var!(unquote(variables))], [unquote(cast)]}
-            else
-              {var!(unquote(variables)), unquote(cast)}
-            end
-            var!(unquote(variables)) = var!(unquote(variables))
-            |> Enum.zip(cast)
-            |> Enum.map(fn {val, type} ->
-              Bobot.Parser.parse(val, type)
-            end)
+        if var!(unquote(variables)) in [:stop, :cancel] do
+          var!(unquote(variables))
+        else
+          if unquote(cast) do
+            {var!(unquote(variables)), cast} =
+              if not is_list(var!(unquote(variables))) do
+                {[var!(unquote(variables))], [unquote(cast)]}
+              else
+                {var!(unquote(variables)), unquote(cast)}
+              end
+              var!(unquote(variables)) = var!(unquote(variables))
+              |> Enum.zip(cast)
+              |> Enum.map(fn {val, type} ->
+                Bobot.Parser.parse(val, type)
+              end)
 
-          if not is_list(unquote(cast)) do
-            var!(unquote(variables)) |> hd()
+            if not is_list(unquote(cast)) do
+              var!(unquote(variables)) |> hd()
+            else
+              var!(unquote(variables))
+            end
           else
             var!(unquote(variables))
           end
-        else
-          var!(unquote(variables))
         end
     end
   end
 
+  defmacro await_response(opts, do: block) do
+    quote do
+      case await_response(unquote(opts)) do
+        :cancel ->
+          :ok
+
+        # this will never happen for now
+        :stop ->
+          terminate()
+
+        _ ->
+         unquote(block)
+      end
+    end
+  end
+
+
+
   ## SETTINGS
   defmacro set_token_data(key, value) do
     quote do
-      # Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).set_token_data(@token, unquote(key), unquote(value))
-      Bobot.Engine.Telegram.Storage.set_token_data(@token, unquote(key), unquote(value))
+      # Bobot.Utils.Assigns.get(var!(sess_id), :sessions_db).set_token_data(@token, unquote(key), unquote(value))
+      Bobot.Utils.Storage.set_token_data(@token, unquote(key), unquote(value))
     end
   end
   defmacro set_token_data([{key, value}]) do
@@ -322,14 +355,14 @@ defmodule Bobot.DSL.Telegram do
 
   defmacro get_token_data(key) do
     quote do
-      # Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).get_token_data(@token, unquote(key))
-      Bobot.Engine.Telegram.Storage.get_token_data(@token, unquote(key))
+      # Bobot.Utils.Assigns.get(var!(sess_id), :sessions_db).get_token_data(@token, unquote(key))
+      Bobot.Utils.Storage.get_token_data(@token, unquote(key))
     end
   end
   defmacro settings_remove(key) do
     quote do
-      # Bobot.Bot.Assigns.get(var!(sess_id), :sessions_db).remove_token(@token, unquote(key))
-      Bobot.Engine.Telegram.Storage.remove_token(@token, unquote(key))
+      # Bobot.Utils.Assigns.get(var!(sess_id), :sessions_db).remove_token(@token, unquote(key))
+      Bobot.Utils.Storage.remove_token(@token, unquote(key))
     end
   end
 

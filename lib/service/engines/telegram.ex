@@ -2,29 +2,9 @@ defmodule Bobot.Engine.Telegram do
 
   use Telegram.ChatBot
   require Logger
+  alias Bobot.Utils.Storage
 
   @log_prefix "[Engine][Telegram]"
-
-  defmodule Storage do
-    use Agent
-
-    def start_link(name: name) do
-      Agent.start_link(fn -> %{} end, name: name)
-    end
-    def start_link(_) do
-      Agent.start_link(fn -> %{} end, name: __MODULE__)
-    end
-
-    def set_token_data(token, key, value) do
-      Agent.update(__MODULE__, fn status -> put_in(status, [{token, key}], value) end)
-    end
-    def get_token_data(token, key) do
-      Agent.get(__MODULE__, fn status -> Map.get(status, {token, key}) end)
-    end
-    def remove_token_data(token, key) do
-      Agent.get(__MODULE__, fn status -> Map.delete(status, {token, key}) end)
-    end
-  end
 
   ################################################################################################
   ## Public API
@@ -47,7 +27,6 @@ defmodule Bobot.Engine.Telegram do
   def init(chat, token) do
 
     assigns = chat.metadata.chat
-      # |> put_in([:sessions_db], Storage)
       |> put_in([:token], token)
       |> Map.delete("id")
       |> put_in([:chat_id], chat.id)
@@ -63,10 +42,12 @@ defmodule Bobot.Engine.Telegram do
     # If IT IS NOT a command run start_bot
     if Storage.get_token_data(token, :commands_as_message) or not match?([%{"type" => "bot_command"}], get_in(chat.update, ["message", "entities"])) do
       module = Storage.get_token_data(token, :module)
+      engine_pid = self()
       pid =
         if module do
           spawn(fn ->
             module.start_bot(chat.id, sess_id, assigns)
+            Kernel.send(engine_pid, :stop)
           end)
         else
           nil
@@ -75,14 +56,14 @@ defmodule Bobot.Engine.Telegram do
       if pid == nil do
         {:error, :not_initiated_yet}
       else
-        Storage.set_token_data(token, chat.id, {pid, self()})
-        Storage.set_token_data(token, :sess_id, sess_id)
+        Storage.set_token_data(token, {:chat, chat.id, :processes}, {pid, engine_pid})
+        Storage.set_token_data(token, {:chat, chat.id, :sess_id}, sess_id)
         Logger.log(:notice, "#{@log_prefix} Initializing chat with #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
         {:ok, chat.id, Storage.get_token_data(token, :session_ttl)}
       end
     # If it is a command (handle_update will manage the command)
     else
-      Storage.set_token_data(token, :sess_id, sess_id)
+      Storage.set_token_data(token, {:chat, chat.id, :sess_id}, sess_id)
       Logger.log(:notice, "#{@log_prefix} Initializing command from #{assigns[:first_name]} (chat_id: #{assigns[:chat_id]})")
       {:ok, chat.id, Storage.get_token_data(token, :session_ttl)}
     end
@@ -94,10 +75,13 @@ defmodule Bobot.Engine.Telegram do
   ## COMMANDS
   def handle_update(%{"message" => %{"text" => command, "chat" => %{"id" => chat_id}, "entities" => [%{"type" => "bot_command"}], }} = update, token, chat_id)
       when byte_size(command) > 0 do
+
     Logger.log(:notice, "#{@log_prefix} Received command: #{command}")
+
     # If commands must not be processed trait it as simple text
     if Storage.get_token_data(token, :commands_as_message) do
       handle_update(%{"message" => %{"text" => command, "chat" => %{"id" => chat_id}}}, token, chat_id)
+
     # If not, process command
     else
       module = Storage.get_token_data(token, :module)
@@ -111,13 +95,27 @@ defmodule Bobot.Engine.Telegram do
         end)
         |> Enum.into(%{})
 
-      sess_id = Storage.get_token_data(token, :sess_id)
-      Bobot.Bot.Assigns.set_all(sess_id, assigns)
+      sess_id = Storage.get_token_data(token, {:chat, chat_id, :sess_id})
+      Bobot.Utils.Assigns.merge(sess_id, assigns)
+      {current_pid, engine_pid} =
+        case Storage.get_token_data(token, {:chat, chat_id, :processes}) do
+          {pid, _} -> {pid, self()}
+          _ -> {nil, self()}
+        end
+
       pid = spawn(fn ->
+        if is_pid(current_pid) and Process.alive?(current_pid), do: :erlang.suspend_process(current_pid)
         module.run_command(command, sess_id, assigns)
+        if is_pid(current_pid) and Process.alive?(current_pid) do
+          Storage.set_token_data(token, {:chat, chat_id, :processes}, {current_pid, self()})
+          :erlang.resume_process(current_pid)
+        else
+          Kernel.send(engine_pid, :stop)
+        end
       end)
-      Storage.set_token_data(token, chat_id, {pid, self()})
+      Storage.set_token_data(token, {:chat, chat_id, :processes}, {pid, self()})
     end
+
     {:ok, chat_id, Storage.get_token_data(token, :session_ttl)}
   end
 
@@ -126,7 +124,7 @@ defmodule Bobot.Engine.Telegram do
   def handle_update(%{"message" => %{"text" => text, "chat" => %{"id" => chat_id}}}, token, chat_id)
     when byte_size(text) > 0 do
     pid =
-      case Storage.get_token_data(token, chat_id) do
+      case Storage.get_token_data(token, {:chat, chat_id, :processes}) do
         {pid, _} -> pid
         _ -> nil
       end
@@ -147,7 +145,7 @@ defmodule Bobot.Engine.Telegram do
 
         image = "," <> Base.encode64(body)
         pid =
-          case Storage.get_token_data(token, chat_id) do
+          case Storage.get_token_data(token, {:chat, chat_id, :processes}) do
             {pid, _} -> pid
             _ -> nil
           end
@@ -179,7 +177,7 @@ defmodule Bobot.Engine.Telegram do
   def handle_update(%{"callback_query" => %{ "data" => text, "message" =>  %{"chat" => %{"id" => chat_id}}}}, token, chat_id)
     when byte_size(text) > 0 do
     pid =
-      case Storage.get_token_data(token, chat_id) do
+      case Storage.get_token_data(token, {:chat, chat_id, :processes}) do
         {pid, _} -> pid
         _ -> nil
       end
@@ -216,9 +214,9 @@ defmodule Bobot.Engine.Telegram do
 
   @impl Telegram.ChatBot
   def handle_info(:stop, token, chat_id, _state) do
-    {pid, _} = Storage.get_token_data(token, chat_id)
+    {pid, _} = Storage.get_token_data(token, {:chat, chat_id, :processes})
     send(pid, :stop)
-    Storage.remove_token_data(token, chat_id)
+    Storage.remove_token_data(token, {:chat, chat_id, :processes})
     Logger.log(:notice, "#{@log_prefix} Stopping chat (chat_id: #{chat_id})")
     {:stop, chat_id}
   end

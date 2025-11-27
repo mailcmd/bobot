@@ -13,7 +13,7 @@ function editor_open(title, text, readonly = false) {
     editor_gotoline(0);
     setTimeout(() => {
         editor.focus();
-        document.querySelector('.ace_text-input').focus();
+        document.querySelector('.ace_text-input')?.focus();
     }, 100);
 }
 

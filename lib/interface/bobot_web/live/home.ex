@@ -13,6 +13,10 @@ defmodule BobotWeb.Home do
 
   def mount(_params, _session, socket) do
     {:ok, socket
+      |> assign(modal: %{})
+      |> assign(available_bots: Bobot.Config.get_available_bots())
+      |> assign(available_apis: Bobot.Config.get_available_apis())
+      |> assign(available_libs: Bobot.Config.get_available_libs())
       |> assign(active_bots: Bobot.Config.get_active_bots())
       |> assign(changed: false)
     }
@@ -65,10 +69,12 @@ defmodule BobotWeb.Home do
         turn_off = :lists.subtract(now_active_bots, new_active_bots)
         turn_on = :lists.subtract(new_active_bots, now_active_bots)
 
-        Enum.each(turn_off, fn name -> Bobot.Tools.bot_stop(name) end)
+        Enum.each(turn_off, fn name -> Bobot.Utils.bot_stop(name) end)
+
+
 
         Enum.each(turn_on, fn name ->
-          case Bobot.Tools.bot_launch(name) do
+          case Bobot.Utils.bot_launch(name) do
             {:error, message} ->
               Logger.log(:error, "[BOBOT][HOME] There was a problem compiling #{@bots_dir}/#{name}.ex (#{message})")
             :ok ->
@@ -83,6 +89,34 @@ defmodule BobotWeb.Home do
       |> put_message(message)
     }
   end
+
+  def handle_event("navigate-to-value", params, socket) do
+    [subdir, object ] = String.split(params["value"], "#")
+    {:noreply, socket
+      |> push_navigate(to: ~p"/#{subdir}/?target=#{object}")
+    }
+  end
+
+  ####################
+  ### CONFIRMED ACTION
+
+  #[remove]
+  def handle_event("confirmed-action", %{"action" => "remove:" <> target}, socket) do
+    [subdir, object ] = String.split(target, ":")
+
+    File.rm("dynamic/#{subdir}/#{object}.ex")
+
+    {:noreply, socket
+      |> assign(available_bots: Bobot.Config.get_available_bots())
+      |> assign(available_apis: Bobot.Config.get_available_apis())
+      |> assign(available_libs: Bobot.Config.get_available_libs())
+      |> assign(active_bots: Bobot.Config.get_active_bots())
+      |> push_event("js-exec", %{ js: """
+        box_confirm_action.close();
+      """ })
+    }
+  end
+
 
   ################################################################################################
   ## Private tools
@@ -106,7 +140,7 @@ defmodule BobotWeb.Home do
       def get_available_bots() do
         "#{@bots_dir}/*.ex"
         |> Path.wildcard()
-        |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+        |> Stream.map(fn filename -> Bobot.Utils.ast_from_file(filename) end)
         |> Stream.map(fn ast -> BobotWeb.Bots.ast_extract_components(ast) end)
         |> Enum.into([])
         |> Enum.filter(fn bot -> bot != [] end)
@@ -116,7 +150,7 @@ defmodule BobotWeb.Home do
       def get_available_apis() do
         "#{@apis_dir}/*.ex"
         |> Path.wildcard()
-        |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+        |> Stream.map(fn filename -> Bobot.Utils.ast_from_file(filename) end)
         |> Stream.map(fn ast -> BobotWeb.Apis.ast_extract_components(ast) end)
         |> Enum.into([])
         |> Enum.filter(fn api -> api != [] end)
@@ -126,7 +160,7 @@ defmodule BobotWeb.Home do
       def get_available_libs() do
         "#{@libs_dir}/*.ex"
         |> Path.wildcard()
-        |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+        |> Stream.map(fn filename -> Bobot.Utils.ast_from_file(filename) end)
         |> Stream.map(fn ast -> BobotWeb.Libs.ast_extract_components(ast) end)
         |> Enum.into([])
         |> Enum.filter(fn lib -> lib != [] end)
@@ -150,6 +184,5 @@ defmodule BobotWeb.Home do
     |> Code.format_string!()
     |> Enum.join("")
   end
-
 
 end

@@ -15,7 +15,7 @@
         value={Keyword.get(@current_bot[:hooks], :stop_block, "")}/>
     </li>
     <li>
-      <.input name="fallback_block" label="Fallback block" required pattern="[a-z_]+" 
+      <.input name="fallback_block" label="Fallback block" pattern="[a-z_]+" 
         placeholder="You can use a-z and _"
         value={Keyword.get(@current_bot[:hooks], :fallback_block, "")}/>
     </li>

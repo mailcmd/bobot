@@ -27,6 +27,7 @@ defmodule BobotWeb.Router do
       live "/bots", Bots
       live "/apis", Apis
       live "/libs", Libs
+      live "/*nouse", Home
     end
 
   end

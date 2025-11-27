@@ -43,7 +43,7 @@ defmodule Bobot.Bot do
 
       import Bobot.DSL.Base
       use unquote(type_module), config: unquote(config)
-      import Bobot.Tools
+      import Bobot.Utils
 
       unquote(import_libs)
 

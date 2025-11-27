@@ -11,25 +11,19 @@
     Commit
   </.small_button>
 
-  <.small_button 
-    class="float-right" type="button" onclick="this.querySelector('a').click()" 
-    icon="wrench-mini" keyb="F9">
+  <.small_button navigate={~p"/bots"}
+    class="float-right" type="button" icon="wrench-mini" keyb="F9">
     Bots
-    <.link navigate={~p"/bots"}></.link>
   </.small_button>  
 
-  <.small_button 
-    class="float-right" type="button" onclick="this.querySelector('a').click()"
-    icon="arrows-right-left" keyb="F10">
+  <.small_button navigate={~p"/apis"} 
+    class="float-right" type="button" icon="arrows-right-left" keyb="F10">
     APIs
-    <.link navigate={~p"/apis"}></.link>
   </.small_button>
 
-  <.small_button 
-    class="float-right" type="button" onclick="this.querySelector('a').click()"
-    icon="book-open" keyb="F11">
+  <.small_button navigate={~p"/libs"} 
+    class="float-right" type="button" icon="book-open" keyb="F11">
     Libs
-    <.link navigate={~p"/libs"}></.link>
   </.small_button>
 
 </header>
@@ -39,26 +33,52 @@
   <form id="form" phx-submit="home-submit"  phx-change="bot-state-change">
     <div class="grid grid-cols-3 gap-4 py-4 align-start absolute top-0 left-0 right-0 bottom-0 
                 place-content-start bg-transparent z-1 justify-items-center">    
-      <span class="home-list" content="bots">
-        <div :for={bot <- Bobot.Config.get_available_bots()}
+      <span class="home-list before:text-purple-800" content="bots">
+        <div :for={bot <- @available_bots}
           class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 border-2 border-purple-400 bg-white rounded-lg">
           <%= "#{bot}" %>
-          <.checkbox class="float-right" name={bot} value={bot} checked={bot in @active_bots}/>
+          <.checkbox class="float-right" name={bot} value={bot} checked={bot in @active_bots}
+            title="Activate/deactivate bot"/>
+          <.icon_button icon="pencil-solid" icon-size="4" value={"bots##{bot}"} title="Edit bot"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            phx-click="navigate-to-value"/>
+          <.icon_button icon="x-circle-solid" icon-size="4" value={bot} title="Remove bot"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            onclick={"confirm_action(
+              'Are you sure about to remove the bot <b class=\"text-red-800\">#{bot}</b>?', 'remove:bots:#{bot}'
+            )"}/>
         </div>
       </span>
-      <span class="home-list" content="apis">
-        <div :for={api <- Bobot.Config.get_available_apis()}
-          class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 pr-10 border-2 border-purple-400 bg-white rounded-lg">
+      <span class="home-list before:text-purple-800" content="apis">
+        <div :for={api <- @available_apis}
+          class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 border-2 border-purple-400 bg-white rounded-lg">
           <%= "#{api}" %>
+          <.icon_button icon="pencil-solid" icon-size="4" value={"apis##{api}"} title="Edit api"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            phx-click="navigate-to-value"/>
+          <.icon_button icon="x-circle-solid" icon-size="4" value={api} title="Remove api"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            onclick={"confirm_action(
+              'Are you sure about to remove the api <b class=\"text-red-800\">#{api}</b>?', 'remove:apis:#{api}'
+            )"}/>
         </div>
       </span>
-      <span class="home-list" content="libs">
-        <div :for={lib <- Bobot.Config.get_available_libs()}
-          class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 pr-10 border-2 border-purple-400 bg-white rounded-lg">
+      <span class="home-list before:text-purple-800" content="libs">
+        <div :for={lib <- @available_libs}
+          class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 border-2 border-purple-400 bg-white rounded-lg">
           <%= "#{lib}" %>
+          <.icon_button icon="pencil-solid" icon-size="4" value={"libs##{lib}"} title="Edit lib"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            phx-click="navigate-to-value"/>
+          <.icon_button icon="x-circle-solid" icon-size="4" value={lib} title="Remove lib"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            onclick={"confirm_action(
+              'Are you sure about to remove the lib <b class=\"text-red-800\">#{lib}</b>?', 'remove:libs:#{lib}'
+            )"}/>
         </div>
       </span>
     </div>
   </form>
 </main>
+
 

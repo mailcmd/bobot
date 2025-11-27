@@ -1,47 +1,25 @@
 import Bobot.DSL.Base
 
-defbot :telegram_test, [
-    type: :telegram,
-    config: [
-      token: "8241208776:AAHz1-OjK94w_L0RIuIDoReuaZnJX0IWSXI",
-      session_ttl: 10 * 1_000,
-      max_bot_concurrency: 1_000,
-      expire_message: "El tiempo de espera se agotó. Empezá de nuevo.",
-      use_api: Bobot.API.Test
-    ]
+## WARNING: You MUST not touch the 'defbot ...' line!!!
+defbot :telegram_test_x,
+  type: :telegram,
+  use_apis: [:test],
+  use_libs: [],
+  config: [
+    token: "8241208776:AAHz1-OjK94w_L0RIuIDoReuaZnJX0IWSXI",
+    session_ttl: 3600,
+    max_bot_concurrency: 1000,
+    expire_message: "El tiempo de espera se agotó. Empezá de nuevo."
   ] do
-
-  hooks [
+  hooks(
     start_block: :start,
-    start_params: phone,
-    stop_block: :good_bye,
+    start_params_count: 1,
+    stop_block: :first_contact,
     fallback_block: :good_bye
-  ]
+  )
 
-  ## COMMANDS
-
-  # command "/start" do
-  #   call_block :start, params: value_of(:chat_id)
-  #   call_block :good_bye
-  # end
-
-  # command "/stop" do
-  #   call_block :good_bye
-  # end
-
-  # command "/test1" do
-  #   send_message "Enviaste el commando TEST1 con #{inspect session_data()}!"
-  #   call_block :good_bye
-  # end
-
-  # command "/test2" do
-  #   call_block :start, params: -1
-  #   call_block :good_bye
-  # end
-
-  ## BLOCKS
   defblock :start, receive: phone do
-    session_store time: System.os_time(:second)
+    session_store(time: System.os_time(:second))
     send_message "<b>Bienvenido #{value_of(:first_name)}!</b>"
     call_block :first_contact, params: phone
   end
@@ -53,7 +31,8 @@ defbot :telegram_test, [
 
   defblock :first_contact, receive: phone do
     call_api :is_first_contact, params: phone
-    if value_of :first_contact, is: true do
+
+    if value_of(:first_contact, is: true) do
       send_message "Ingresá tu ID de cliente o DNI"
       await_response store_in: id_dni
       call_api :addresses_menu, params: id_dni
@@ -65,9 +44,9 @@ defbot :telegram_test, [
   end
 
   defblock :addresses_menu do
-    send_message "Cuál es tu domicilio?", menu: value_of(:menu)
+    send_menu message: "Cuál es tu domicilio?", menu: value_of(:menu)
     await_response store_in: user_input, cast_as: :integer
-    edit_message message: "Elegiste: #{value_of(:menu) |> Enum.at(user_input-1)}!", menu: []
+    edit_message message: "Elegiste: #{value_of(:menu |> Enum.at(user_input - 1))}!", menu: []
 
     if user_input == value_of(:correct_item) do
       call_block :first_check
@@ -78,12 +57,12 @@ defbot :telegram_test, [
   end
 
   defblock :first_check do
-    call_api :client_status, params: value_of :id
-    if value_of :status, is: :suspend do
+    call_api :client_status, params: value_of(:id)
+
+    if value_of(:status, is: :suspend) do
       send_message "Estás suspendido macho, pagá y después charlamos."
     else
       send_message "Capo!!! Sos un buen cliente!!"
     end
   end
-
 end

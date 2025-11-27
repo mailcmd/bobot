@@ -10,6 +10,7 @@ defmodule BobotWeb.Layouts do
   """
   use BobotWeb, :html
   # import BobotWeb.Components
+  import BobotWeb.WebTools
 
   embed_templates "layouts/*"
 end

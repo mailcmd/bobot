@@ -1,0 +1,9 @@
+<dialog :if={@modal[:template]} class="bg-gray-100 dark:bg-gray-700 text-700 dark:text-100 before:bg-purple-800 before:text-white" id="modal" data-title={@modal[:title]}>
+  <.icon class="close cursor-pointer" name="hero-x-mark-mini" onclick="modal.close()"/>
+  <%= 
+  if get_in(@modal, [:template]) do 
+    %{module: module, sentency: sentency} = @modal[:template]
+    apply(module, :show, [sentency, assigns]) 
+  end
+  %>
+</dialog>

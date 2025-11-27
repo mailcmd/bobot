@@ -1,7 +1,16 @@
-defmodule Bobot.Tools do
+defmodule Bobot.Utils do
   @bots_dir Application.compile_env(:bobot, :bots_dir)
 
   defmacro apply_if(value, expr, ope) do
+    quote do
+      if unquote(expr) do
+        unquote(value) |> unquote(ope)
+      else
+        unquote(value)
+      end
+    end
+  end
+  defmacro pipe_if(value, expr, do: ope) do
     quote do
       if unquote(expr) do
         unquote(value) |> unquote(ope)
@@ -56,7 +65,7 @@ defmodule Bobot.Tools do
   def tables_render(tables) do
     tables
       |> Enum.map(fn table ->
-        apply(Bobot.Tools, :table_render, Tuple.to_list(table))
+        apply(Bobot.Utils, :table_render, Tuple.to_list(table))
       end)
       |> Enum.join("\n")
   end
@@ -277,7 +286,11 @@ defmodule Bobot.Tools do
   end
 
   def get_bot_module(name) do
-    ("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}" |> String.to_existing_atom)
+    try do
+      ("Elixir.Bobot.Bot.#{Macro.camelize("#{name}")}" |> String.to_existing_atom)
+    rescue
+      _ -> nil
+    end
   end
 
   def bot_launch(name) do

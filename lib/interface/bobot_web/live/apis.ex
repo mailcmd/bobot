@@ -3,6 +3,8 @@ defmodule BobotWeb.Apis do
   import BobotWeb.Components
   import BobotWeb.WebTools
 
+  require Bobot.Utils
+
   Code.ensure_compiled!(Bobot.Config)
 
   @doc """
@@ -34,13 +36,17 @@ defmodule BobotWeb.Apis do
     changed: false
   }
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
 
     {:ok, socket
       |> assign(apis: Bobot.Config.get_available_apis())
       |> assign(modal: %{})
       |> assign(editor_status_bar: "")
       |> assign(current_api: nil)
+      |> Bobot.Utils.pipe_if(
+          params["target"] != nil,
+            do: assign(current_api: params["target"] |> String.to_atom() |> load_api())
+        )
     }
   end
 
@@ -186,7 +192,7 @@ defmodule BobotWeb.Apis do
   end
 
   def handle_event("operation-editor", %{"operation" => "cancel"} = params, socket) do
-    case Bobot.Tools.quote_string(params["block_text"]) do
+    case Bobot.Utils.quote_string(params["block_text"]) do
       {:error, nline, message} ->
         {:noreply, socket
           |> assign(last_result: :error)
@@ -205,7 +211,7 @@ defmodule BobotWeb.Apis do
         original_api = socket.assigns[:current_api][:code]
 
         {result, message} =
-          if not Bobot.Tools.ast_equals(original_api, new_api) do
+          if not Bobot.Utils.ast_equals(original_api, new_api) do
             {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
           else
             {:ok, nil}
@@ -222,7 +228,7 @@ defmodule BobotWeb.Apis do
   end
 
   def handle_event("operation-editor", %{"operation" => "commit"} = params, socket) do
-    case Bobot.Tools.quote_string(params["block_text"]) do
+    case Bobot.Utils.quote_string(params["block_text"]) do
       {:error, nline, message} ->
         {:noreply, socket
           |> assign(last_result: :error)
@@ -265,7 +271,7 @@ defmodule BobotWeb.Apis do
 
   defp load_api(name) do
     "#{@apis_dir}/#{name}.ex"
-    |> Bobot.Tools.ast_from_file()
+    |> Bobot.Utils.ast_from_file()
     |> ast_extract_components()
     |> elem(1)
   end
@@ -287,7 +293,7 @@ defmodule BobotWeb.Apis do
     import Bobot.DSL.Base
 
     defapi :#{api[:name]} do ## WARNING: You MUST not touch the 'defapi ...' line!!!
-      #{Bobot.Tools.ast_to_source([api[:code]], no_parens: no_parens)}
+      #{Bobot.Utils.ast_to_source([api[:code]], no_parens: no_parens)}
     end
     """
     |> Code.format_string!(locals_without_parens: no_parens)
@@ -296,7 +302,7 @@ defmodule BobotWeb.Apis do
 
   defp compile_api(name) do
     filename = "#{@apis_dir}/#{name}.ex"
-    case Bobot.Tools.compile_file(filename) do
+    case Bobot.Utils.compile_file(filename) do
       {:ok, _} ->
         {:ok, "API compiled OK!"}
 

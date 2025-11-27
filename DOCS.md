@@ -1,9 +1,9 @@
 # Bobot, a tool not suitable for lazy people
 
 With Bobot YOU are the smart one, YOU are the one who thinks, YOU are the one who solves problems,
-and YOU are the one who creates solutions. No dude, with Bobot there is not AIs, prompts,  visual 
-interfaces designed for people who cannot type because their nail polish chips easily or faggy 
-stuff like that, here YOU are the one who has to work. With Bobot YOU must type the instructions
+and YOU are the one who creates solutions. Yes dude!... with Bobot there is not AIs, no prompts, 
+no visual interfaces designed for people who cannot type because their nail polish chips or faggy 
+stuff like that, here YOU are the one who has to work. With Bobot YOU must type the instructions 
 that says to the bot what to do. 
 
 But it's not all that hard with Bobot because, through simple and fairly self-explanatory language, 
@@ -26,7 +26,7 @@ The **settings** are conformed by many keys, some of them mandatories. One of th
 Depending of the type of bot, will be necessary to complete other settings (Ex: for type :telegram 
 you need to set `token`).
 
-The **hooks** defile 3 important blocks: 
+The **hooks** define 3 important blocks: 
 - `start_block`: it is the block that will be called when the user start communication with the bot. 
   For the `start_block` also will be necesary define how many parameters will receive; for that it 
   is used `start_params_count`. 
@@ -43,12 +43,12 @@ A bot is made up of one or more of the 3 basic blocks defined in Bobot:
     callables that can be invoked from initial hooks (see below), fron another **block**, or from a 
     **command** (see below). 
 
-- **command**: It is another basic unit. Some bots engine (example Telegram) allow define special
+- **command**: It is another basic unit. Some bots engines (example Telegram) allow define special
     message that are **commands**. These **commands** can interrupt the normal flow of the bot and 
     trigger some specific action. To define a **command** block it is used `defcommand`. 
 
-- **channel**: A **channel** is a special block that define a kind of group of news for subscribers. 
-    The user of the bot can send with a special command a subs or unsubs to the **channel** defined.
+- **channel**: A **channel** is a special block that define a kind of group/topic/news for subscribers. 
+    The user of the bot can send with a special command a subs or unsubs to a **channel**.
     Inside a channel you can define periodic task that will run every period and will send the 
     result of the task to the subscribers. A channel is defined with `defchannel` sentency.
 

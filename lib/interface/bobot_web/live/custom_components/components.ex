@@ -1,6 +1,6 @@
 defmodule BobotWeb.Components do
-  use Phoenix.Component
-
+  # use Phoenix.Component
+  use BobotWeb, :html
   import BobotWeb.CoreComponents
   # alias Phoenix.LiveView.JS
   use Gettext, backend: BobotWeb.Gettext
@@ -13,6 +13,7 @@ defmodule BobotWeb.Components do
     """
   end
 
+  attr :onclick, :string, default: nil
   slot :inner_block
 
   def tiny_logo(assigns) do
@@ -29,8 +30,10 @@ defmodule BobotWeb.Components do
 
   attr :type, :string, default: "button"
   attr :icon, :string, default: nil
+  attr :navigate, :any, default: nil
   attr :class, :any, default: nil
   attr :"icon-pos", :string, default: "right"
+  attr :onclick, :string, default: ""
   attr :rest, :global, include: ~w(disabled form name value keyb keyb-hide)
 
   slot :inner_block, required: true
@@ -45,11 +48,15 @@ defmodule BobotWeb.Components do
         "font-medium rounded text-xs p-1.5 text-center items-center disabled:text-gray-400",
         @class
       ]}
+      onclick={"#{@onclick};#{@navigate && "this.querySelector('a').click();" || ""}"}
       {@rest}
     >
       <%= render_slot(@inner_block) %>
       <%= if @icon != nil do %>
-      <.icon name={"hero-#{@icon}"} class={"-ml-2 h-4 w-4 float-#{assigns[:"icon-pos"]}"} />
+        <.icon name={"hero-#{@icon}"} class={"-ml-2 h-4 w-4 float-#{assigns[:"icon-pos"]}"} />
+      <% end %>
+      <%= if @navigate != nil do %>
+        <.link navigate={@navigate}></.link>
       <% end %>
     </button>
     """

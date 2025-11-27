@@ -1,7 +1,7 @@
 setTimeout(()=>{
     if (window.bobot_editor) {
         bobot_editor.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') e.preventDefault();
+            if (e.key === 'Escape' || e.key === 'F2') e.preventDefault();
         });
         window.editor = ace.edit("bobot-editor-text");
         editor.setTheme("ace/theme/monokai");

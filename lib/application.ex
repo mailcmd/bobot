@@ -29,7 +29,7 @@ defmodule Bobot.Application do
     # Compile APIs
     Path.wildcard("#{@apis_dir}/*.ex") |> Enum.map(fn filename ->
       try do
-        Bobot.Tools.compile_file(filename)
+        Bobot.Utils.compile_file(filename)
       rescue
         error -> Logger.log(:error, "[BOBOT] There was a problem compiling #{filename} (#{inspect error})")
       end
@@ -38,7 +38,7 @@ defmodule Bobot.Application do
     # Compile Libs
     Path.wildcard("#{@libs_dir}/*.ex") |> Enum.map(fn filename ->
       try do
-        Bobot.Tools.compile_file(filename)
+        Bobot.Utils.compile_file(filename)
       rescue
         error -> Logger.log(:error, "[BOBOT] There was a problem compiling #{filename} (#{inspect error})")
       end
@@ -52,7 +52,7 @@ defmodule Bobot.Application do
     telegram_bots=
       Enum.map(telegram_bots, fn name ->
         Logger.log(:notice, "[BOBOT] Compiling #{name} bot...")
-        case Bobot.Tools.compile_file("#{@bots_dir}/#{name}.ex") do
+        case Bobot.Utils.compile_file("#{@bots_dir}/#{name}.ex") do
           {{:error, message}, _} ->
             Logger.log(:error, "[BOBOT] There was a problem compiling #{@bots_dir}/#{name}.ex (#{message})")
             nil
@@ -67,8 +67,8 @@ defmodule Bobot.Application do
       {DNSCluster, query: Application.get_env(:bobot, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Bobot.PubSub},
       BobotWeb.Endpoint,
-      {Bobot.Bot.Assigns, []},
-      {Bobot.Engine.Telegram.Storage, []},
+      {Bobot.Utils.Assigns, []},
+      {Bobot.Utils.Storage, []},
       {Finch, name: Bobot.Finch},
       # {Telegram.Webhook, config: webhook_config, bots: [{Bobot.Engine.Telegram, bot_config}]}
       # {Telegram.Poller, bots: [{Bobot.Engine.Telegram, bot_config}]},
@@ -100,7 +100,7 @@ defmodule Bobot.Application do
   ################################################################################################
 
   def init_telegram_bot(name) do
-    bot_module = Bobot.Tools.get_bot_module(name)
+    bot_module = Bobot.Utils.get_bot_module(name)
 
     ## check if bot has channels and init
     bot_channels = :attributes |> bot_module.__info__() |> Keyword.get(:bot_channels, [])
@@ -117,10 +117,10 @@ defmodule Bobot.Application do
     expire_message = Keyword.get(bot_config, :expire_message, "👏")
     commands_as_message = Keyword.get(bot_config, :commands_as_message, false)
     :timer.apply_after(3_000, fn ->
-      Bobot.Engine.Telegram.Storage.set_token_data(token, :module, bot_module)
-      Bobot.Engine.Telegram.Storage.set_token_data(token, :session_ttl, session_ttl)
-      Bobot.Engine.Telegram.Storage.set_token_data(token, :expire_message, expire_message)
-      Bobot.Engine.Telegram.Storage.set_token_data(token, :commands_as_message, commands_as_message)
+      Bobot.Utils.Storage.set_token_data(token, :module, bot_module)
+      Bobot.Utils.Storage.set_token_data(token, :session_ttl, session_ttl)
+      Bobot.Utils.Storage.set_token_data(token, :expire_message, expire_message)
+      Bobot.Utils.Storage.set_token_data(token, :commands_as_message, commands_as_message)
     end)
     {Bobot.Engine.Telegram, bot_config}
     # {Bobot.Engine.Telegram, [{:name, name} | bot_config]}

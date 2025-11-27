@@ -21,6 +21,8 @@ A tool where YOU are the one who build solutions!!
       [x] defapi 
       [x] defcall 
 - [ ] Default commands: help, chsub, chunsub, chls
+- [x] IMPORTANT: enhance how engine manage flow interrupt with commands (maybe a different session?)
+- [ ] Base: add constants definitions (attributes)
 - [ ] Duplicate BOT y API
 - [x] Telegram: add send_image 
 - [x] Interface web: add Telegram "command ..." as blocks

@@ -69,8 +69,8 @@ defmodule Bobot.DSL.Base.Templates do
     hooks = [
       start_block: String.to_atom(params["start_block"]),
       start_params_count: String.to_integer(params["start_params_count"]),
-      stop_block: String.to_atom(params["stop_block"]),
-      fallback_block: String.to_atom(params["fallback_block"])
+      stop_block: (if params["stop_block"] == "", do: nil, else: String.to_atom(params["stop_block"])),
+      fallback_block: (if params["fallback_block"] == "", do: nil, else: String.to_atom(params["fallback_block"]))
     ]
     {:ok, "Hooks set!", hooks}
   end
@@ -86,10 +86,9 @@ defmodule Bobot.DSL.Base.Templates do
           end
 
         {:ok, nil, %{
-          name => %{
+            name: name,
             params: prms,
             block: []
-          }
         }}
       _ ->
         {:error, "Already exists a block with this name!", nil}

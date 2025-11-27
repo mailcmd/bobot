@@ -20,6 +20,7 @@
   </head>
   <body class="flex flex-col h-screen w-screen">
     <%= @inner_content %> 
+    <%= include("static", assigns) %>
     <script defer phx-track-static type="text/javascript" src={~p"/assets/init.js"}></script>
   </body>
 </html>

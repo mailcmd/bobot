@@ -3,7 +3,7 @@ defmodule BobotWeb.Bots do
   import BobotWeb.Components
   import BobotWeb.WebTools
 
-  require Bobot.Tools
+  require Bobot.Utils
 
   Code.ensure_compiled!(Bobot.Config)
 
@@ -57,7 +57,7 @@ defmodule BobotWeb.Bots do
 
   @bots_dir Application.compile_env(:bobot, :bots_dir)
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
 
     {:ok, socket
       |> assign(sentencies: get_sentencies())
@@ -67,7 +67,14 @@ defmodule BobotWeb.Bots do
       |> assign(box_status: "maximized")
       |> assign(editor_status_bar: "")
       |> assign(current_bot: nil)
+      |> Bobot.Utils.pipe_if(
+          params["target"] != nil,
+            do: assign(current_bot: params["target"] |> String.to_atom() |> load_bot())
+        )
       |> assign(current_block: nil)
+      |> push_event("js-exec", %{ js: """
+        bobot_editor.close();
+      """ })
     }
   end
 
@@ -135,10 +142,12 @@ defmodule BobotWeb.Bots do
               nil ->
                 @blank_bot
                 |> put_in([:name], def[:name])
+                |> put_in([:settings], [])
                 |> put_in([:settings, :type], def[:type])
                 |> put_in([:settings, :use_apis], def[:use_apis])
                 |> put_in([:settings, :use_libs], def[:use_libs])
                 |> put_in([:settings, :config], [])
+                |> put_in([:blocks], [])
 
               cb ->
                 cb
@@ -230,7 +239,7 @@ defmodule BobotWeb.Bots do
         :ok ->
           current_bot =
             assigns[:current_bot]
-            |> update_in([:blocks], fn blocks -> Map.merge(blocks, block) end)
+            |> update_in([:blocks], fn blocks -> blocks ++ [block] end)
             |> put_in([:changed], true)
 
           socket
@@ -262,12 +271,12 @@ defmodule BobotWeb.Bots do
 
   ###############
   ### VIEW BOT
-  def handle_event("view-bot", _params, socket) do
+  def handle_event("edit-bot", _params, socket) do
     text = bot_to_string(socket.assigns[:current_bot])
 
     {:noreply, socket
       |> push_event("js-exec", %{ js: """
-        editor_open('#{socket.assigns[:current_bot][:name]}', `#{text}`, true);
+        editor_open('#{socket.assigns[:current_bot][:name]}', `#{text}`, false);
       """ })
     }
 
@@ -290,6 +299,7 @@ defmodule BobotWeb.Bots do
           let {row, column} = editor.getCursorPositionScreen();
           editor_set_text(`#{text}`);
           editor_gotoline([row + 1, column])
+          editor_set_status_bar('');
           editor.focus();
         """ })
   }
@@ -301,8 +311,8 @@ defmodule BobotWeb.Bots do
           |> assign(last_result: :error)
           |> put_message(message)
           |> push_event("js-exec", %{ js: """
-            editor_open('Compile error for #{current_bot[:name]}', `#{text}`, true);
-            editor_set_status_bar('#{error_message}', #{nline}, true);
+            editor_open('Compile error for #{current_bot[:name]}', `#{text}`, false);
+            editor_set_status_bar('ERROR: #{error_message}', #{nline}, true);
           """ })
         }
 
@@ -344,7 +354,8 @@ defmodule BobotWeb.Bots do
   def handle_event("open-block", params, socket) do
     name = String.to_atom(params["value"])
     block_prms = Macro.to_string(socket.assigns[:current_bot][:blocks][name][:params])
-    text = Bobot.Tools.ast_to_source(socket.assigns[:current_bot][:blocks][name][:block])
+    block = find_block(socket.assigns[:current_bot], name)
+    text = Bobot.Utils.ast_to_source(block[:block])
     {:noreply, socket
       |> assign(current_block: name)
       |> push_event("js-exec", %{ js: """
@@ -365,7 +376,7 @@ defmodule BobotWeb.Bots do
   end
 
   def handle_event("operation-editor", %{"operation" => "cancel"} = params, socket) do
-    case Bobot.Tools.quote_string(params["block_text"]) do
+    case Bobot.Utils.quote_string(params["block_text"]) do
       {:error, nline, message} ->
         {:noreply, socket
           |> assign(last_result: :error)
@@ -385,10 +396,10 @@ defmodule BobotWeb.Bots do
             original_bot =
               current_bot
               |> bot_to_string()
-              |> Bobot.Tools.quote_string()
+              |> Bobot.Utils.quote_string()
 
             {result, message} =
-              if not Bobot.Tools.ast_equals(original_bot, new_block) do
+              if not Bobot.Utils.ast_equals(original_bot, new_block) do
                 {:error, "You made changes, save them before close or [CTRL+click] to close without save."}
               else
                 {:ok, nil}
@@ -405,10 +416,10 @@ defmodule BobotWeb.Bots do
           ## If it is just a block
           name ->
             new_block = ast
-            original_block = socket.assigns[:current_bot][:blocks][name][:block]
+            original_block = find_block(socket.assigns[:current_bot], name)[:block]
 
             {result, block_name, message} =
-              if not Bobot.Tools.ast_equals(original_block, new_block) do
+              if not Bobot.Utils.ast_equals(original_block, new_block) do
                 {:error, name, "You made changes, save them before close or [CTRL+click] to close without save."}
               else
                 {:ok, nil, nil}
@@ -427,7 +438,7 @@ defmodule BobotWeb.Bots do
   end
 
   def handle_event("operation-editor", %{"operation" => "commit"} = params, socket) do
-    case Bobot.Tools.quote_string(params["block_text"]) do
+    case Bobot.Utils.quote_string(params["block_text"]) do
       {:error, nline, message} ->
         {:noreply, socket
           |> assign(last_result: :error)
@@ -438,12 +449,12 @@ defmodule BobotWeb.Bots do
           """ })
         }
 
-      new_block ->
+      new_ast ->
         case socket.assigns[:current_block] do
           ## If it is a complete bot
           nil ->
             new_bot =
-              {:__block__, [],  new_block}
+              {:__block__, [],  new_ast}
               |> ast_extract_components()
               |> elem(1)
               |> Map.put(:changed, true)
@@ -468,7 +479,13 @@ defmodule BobotWeb.Bots do
             {:noreply, socket
               |> update(:current_bot, fn current_bot ->
                 current_bot
-                  |> put_in([:blocks, name, :block], new_block)
+                  |> update_in([:blocks], fn blocks ->
+                    index = find_block_index(current_bot, name)
+                    new_block = current_bot
+                      |> find_block(name)
+                      |> put_in([:block], new_ast)
+                    List.replace_at(blocks, index, new_block)
+                  end)
                   |> put_in([:changed], true)
               end)
               |> assign(last_result: :ok)
@@ -534,9 +551,17 @@ defmodule BobotWeb.Bots do
   end
   defp save_bot(bot, filename), do: File.write(filename, bot_to_string(bot))
 
+  defp find_block(bot, name) do
+    Enum.find(bot[:blocks], fn blk -> blk[:name] == name end)
+  end
+
+  defp find_block_index(bot, name) do
+    Enum.find_index(bot[:blocks], fn blk -> blk[:name] == name end)
+  end
+
   defp bot_to_string(bot) do
 
-    except = [:hooks]
+    except = [:hooks, :terminate, :break]
     no_parens =
       get_sentencies()
       |> Enum.map(fn {k, _} -> {String.to_atom(k), :*} end)
@@ -573,7 +598,7 @@ defmodule BobotWeb.Bots do
   defp bot_blocks_to_source([block | blocks], no_parens) do
     """
     defblock :#{block[:name]}#{block[:params] != [] && ", #{Macro.to_string(block[:params])}" || ""} do
-      #{Bobot.Tools.ast_to_source(block[:block], no_parens)}
+      #{Bobot.Utils.ast_to_source(block[:block], no_parens)}
     end
 
     #{bot_blocks_to_source(blocks, no_parens)}
@@ -588,7 +613,7 @@ defmodule BobotWeb.Bots do
   defp bot_commands_to_source([{command, block} | commands], no_parens) do
     """
     defcommand #{Macro.to_string(command)} do
-      #{Bobot.Tools.ast_to_source(block, no_parens)}
+      #{Bobot.Utils.ast_to_source(block, no_parens)}
     end
 
     #{bot_commands_to_source(commands, no_parens)}
@@ -603,7 +628,7 @@ defmodule BobotWeb.Bots do
  defp bot_channels_to_source([{channel, block} | channels], no_parens) do
    """
    defchannel #{Macro.to_string(channel)} do
-     #{Bobot.Tools.ast_to_source(block, no_parens)}
+     #{Bobot.Utils.ast_to_source(block, no_parens)}
    end
 
    #{bot_channels_to_source(channels, no_parens)}
@@ -612,7 +637,7 @@ defmodule BobotWeb.Bots do
 
  defp compile_bot(name) do
     filename = file_name(name)
-    case Bobot.Tools.compile_file(filename) do
+    case Bobot.Utils.compile_file(filename) do
       {:ok, _} ->
         {:ok, "Bot compiled OK!"}
 
@@ -709,7 +734,7 @@ defmodule BobotWeb.Bots do
           {
             [], #node,
             acc
-              |> Bobot.Tools.put_inx([:commands, command], block)
+              |> Bobot.Utils.put_inx([:commands, command], block)
           }
 
           {:defchannel, _, [channel, [do: block]]}, acc ->
@@ -721,7 +746,7 @@ defmodule BobotWeb.Bots do
             {
               [], #node,
               acc
-                |> Bobot.Tools.put_inx([:channels, channel], block)
+                |> Bobot.Utils.put_inx([:channels, channel], block)
             }
 
           {:__block__, _, _}, %{hooks: _hooks} = acc ->
@@ -744,12 +769,16 @@ defmodule BobotWeb.Bots do
           }
       end)
       |> elem(1)
+      |> update_in([:blocks], fn
+        nil -> []
+        blocks -> blocks
+      end)
     }
   end
   def ast_extract_components(_), do: []
 
   def get_sentencies() do
-    Bobot.Tools.get_modules(~r/Bobot\.DSL\.(.+?)\.Tools/)
+    Bobot.Utils.get_modules(~r/Bobot\.DSL\.(.+?)\.Tools/)
       |> Enum.map(fn mod -> mod.info(:sentencies) end)
       |> List.flatten()
       |> Enum.into(%{})
@@ -758,7 +787,7 @@ defmodule BobotWeb.Bots do
   def load_bot(name) do
     name
     |> file_name()
-    |> Bobot.Tools.ast_from_file()
+    |> Bobot.Utils.ast_from_file()
     |> ast_extract_components()
     |> elem(1)
   end

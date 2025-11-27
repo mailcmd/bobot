@@ -99,7 +99,7 @@ defmodule Bobot.DSL.Base do
       |> Enum.map(fn l -> Code.eval_string("{:#{l}, [], nil}") |> elem(0) end)
     params =
       cond do
-        length(params) == 0 -> nil
+        length(params) == 0 -> {:_, [], nil}
         length(params) == 1 -> hd(params)
         true -> params
       end
@@ -107,19 +107,20 @@ defmodule Bobot.DSL.Base do
     fallback = Keyword.get(opts, :fallback_block)
     quote do
       @fallback_block unquote(fallback)
-      def start_bot(unquote(params), var!(sess_id), assigns \\ %{}) do
-        Bobot.Bot.Assigns.set_all(var!(sess_id), assigns)
+      def start_bot(unquote(params) = prms, var!(sess_id), assigns \\ %{}) do
+        Bobot.Utils.Assigns.set_all(var!(sess_id), assigns)
         try do
-          run(unquote(start), unquote(params), var!(sess_id))
+          run(unquote(start), prms, var!(sess_id))
           if unquote(stop) do
             run(unquote(stop), nil, var!(sess_id))
           end
-          Bobot.Bot.Assigns.unset(var!(sess_id))
+          Bobot.Utils.Assigns.unset(var!(sess_id))
         rescue
           error ->
             require Logger
             Logger.log(:error, "#{inspect error}")
             run(unquote(fallback), nil, var!(sess_id))
+            Bobot.Utils.Assigns.unset(var!(sess_id))
         end
       end
     end
@@ -127,10 +128,12 @@ defmodule Bobot.DSL.Base do
 
   ## BLOCK
   defmacro defblock(name, opts \\ [], do: block) do
-    vars = Keyword.get(opts, :receive, nil)
+    vars = Keyword.get(opts, :receive, {:_, [], nil})
     quote do
       def run(unquote(name), unquote(vars), var!(sess_id)) do
         unquote(block)
+        catch
+          value -> value
       end
     end
   end
@@ -139,15 +142,9 @@ defmodule Bobot.DSL.Base do
   defmacro defcommand(command, do: block) do
     quote do
       def run_command(unquote(command), var!(sess_id), var!(assigns)) do
-        # if var!(sess_id) != nil do
-        #   chat_id = var!(assigns)[:chat_id]
-        #   case get_token_data(chat_id) do
-        #     {pid, _engine} -> Kernel.send(pid, :cancel)
-        #     _ -> :ok
-        #   end
-        # end
         unquote(block)
-        # terminate()
+        catch
+          value -> value
       end
     end
   end
@@ -163,6 +160,7 @@ defmodule Bobot.DSL.Base do
   end
 
   ################################################################################################
+  ################################################################################################
   defmacro call_block(name, opts \\ []) do
     params = Keyword.get(opts, :params, nil)
     quote do
@@ -170,20 +168,27 @@ defmodule Bobot.DSL.Base do
     end
   end
 
+  defmacro return() do
+    throw(nil)
+  end
+  defmacro return(value) do
+    throw(value)
+  end
+
   ## VALUE_OF / SESSION_VALUE / SESSION_DATA
   defmacro session_data() do
     quote do
-      Bobot.Bot.Assigns.get_all(var!(sess_id))
+      Bobot.Utils.Assigns.get_all(var!(sess_id))
     end
   end
   defmacro value_of(keys) when is_list(keys) do
     quote do
-      Bobot.Bot.Assigns.get_in(var!(sess_id), unquote(keys))
+      Bobot.Utils.Assigns.get_in(var!(sess_id), unquote(keys))
     end
   end
   defmacro value_of(key) do
     quote do
-      Bobot.Bot.Assigns.get(var!(sess_id), unquote(key))
+      Bobot.Utils.Assigns.get(var!(sess_id), unquote(key))
     end
   end
   defmacro value_of(key, is: val) do
@@ -226,13 +231,13 @@ defmodule Bobot.DSL.Base do
   defmacro session_store(values) when is_list(values) or is_map(values) do
     quote do
       Enum.each(unquote(values), fn {key, val} ->
-        Bobot.Bot.Assigns.put(var!(sess_id), key, val)
+        Bobot.Utils.Assigns.put(var!(sess_id), key, val)
       end)
     end
   end
   defmacro session_store({keys, values}) when is_list(keys) do
     quote do
-      Bobot.Bot.Assigns.put_in(var!(sess_id), unquote(keys), unquote(values))
+      Bobot.Utils.Assigns.put_in(var!(sess_id), unquote(keys), unquote(values))
     end
   end
 
@@ -242,7 +247,7 @@ defmodule Bobot.DSL.Base do
     quote do
       apis = __MODULE__.__info__(:attributes) |> Keyword.get(:bot_apis)
       res = try_apis(apis, unquote(id), unquote(params))
-      Bobot.Bot.Assigns.put_in(var!(sess_id), [unquote(id)], res)
+      Bobot.Utils.Assigns.put_in(var!(sess_id), [unquote(id)], res)
     end
   end
 
@@ -251,7 +256,7 @@ defmodule Bobot.DSL.Base do
     store_key = Keyword.fetch!(opts, :store_in)
     quote do
       res = http_request(unquote(url), unquote(opts))
-      Bobot.Bot.Assigns.put_in(var!(sess_id), [unquote(store_key)], res)
+      Bobot.Utils.Assigns.put_in(var!(sess_id), [unquote(store_key)], res)
     end
   end
 
@@ -264,7 +269,7 @@ defmodule Bobot.DSL.Base do
       end
     end)
     quote do
-      Bobot.Tools.task_every_add(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
+      Bobot.Utils.task_every_add(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
     end
   end
 

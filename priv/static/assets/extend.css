@@ -116,6 +116,10 @@ input[readonly]:focus {
   width: 24rem;
 }
 
+.w-80\% {
+  width: 80%;
+}
+
 .home-list::before {
   content: attr(content);
   width: 100%;
@@ -131,6 +135,7 @@ input[readonly]:focus {
 }
 
 .editor-status-bar {
+  width: 60vw;
   padding-top: 4px;
   padding-bottom: 4px;
 }
