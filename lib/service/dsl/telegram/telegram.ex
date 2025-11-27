@@ -44,16 +44,7 @@ defmodule Bobot.DSL.Telegram do
         )
       end
 
-      def inform_to_subscribers(channel, subscribers, message) do
-        Enum.each(subscribers, fn chat_id ->
-          Telegram.Api.request(@token, "sendMessage",
-            chat_id: chat_id,
-            text: message,
-            parse_mode: "HTML"
-          )
-        end)
-      end
-
+      @impl Bobot.Bot
       def launch() do
         case Bobot.Utils.compile_file("#{@bots_dir}/#{@bot_name}.ex") do
           {{:error, message}, _} ->
@@ -71,6 +62,7 @@ defmodule Bobot.DSL.Telegram do
         end
       end
 
+      @impl Bobot.Bot
       def stop() do
         Supervisor.which_children(Telegram.Poller)
           |> Enum.each(fn {id, _, _, _} ->
@@ -231,18 +223,6 @@ defmodule Bobot.DSL.Telegram do
   end
 
   ## TERMINATE
-  defmacro break(returning: value) do
-    quote do
-      throw(unquote(value))
-    end
-  end
-
-  defmacro break() do
-    quote do
-      break(returning: nil)
-    end
-  end
-
   defmacro terminate() do
     quote do
       chat_id = Bobot.Utils.Assigns.get(var!(sess_id), :chat_id)

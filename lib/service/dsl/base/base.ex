@@ -1,6 +1,28 @@
 defmodule Bobot.DSL.Base do
   @moduledoc false
 
+  defmacro __using__(_) do
+    quote do
+      @impl Bobot.Bot
+      def inform_to_subscribers(channel, subscribers, message) do
+        Enum.each(subscribers, fn chat_id ->
+          var!(sess_id) = Bobot.Utils.Storage.get_token_data(@token, {:chat, chat_id, :sess_id})
+          case message do
+            message when is_binary(message) ->
+              send_message message
+
+            %{type: :text, text: text} ->
+              send_message text
+
+            %{type: :image, image: image} ->
+              send_image image, download: true
+          end
+        end)
+      end
+    end
+  end
+
+
   ################################################################################################
   ## UTILS
   ################################################################################################
@@ -126,6 +148,15 @@ defmodule Bobot.DSL.Base do
     end
   end
 
+  defmacro constants(keywords) do
+    for {k, v} <- keywords do
+      quote do
+        Module.register_attribute(__MODULE__, unquote(k), persist: true, accumulate: false)
+        Module.put_attribute(__MODULE__, unquote(k), unquote(v))
+      end
+    end
+  end
+
   ## BLOCK
   defmacro defblock(name, opts \\ [], do: block) do
     vars = Keyword.get(opts, :receive, {:_, [], nil})
@@ -168,11 +199,17 @@ defmodule Bobot.DSL.Base do
     end
   end
 
-  defmacro return() do
-    throw(nil)
+  ## BREAK
+  defmacro break(returning: value) do
+    quote do
+      throw(unquote(value))
+    end
   end
-  defmacro return(value) do
-    throw(value)
+
+  defmacro break() do
+    quote do
+      break(returning: nil)
+    end
   end
 
   ## VALUE_OF / SESSION_VALUE / SESSION_DATA
@@ -181,49 +218,51 @@ defmodule Bobot.DSL.Base do
       Bobot.Utils.Assigns.get_all(var!(sess_id))
     end
   end
-  defmacro value_of(keys) when is_list(keys) do
+  defmacro session_value(keys) when is_list(keys) do
     quote do
       Bobot.Utils.Assigns.get_in(var!(sess_id), unquote(keys))
     end
   end
-  defmacro value_of(key) do
+  defmacro session_value(key) do
     quote do
       Bobot.Utils.Assigns.get(var!(sess_id), unquote(key))
     end
   end
-  defmacro value_of(key, is: val) do
+  defmacro session_value(key, is: val) do
     quote do
-      value_of(unquote(key)) == unquote(val)
+      session_value(unquote(key)) == unquote(val)
     end
   end
-  defmacro value_of(key, is_not: val) do
+  defmacro session_value(key, is_not: val) do
     quote do
-      value_of(unquote(key)) != unquote(val)
+      session_value(unquote(key)) != unquote(val)
     end
   end
-  defmacro value_of(key, contains: val) when is_binary(val) do
+  defmacro session_value(key, contains: val) when is_binary(val) do
     quote do
-      String.match?(value_of(unquote(key)), Regex.compile!("#{unquote(val)}"))
+      String.match?(session_value(unquote(key)), Regex.compile!("#{unquote(val)}"))
     end
   end
-  defmacro value_of(key, icontains: val) when is_binary(val) do
+  defmacro session_value(key, icontains: val) when is_binary(val) do
     quote do
-      String.match?(value_of(unquote(key)), Regex.compile!("#{unquote(val)}", "i"))
+      String.match?(session_value(unquote(key)), Regex.compile!("#{unquote(val)}", "i"))
     end
   end
-  defmacro value_of(key, match: val) do
+  defmacro session_value(key, match: val) do
     quote do
-      String.match?(value_of(unquote(key)), unquote(val))
+      String.match?(session_value(unquote(key)), unquote(val))
     end
   end
-  defmacro session_value(key) do
+
+  ## Just for backward compatibility
+  defmacro value_of(key) do
     quote do
-      value_of(unquote(key))
+      session_value(unquote(key))
     end
   end
-  defmacro session_value(key, opts)do
+  defmacro value_of(key, opts)do
     quote do
-      value_of(unquote(key), unquote(opts))
+      session_value(unquote(key), unquote(opts))
     end
   end
 

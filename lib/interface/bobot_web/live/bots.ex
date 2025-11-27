@@ -579,6 +579,8 @@ defmodule BobotWeb.Bots do
 
       hooks #{Macro.to_string(bot[:hooks])}
 
+      constants #{Macro.to_string(bot[:constants] || [])}
+
       #{bot_channels_to_source(bot[:channels], no_parens: no_parens)}
 
       #{bot_commands_to_source(bot[:commands], no_parens: no_parens)}
@@ -675,6 +677,12 @@ defmodule BobotWeb.Bots do
           {
             [], #node,
             put_in(acc, [:hooks], hooks)
+          }
+
+        {:constants, _, [constants]}, acc ->
+          {
+            [], #node,
+            put_in(acc, [:constants], constants)
           }
 
         {:defblock, _, [block_name, [do: block]]}, acc ->

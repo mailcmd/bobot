@@ -34,22 +34,23 @@ defmodule Bobot.Task do
           Code.eval_quoted(quote do
             case unquote(now) do
               unquote(quoted_pattern) ->
-                require Logger
-                # Run the 'every' function and save the result as message
-                func = unquote(quoted_func)
-                message =
-                  try do
-                    func.(unquote(bot_module), unquote(channel))
-                  rescue
-                    _ -> "ERROR running task!"
-                  end
-
                 # Get channel subscribers from db
                 subscribers =
                   :dets.match_object(:static_db, {{:channel, unquote(channel)}, :_})
                   |> Enum.map(fn {_, chat_id} -> chat_id end)
 
+                # If there are not subs it is not worth run the task
                 if length(subscribers) > 0 do
+                  require Logger
+                  # Run the 'every' function and save the result as message
+                  func = unquote(quoted_func)
+                  message =
+                    try do
+                      func.(unquote(bot_module), unquote(channel))
+                    rescue
+                      _ -> "ERROR running task!"
+                    end
+
                   Logger.log(:info, "[Bobot][Tasks] Sending news for channel '#{unquote(channel)}' to #{inspect subscribers}")
                   unquote(bot_module).inform_to_subscribers(unquote(channel), subscribers, message)
                 end

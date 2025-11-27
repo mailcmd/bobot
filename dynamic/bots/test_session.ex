@@ -13,8 +13,10 @@ defbot :test_session,
   ] do
   hooks(start_block: :start, start_params_count: 0, stop_block: :stop, fallback_block: nil)
 
+  constants(bye_message: "Ok, good bye!")
+
   defcommand "/stop" do
-    terminate(message: "Ok, good bye!")
+    terminate(message: @bye_message)
   end
 
   defcommand "/test" do

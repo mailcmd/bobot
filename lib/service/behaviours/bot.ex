@@ -41,13 +41,19 @@ defmodule Bobot.Bot do
 
       require Logger
 
-      import Bobot.DSL.Base
       use unquote(type_module), config: unquote(config)
+      use Bobot.DSL.Base
       import Bobot.Utils
 
       unquote(import_libs)
 
+      @behaviour Bobot.Bot
     end
   end
 
+  @callback inform_to_subscribers(channel::atom(), subs::list(), message::(String.t | map()))
+    :: any()
+
+  @callback launch() :: any()
+  @callback stop() :: any()
 end

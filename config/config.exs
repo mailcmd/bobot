@@ -54,6 +54,17 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :bobot, motivational_quotes: [
+  "A tool where YOU are the smart one!!",
+  "A tool where YOU are the one who thinks!!",
+  "A tool where YOU're still the smart one!!",
+  "A tool for those who prefer to keep using their brains!!",
+  "A tool where YOU are the one who solves problems!!",
+  "A tool where YOU are the one who creates solutions!!",
+  "A tool where YOU are the one who invent solutions!!",
+  "A tool where YOU are the one who build solutions!!"
+]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

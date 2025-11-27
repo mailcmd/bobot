@@ -18,9 +18,11 @@ defbot :smi,
     fallback_block: :good_bye
   )
 
+  constants([])
+
   defchannel :test do
     every {{_, _, _}, {_, _, _}} do
-      "#{module} #{channel}"
+      %{type: :text, text: "#{module} #{channel} arreglado"}
     end
   end
 
@@ -41,8 +43,10 @@ defbot :smi,
         call_block :loop
 
       :error ->
-        terminate message:
-                    "No estás autorizado para usar @SMI BOT, envía este ID: <b>#{muid}</b> a los admines"
+        terminate(
+          message:
+            "No estás autorizado para usar @SMI BOT, envía este ID: <b>#{muid}</b> a los admines"
+        )
     end
   end
 
@@ -59,7 +63,7 @@ defbot :smi,
   end
 
   defblock :good_bye do
-    terminate message: @bot_config[:expire_message]
+    terminate(message: @bot_config[:expire_message])
   end
 
   defblock :loop do

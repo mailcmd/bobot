@@ -5,10 +5,16 @@ defmodule BobotWeb.Components do
   # alias Phoenix.LiveView.JS
   use Gettext, backend: BobotWeb.Gettext
 
+  @motivational_quotes Application.compile_env(:bobot, :motivational_quotes)
+
   def bg_logo(assigns) do
+    assigns = Map.put(assigns, :motivational_quotes, @motivational_quotes)
     ~H"""
     <div class="grid place-content-center blur absolute top-0 left-0 w-full h-full">
       <img class="invert" src={"/images/bobot.png"} style="width: 100%; height: 100% !important; opacity: 20%;"/>
+      <span class="m-auto text-gray-400" style="">
+        <%= Enum.at(@motivational_quotes, Enum.random(0..length(@motivational_quotes)-1)) %>
+      </span>
     </div>
     """
   end

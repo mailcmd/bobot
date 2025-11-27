@@ -21,7 +21,6 @@ defbot :spi_support,
 
   defblock :start, receive: muid do
     call_api :authenticate, params: muid
-    IO.inspect(session_data())
 
     case session_value([:authenticate, :user_data]) do
       :error ->
