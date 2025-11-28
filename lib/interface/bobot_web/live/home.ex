@@ -71,8 +71,6 @@ defmodule BobotWeb.Home do
 
         Enum.each(turn_off, fn name -> Bobot.Utils.bot_stop(name) end)
 
-
-
         Enum.each(turn_on, fn name ->
           case Bobot.Utils.bot_launch(name) do
             {:error, message} ->
@@ -94,6 +92,24 @@ defmodule BobotWeb.Home do
     [subdir, object ] = String.split(params["value"], "#")
     {:noreply, socket
       |> push_navigate(to: ~p"/#{subdir}/?target=#{object}")
+    }
+  end
+
+  def handle_event("reload-bot", params, socket) do
+    name = String.to_atom(params["value"])
+    Bobot.Utils.bot_stop(name)
+    {result, message} =
+      case Bobot.Utils.bot_launch(name) do
+        {:error, message} ->
+          Logger.log(:error, "[BOBOT][HOME] There was a problem compiling #{@bots_dir}/#{name}.ex (#{message})")
+          {:error, "There was a problem compiling #{@bots_dir}/#{name}.ex (#{message})"}
+        :ok ->
+          {:ok, "Bot reloaded OK!"}
+      end
+
+    {:noreply, socket
+      |> assign(last_result: result)
+      |> put_message(message)
     }
   end
 

@@ -94,6 +94,7 @@ defmodule Bobot.DSL.Telegram do
           {{:error, message}, _} ->
             Logger.log(:error, "[BOBOT][HOME] There was a problem compiling #{@bots_dir}/#{@bot_name}.ex (#{message})")
           _ ->
+            init_channels()
             type = @bot_type
             id = Telegram.Bot.Utils.name(Telegram.Poller.Task, @token)
 

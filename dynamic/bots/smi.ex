@@ -21,9 +21,9 @@ defbot :smi,
   constants([])
 
   defchannel :test do
-    every {{_, _, _}, {_, _, _}} do
+    every {{_, _, _}, {_, min, _}}, when: rem(min, 2) == 0 do
       %{
-        type: :image,
+        type: :text,
         url:
           "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDEqLPkj2upTgSZK7TEIxGlBo42_YojmNFjQ&s",
         text: "CHANNEL #{channel}: ANDAAAAAAAAAA???? #{NaiveDateTime.local_now()}"

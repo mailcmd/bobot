@@ -73,6 +73,7 @@ defmodule BobotWeb.Components do
   attr :icon, :string, default: nil
   attr :"icon-size", :string, default: "4"
   attr :class, :string, default: nil
+  attr :disabled, :boolean, default: false
   attr :rest, :global
 
   def icon_button(assigns) do

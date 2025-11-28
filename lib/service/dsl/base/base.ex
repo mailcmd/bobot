@@ -293,15 +293,23 @@ defmodule Bobot.DSL.Base do
   end
 
   # EVERY
-  defmacro every(pattern, do: block) do
+  defmacro every(pattern, opts \\ [], do: block) do
     pattern = Macro.escape(pattern)
     func = Macro.escape(quote do
       fn (var!(module), var!(channel)) ->
         Code.eval_quoted(unquote(Macro.escape(block)), [module: var!(module), channel: var!(channel)]) |> elem(0)
       end
     end)
-    quote do
-      Bobot.Task.add_task(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
+    guard = Keyword.get(opts, :when, nil)
+    if guard != nil do
+      guard = Macro.escape(guard)
+      quote do
+        Bobot.Task.add_task(__MODULE__, var!(channel_name), unquote(pattern), unquote(guard), unquote(func))
+      end
+    else
+      quote do
+        Bobot.Task.add_task(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
+      end
     end
   end
 

@@ -16400,6 +16400,10 @@ select {
   min-width: 16rem;
 }
 
+.min-w-80 {
+  min-width: 20rem;
+}
+
 .max-w-3xl {
   max-width: 48rem;
 }
@@ -16869,6 +16873,11 @@ select {
   line-height: 1.25rem;
 }
 
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
@@ -17197,6 +17206,11 @@ select {
 .disabled\:bg-gray-300:disabled {
   --tw-bg-opacity: 1;
   background-color: rgb(209 213 219 / var(--tw-bg-opacity));
+}
+
+.disabled\:text-gray-300:disabled {
+  --tw-text-opacity: 1;
+  color: rgb(209 213 219 / var(--tw-text-opacity));
 }
 
 .disabled\:text-gray-400:disabled {
