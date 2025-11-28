@@ -74,6 +74,24 @@ defmodule BobotWeb.Bots do
       |> assign(current_block: nil)
       |> push_event("js-exec", %{ js: """
         bobot_editor.close();
+        interact('span.defblock').draggable({
+          listeners: {
+            start (event) {
+              if (!event.target.position) event.target.position = {x: 0, y: 0};
+            },
+            move (event) {
+              event.target.position.x += event.dx;
+              event.target.position.y += event.dy;
+
+              event.target.style.transform =
+                `translate(${event.target.position.x}px, ${event.target.position.y}px)`;
+
+              if (event.target.lines) {
+                event.target.lines.forEach( line => line.position() );
+              }
+            },
+          }
+        });
       """ })
     }
   end

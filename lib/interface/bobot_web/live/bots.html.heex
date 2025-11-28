@@ -70,9 +70,9 @@
   <!-- Blocks -->
   <span :if={@current_bot} class="block flex flex-col flex-wrap">
     <%= for %{name: name} = block_data <- (@current_bot[:blocks] || []) do %>
-    <span class="defblock">
-      <div data-block-name={name} class={[
-        "flex-none inline-block min-w-64 relative font-mono text-xs h-fit-content m-2 p-2 pr-10",
+    <span data-block-name={name} class="defblock">
+      <div class={[
+        "flex-none inline-block min-w-80 relative font-mono text-xs h-fit-content m-2 p-2 pr-14",
         "border-2 border-purple-400 bg-white rounded-lg"
         ]}> 
         <%= 
@@ -86,6 +86,11 @@
           onclick={"confirm_action('Are you sure about to remove <b class=\"text-red-800\">#{name}</b> block?', 'remove_block:#{name}')"}/>
         <.icon_button class="edit absolute right-6 top-2 text-purple-600 hover:text-purple-800 hover:scale-110" 
           icon="pencil-solid" icon-size="3" phx-click="open-block" value={name}/>      
+        <.icon_button class="connect absolute right-10 top-2 text-purple-600 hover:text-purple-800 hover:scale-110 " 
+          icon="arrow-down-circle" icon-size="3" onclick="open_connect(this)" value={name}/>
+        
+        <.icon name="hero-plus-circle" class="hidden" />
+          
       </div>
       <!-- <div class="inline-block relative -top-1 ml-32 w-0 h-0" data-block-name-anchor={name}></div> -->
     </span>

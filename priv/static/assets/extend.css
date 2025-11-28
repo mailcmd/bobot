@@ -21,6 +21,7 @@ header > button.small-button {
 
 main {
   max-height: calc(100vh - 48px);
+  user-select: none;
 }
 
 dialog {
@@ -154,6 +155,13 @@ input[readonly]:focus {
   filter: blur(1px);
 }
 
+.block-selectable {
+  filter: hue-rotate(40deg);
+}
+.block-selectable:hover {
+  background-color: rgba(200,0,210,0.1);
+  cursor: pointer;
+}
 
 #bobot_editor.readonly::before, #bobot_editor.readonly .editor-status-bar {
   background-color: black;

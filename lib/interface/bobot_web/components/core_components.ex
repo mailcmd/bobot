@@ -595,7 +595,7 @@ defmodule BobotWeb.CoreComponents do
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} onclick={@onclick} @rest />
+    <span class={[@name, @class]} onclick={@onclick} {@rest} />
     """
   end
 

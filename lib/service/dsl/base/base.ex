@@ -6,7 +6,10 @@ defmodule Bobot.DSL.Base do
       import Bobot.DSL.Base
 
      def init_channels() do
-        bot_channels = :attributes |> __MODULE__.__info__() |> Keyword.get(:bot_channels, [])
+        bot_channels = :attributes
+          |> __MODULE__.__info__()
+          |> Keyword.get(:bot_channels, [])
+          |> Enum.map(fn {c, _} -> c end)
         Enum.each(bot_channels, fn channel ->
           init_channel(channel)
         end)
@@ -174,9 +177,10 @@ defmodule Bobot.DSL.Base do
   end
 
   ## CHANNEL
-  defmacro defchannel(channel, do: block) do
+  defmacro defchannel(channel, opts \\ [], do: block) do
+    description = Keyword.get(opts, :description, "")
     quote do
-      @bot_channels unquote(channel)
+      @bot_channels {unquote(channel), unquote(description)}
       def init_channel(unquote(channel) = var!(channel_name)) do
         unquote(block)
       end
@@ -356,16 +360,6 @@ defmodule Bobot.DSL.Base do
       end
     end
   end
-
-  # defmacro defcall(name, vars \\ [], do: block) do
-
-  #   quote do
-  #     @impl true
-  #     def call(unquote(name), unquote(vars)) when unquote(guards_expr) do
-  #       unquote(block)
-  #     end
-  #   end
-  # end
 
 
   ################################################################################################

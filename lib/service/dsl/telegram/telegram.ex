@@ -29,11 +29,12 @@ defmodule Bobot.DSL.Telegram do
 
       defcommand "/chsub " <> channel do
         chat_id = var!(assigns)[:chat_id]
-        Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} subscribed to channel #{channel}")
+        Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} subscribed to channel '#{channel}'")
         Bobot.Utils.channel_subscribe(
           String.to_atom(channel),
           chat_id
         )
+        send_message "<i>You are now subscribed to the '#{channel}' channel</i>"
       end
       defcommand "/chunsub " <> channel do
         chat_id = var!(assigns)[:chat_id]
@@ -42,6 +43,7 @@ defmodule Bobot.DSL.Telegram do
           String.to_atom(channel),
           chat_id
         )
+        send_message "<i>You have been removed from the '#{channel}' channel</i>"
       end
 
       ################################################################################################
@@ -123,7 +125,9 @@ defmodule Bobot.DSL.Telegram do
 
   defmacro __before_compile__(_env) do
     quote do
-      def run_command(cmd, _, _), do: IO.inspect(cmd, label: "FALLBACK")
+      def run_command(cmd, var!(sess_id), _) do
+        send_message "<i>Unknown command '#{cmd}'</i>"
+      end
       def init_channel(nil), do: :ok
     end
   end

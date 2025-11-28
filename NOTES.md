@@ -1,5 +1,22 @@
 # Just my notes, ideas, prototypes, etc
 
+*******
+A collateral idea for a minilib:
+
+You pass a :erlang.local_time pattern and the lib calculate the inmediately next time in the future 
+when the pattern match. 
+
+Ex guessing now = {{2025, 11, 28}, {16, 40, 57}}
+ - {{_, _, _}, {_, _, _}}  -> {{2025, 11, 28}, {16, 40, 58}}
+ - {{_, _, _}, {_, _, 0}}  -> {{2025, 11, 28}, {16, 41, 0}}
+ - {{_, _, _}, {_, 0, 10}} -> {{2025, 11, 28}, {17, 0, 10}}
+
+Extra function: 
+  - The same but passing a base time instead of now. 
+  - The same but calculate when in the past instead of the future. 
+
+*******
+
 ## Components
 - Nodes are equal a BLOCKS. So the main unit of process is the "block". 
 - Inside a block came the logic. The logic is a sequence of sentencies, including 

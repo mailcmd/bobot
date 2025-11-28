@@ -39,70 +39,80 @@ defmodule Bobot.Task do
 
   def every_minute_tasks() do
     now = Macro.escape(:calendar.local_time())
-    Enum.each(:ets.tab2list(:volatile_db), fn row ->
-      case row do
-        {:task, bot_module, channel, quoted_pattern, quoted_func} ->
-          Code.eval_quoted(quote do
-            case unquote(now) do
-              unquote(quoted_pattern) ->
-                # Get channel subscribers from db
-                subscribers =
-                  :dets.match_object(:static_db, {{:channel, unquote(channel)}, :_})
-                  |> Enum.map(fn {_, chat_id} -> chat_id end)
-
-                # If there are not subs it is not worth run the task
-                if length(subscribers) > 0 do
-                  require Logger
-                  # Run the 'every' function and save the result as message
-                  func = unquote(quoted_func)
-                  message =
-                    try do
-                      func.(unquote(bot_module), unquote(channel))
-                    rescue
-                      _ -> "ERROR running task!"
-                    end
-
-                  Logger.log(:info, "[Bobot][Tasks] Sending news for channel '#{unquote(channel)}' to #{inspect subscribers}")
-                  unquote(bot_module).inform_to_subscribers(unquote(channel), subscribers, message)
-                end
-
-              _ ->
-                nil
-            end
-          end)
-
-        {:task, bot_module, channel, quoted_pattern, quoted_guard, quoted_func} ->
-          Code.eval_quoted(quote do
-            case unquote(now) do
-              unquote(quoted_pattern) when (unquote(quoted_guard)) ->
-                # Get channel subscribers from db
-                subscribers =
-                  :dets.match_object(:static_db, {{:channel, unquote(channel)}, :_})
-                  |> Enum.map(fn {_, chat_id} -> chat_id end)
-
-                # If there are not subs it is not worth run the task
-                if length(subscribers) > 0 do
-                  require Logger
-                  # Run the 'every' function and save the result as message
-                  func = unquote(quoted_func)
-                  message =
-                    try do
-                      func.(unquote(bot_module), unquote(channel))
-                    rescue
-                      _ -> "ERROR running task!"
-                    end
-
-                  Logger.log(:info, "[Bobot][Tasks] Sending news for channel '#{unquote(channel)}' to #{inspect subscribers}")
-                  unquote(bot_module).inform_to_subscribers(unquote(channel), subscribers, message)
-                end
-
-              _ ->
-                nil
-            end
-          end)
-
-      end
-    end)
+    every_minute_tasks_h(:ets.tab2list(:volatile_db), now)
     :timer.apply_after(60_000, __MODULE__, :every_minute_tasks, [])
   end
+
+  defp every_minute_tasks_h([], _), do: :ok
+
+  # task without guard
+  defp every_minute_tasks_h([{:task, bot_module, channel, quoted_pattern, quoted_func} | tasks], now) do
+    Code.eval_quoted(quote do
+      case unquote(now) do
+        unquote(quoted_pattern) ->
+          # Get channel subscribers from db
+          subscribers =
+            :dets.match_object(:static_db, {{:channel, unquote(channel)}, :_})
+            |> Enum.map(fn {_, chat_id} -> chat_id end)
+
+          # If there are not subs it is not worth run the task
+          if length(subscribers) > 0 do
+            require Logger
+            # Run the 'every' function and save the result as message
+            func = unquote(quoted_func)
+            message =
+              try do
+                func.(unquote(bot_module), unquote(channel))
+              rescue
+                _ -> "ERROR running task!"
+              end
+
+            Logger.log(:info, "[Bobot][Tasks] Sending news for channel '#{unquote(channel)}' to #{inspect subscribers}")
+            unquote(bot_module).inform_to_subscribers(unquote(channel), subscribers, message)
+          end
+
+        _ ->
+          nil
+      end
+    end)
+
+    every_minute_tasks_h(tasks, now)
+  end
+
+  # task with guard
+  defp every_minute_tasks_h([{:task, bot_module, channel, quoted_pattern, quoted_guard, quoted_func} | tasks], now) do
+    Code.eval_quoted(quote do
+      case unquote(now) do
+        unquote(quoted_pattern) when (unquote(quoted_guard)) ->
+          # Get channel subscribers from db
+          subscribers =
+            :dets.match_object(:static_db, {{:channel, unquote(channel)}, :_})
+            |> Enum.map(fn {_, chat_id} -> chat_id end)
+
+          # If there are not subs it is not worth run the task
+          if length(subscribers) > 0 do
+            require Logger
+            # Run the 'every' function and save the result as message
+            func = unquote(quoted_func)
+            message =
+              try do
+                func.(unquote(bot_module), unquote(channel))
+              rescue
+                _ -> "ERROR running task!"
+              end
+
+            Logger.log(:info,
+              "[Bobot][Tasks] Sending news for channel '#{unquote(channel)}' to #{inspect subscribers}"
+            )
+            unquote(bot_module).inform_to_subscribers(unquote(channel), subscribers, message)
+          end
+
+        _ ->
+          nil
+      end
+    end)
+
+    every_minute_tasks_h(tasks, now)
+  end
+
 end

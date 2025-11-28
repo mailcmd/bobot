@@ -27,7 +27,7 @@ A tool where YOU are the one who build solutions!!
 - [x] every with guards
 - [x] Reload active BOT
 - [ ] Default commands: help, chsub, chunsub, chls
-- [ ] chsub, chunsub FEEDBACK
+- [x] chsub, chunsub FEEDBACK
 - [ ] Duplicate BOT y API
 - [ ] API to sent messages to channels
 - [ ] See what can make with connections between blocks

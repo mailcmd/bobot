@@ -12,7 +12,7 @@ defmodule BobotWeb.Components do
     ~H"""
     <div class="grid place-content-center blur absolute top-0 left-0 w-full h-full">
       <img class="invert" src={"/images/bobot.png"} style="width: 100%; height: 100% !important; opacity: 20%;"/>
-      <span class="m-auto text-gray-400" style="">
+      <span class="m-auto text-gray-400" style="opacity: 0.15;color: #000;">
         <%= Enum.at(@motivational_quotes, Enum.random(0..length(@motivational_quotes)-1)) %>
       </span>
     </div>
@@ -73,8 +73,7 @@ defmodule BobotWeb.Components do
   attr :icon, :string, default: nil
   attr :"icon-size", :string, default: "4"
   attr :class, :string, default: nil
-  attr :disabled, :boolean, default: false
-  attr :rest, :global
+  attr :rest, :global, include: ~w(disabled form name value keyb keyb-hide)
 
   def icon_button(assigns) do
     ~H"""
