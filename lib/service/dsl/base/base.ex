@@ -3,21 +3,14 @@ defmodule Bobot.DSL.Base do
 
   defmacro __using__(_) do
     quote do
-      @impl Bobot.Bot
-      def inform_to_subscribers(channel, subscribers, message) do
-        Enum.each(subscribers, fn chat_id ->
-          var!(sess_id) = Bobot.Utils.Storage.get_token_data(@token, {:chat, chat_id, :sess_id})
-          case message do
-            message when is_binary(message) ->
-              send_message message
+      import Bobot.DSL.Base
 
-            %{type: :text, text: text} ->
-              send_message text
-
-            %{type: :image, image: image} ->
-              send_image image, download: true
-          end
+     def init_channels() do
+        bot_channels = :attributes |> __MODULE__.__info__() |> Keyword.get(:bot_channels, [])
+        Enum.each(bot_channels, fn channel ->
+          init_channel(channel)
         end)
+        :ok
       end
     end
   end
@@ -308,7 +301,7 @@ defmodule Bobot.DSL.Base do
       end
     end)
     quote do
-      Bobot.Utils.task_every_add(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
+      Bobot.Task.add_task(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
     end
   end
 

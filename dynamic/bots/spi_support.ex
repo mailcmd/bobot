@@ -19,13 +19,17 @@ defbot :spi_support,
     fallback_block: :good_bye
   )
 
+  constants([])
+
   defblock :start, receive: muid do
     call_api :authenticate, params: muid
 
     case session_value([:authenticate, :user_data]) do
       :error ->
-        terminate message:
-                    "No estás autorizado para usar @SPISupport BOT, envía este ID: <b>#{muid}</b> a los admines"
+        terminate(
+          message:
+            "No estás autorizado para usar @SPISupport BOT, envía este ID: <b>#{muid}</b> a los admines"
+        )
 
       user_data ->
         session_store(current_channel: session_value([:authenticate, :current_channel]))
@@ -91,6 +95,6 @@ defbot :spi_support,
   end
 
   defblock :good_bye do
-    terminate message: @bot_config[:expire_message]
+    terminate(message: @bot_config[:expire_message])
   end
 end

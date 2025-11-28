@@ -23,7 +23,9 @@ A tool where YOU are the one who build solutions!!
 - [x] Base: add constants definitions (attributes)
 - [x] Telegram: add send_image 
 - [x] Interface web: add Telegram "command ..." as blocks
-- [ ] Base: add task schedule that trigger actions every time period
+- [x] Base: add task schedule that trigger actions every time period
+- [ ] every with guards
+- [ ] Reload active BOT
 - [ ] Default commands: help, chsub, chunsub, chls
 - [ ] Duplicate BOT y API
 - [ ] API to sent messages to channels

@@ -44,6 +44,50 @@ defmodule Bobot.DSL.Telegram do
         )
       end
 
+      ################################################################################################
+      ## Callbacks
+      ################################################################################################
+
+      @impl Bobot.Bot
+      def inform_to_subscribers(channel, subscribers, message) do
+        Enum.each(subscribers, fn chat_id ->
+          case message do
+            message when is_binary(message) ->
+              Telegram.Api.request(@token, "sendMessage", [
+                chat_id: chat_id,
+                text: message,
+                parse_mode: "HTML"
+              ])
+
+            %{type: :text, text: text} ->
+              Telegram.Api.request(@token, "sendMessage", [
+                chat_id: chat_id,
+                text: text,
+                parse_mode: "HTML"
+              ])
+
+            %{type: :image, filename: filename} ->
+              case File.read(filename) do
+                {:ok, content} ->
+                  result = Telegram.Api.request(@token, "sendPhoto",
+                    chat_id: chat_id,
+                    photo: {:file_content, content, Path.basename(filename)}
+                  )
+
+                _ ->
+                  :ok
+              end
+
+            %{type: :image, url: url} ->
+              result = Telegram.Api.request(@token, "sendPhoto",
+                chat_id: chat_id,
+                photo: url
+              )
+
+          end
+        end)
+      end
+
       @impl Bobot.Bot
       def launch() do
         case Bobot.Utils.compile_file("#{@bots_dir}/#{@bot_name}.ex") do
@@ -79,6 +123,7 @@ defmodule Bobot.DSL.Telegram do
   defmacro __before_compile__(_env) do
     quote do
       def run_command(cmd, _, _), do: IO.inspect(cmd, label: "FALLBACK")
+      def init_channel(nil), do: :ok
     end
   end
 
@@ -136,10 +181,18 @@ defmodule Bobot.DSL.Telegram do
         end
 
       if photo do
-        Telegram.Api.request(@token, "sendPhoto",
+        result = Telegram.Api.request(@token, "sendPhoto",
           chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
           photo: photo
         )
+        msg_id =
+          case result do
+            {:ok, %{"message_id" => id}} -> id
+            _ -> nil
+          end
+
+        Bobot.Utils.Assigns.put(var!(sess_id), :last_message_id, msg_id)
+        msg_id
       else
         Logger.log(:error, "[Bobot][Telegram] Error trying to send image (#{inspect error})")
       end
@@ -149,10 +202,18 @@ defmodule Bobot.DSL.Telegram do
     quote do
       case File.read(unquote(filename)) do
         {:ok, content} ->
-          Telegram.Api.request(@token, "sendPhoto",
+          result = Telegram.Api.request(@token, "sendPhoto",
             chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
             photo: {:file_content, content, Path.basename(unquote(filename))}
           )
+          msg_id =
+            case result do
+              {:ok, %{"message_id" => id}} -> id
+              _ -> nil
+            end
+
+          Bobot.Utils.Assigns.put(var!(sess_id), :last_message_id, msg_id)
+          msg_id
 
         error ->
           Logger.log(:error, "[Bobot][Telegram] Error trying to send image (#{inspect error})")

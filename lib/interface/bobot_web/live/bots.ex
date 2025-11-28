@@ -288,7 +288,8 @@ defmodule BobotWeb.Bots do
     current_bot = socket.assigns[:current_bot]
 
     with :ok <- save_bot(current_bot),
-         {:ok, message} <- compile_bot(current_bot[:name]) do
+         {:ok, message} <- compile_bot(current_bot[:name]),
+         :ok <- Bobot.Utils.get_bot_module(current_bot[:name]).init_channels() do
 
       text = bot_to_string(current_bot)
       {:noreply, socket

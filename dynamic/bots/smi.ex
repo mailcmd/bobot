@@ -22,7 +22,12 @@ defbot :smi,
 
   defchannel :test do
     every {{_, _, _}, {_, _, _}} do
-      %{type: :text, text: "#{module} #{channel} arreglado"}
+      %{
+        type: :image,
+        url:
+          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDEqLPkj2upTgSZK7TEIxGlBo42_YojmNFjQ&s",
+        text: "CHANNEL #{channel}: ANDAAAAAAAAAA???? #{NaiveDateTime.local_now()}"
+      }
     end
   end
 

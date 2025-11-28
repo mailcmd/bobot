@@ -3,12 +3,16 @@ defmodule Bobot.Task do
   require Logger
 
   def start_link(args \\ []) do
-    GenServer.start_link(__MODULE__, args, [])
+    GenServer.start_link(__MODULE__, args, [name: __MODULE__])
   end
 
   @impl true
   def init(_) do
-    pid = spawn_link(__MODULE__, :every_minute_tasks, [])
+    pid = spawn_link(fn ->
+      # At start wait 5secs because it is necesary inititialize
+      :timer.sleep(5_000)
+      apply(__MODULE__, :every_minute_tasks, [])
+    end)
     {:ok, pid}
   end
 
@@ -25,6 +29,10 @@ defmodule Bobot.Task do
   ################################################################################################
   ################################################################################################
   ################################################################################################
+
+  def add_task(bot_module, channel, quoted_pattern, quoted_func) do
+    :ets.insert(:volatile_db, {:task, bot_module, channel, quoted_pattern, quoted_func})
+  end
 
   def every_minute_tasks() do
     now = Macro.escape(:calendar.local_time())

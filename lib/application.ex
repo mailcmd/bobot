@@ -105,10 +105,12 @@ defmodule Bobot.Application do
     ## check if bot has channels and init
     bot_channels = :attributes |> bot_module.__info__() |> Keyword.get(:bot_channels, [])
     Logger.log(:notice, "[BOBOT] Bot #{name} has channels: #{inspect bot_channels}")
-    Enum.each(bot_channels, fn channel ->
-      Logger.log(:notice, "[BOBOT] Bot #{name} init channel #{channel}")
-      bot_module.init_channel(channel)
-    end)
+    Logger.log(:notice, "[BOBOT] Init all channels...")
+    bot_module.init_channels()
+    # Enum.each(bot_channels, fn channel ->
+    #   Logger.log(:notice, "[BOBOT] Bot #{name} init channel #{channel}")
+    #   bot_module.init_channel(channel)
+    # end)
 
     ## get bot config
     bot_config = :attributes |> bot_module.__info__() |> Keyword.fetch!(:bot_config)
