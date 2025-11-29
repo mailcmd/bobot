@@ -56,7 +56,6 @@ defbot :hello,  [
     session_ttl: 300_000,
     max_bot_concurrency: 1000,
     expire_message: "Bye bye!"
-]
 ] do 
   # Here the code of the bot. 
 end
