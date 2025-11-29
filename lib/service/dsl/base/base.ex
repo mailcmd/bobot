@@ -264,6 +264,11 @@ defmodule Bobot.DSL.Base do
   end
 
   ## STORE
+  defmacro session_store(keys, values) when is_list(keys) do
+    quote do
+      Bobot.Utils.Assigns.put_in(var!(sess_id), unquote(keys), unquote(values))
+    end
+  end
   defmacro session_store(values) when is_list(values) or is_map(values) do
     quote do
       Enum.each(unquote(values), fn {key, val} ->
@@ -273,7 +278,7 @@ defmodule Bobot.DSL.Base do
   end
   defmacro session_store({keys, values}) when is_list(keys) do
     quote do
-      Bobot.Utils.Assigns.put_in(var!(sess_id), unquote(keys), unquote(values))
+      session_store(unquote(keys), unquote(values))
     end
   end
 

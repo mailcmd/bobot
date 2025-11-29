@@ -1,120 +1,226 @@
+# Bobot, a tool not suitable for lazy people
+
+With Bobot YOU are the smart one, YOU are the one who thinks, YOU are the one who solves problems,
+and YOU are the one who creates solutions. Yes dude!... with Bobot there is not AIs, no prompts, 
+no visual interfaces designed for people who cannot type because their nail polish chips or faggy 
+stuff like that, here YOU are the one who has to work. With Bobot YOU must type the instructions 
+that says to the bot what to do. 
+
+But it's not all that hard with Bobot because, through simple and fairly self-explanatory language, 
+you can instruct complex behavior without getting bogged down in the details of how it should be 
+done.
+
+## A simple language for doing complex things
+
+Bobot is made in Elixir programing language and define a DSL (Domain Specific Language) to program 
+bots creating an abstraction layer that allow to do a lot with a little. Like the DSL is made in 
+Elixir it is also dependant of its syntax rules. So, although you does not need to be an Elixir 
+expert, it is important to know al least a little about the fundamentals of Elixir language. 
+
 # Bobot DSL Reference
 
-Overview
+## Overview
 
-- The DSL is implemented as compile-time macros in Bobot.DSL.Base and Bobot.DSL.Telegram.
-- Bobot.DSL.Base exposes general bot-building macros: defbot, hooks, defblock, defcommand, defchannel, session helpers, API/HTTP helpers, periodic tasks, and API/lib definition macros.
-- Bobot.DSL.Telegram is a Telegram-specific layer that sets up module attributes (@token, @session_ttl, etc.), provides Telegram targeted message macros (send_message, send_image, send_menu, edit_message, pin/unpin, terminate) and default Telegram callbacks (/chsub, /chunsub, launch, stop, inform_to_subscribers).
-- The DSL follows Elixir syntax; these are macros you use inside bot module definitions.
+- The DSL is implemented as compile-time macros in `Bobot.DSL.Base` and `Bobot.DSL.Telegram` (for now).
+- `Bobot.DSL.Base` exposes general bot-building macros: `defbot`, `hooks`, `defblock`, `defcommand`, `defchannel`, session helpers (`session_data`, `session_value`, `session_store`), API/HTTP helpers (`call_api`, `call_http`), periodic tasks (`every`), and API/lib definition macros (`defapi` and `deflib`).
+- `Bobot.DSL.Telegram` is a Telegram-specific layer that sets up module attributes (`@token`, `@session_ttl`, etc.), provides Telegram targeted message macros (`send_message`, `send_image`, `send_menu`, `edit_message`, `pin`/`unpin`, `terminate`), some native commands (`/chsub`, `/chunsub`, etc) and some behavior callbacks (`launch`, `stop`, `inform_to_subscribers`).
+- The DSL follows Elixir language syntax rules.
 
-Key module attributes created by Telegram DSL
+**NOTE**: in the future will be created `Bobot.DSL.Whatsapp`, `Bobot.DSL.Discord` and others modules that implements the same bot-building macros as `Bobot.DSL.Telegram`. 
 
-- @token — bot token (set by passing config when using the DSL)
-- @session_ttl — session time-to-live (defaults from app config)
-- @max_bot_concurrency — optional max concurrency
-- @bots_dir, @apis_dir, @libs_dir — compile-time app config
-- @bot_channels — collects channel definitions declared via defchannel (persist: true, accumulate: true)
+## Key module attributes created by Telegram DSL
 
-Core macros (from Bobot.DSL.Base)
+- `@token` — bot token (set by passing config when using the DSL)
+- `@session_ttl` — session time-to-live (defaults from app config)
+- `@max_bot_concurrency` — optional max concurrency
+- `@bots_dir`, `@apis_dir`, `@libs_dir` — compile-time app config
+- `@bot_channels` — collects channel definitions declared via `defchannel`.
 
-1) defbot(name, opts \ [], do: block)
+## Core macros (DSL Base)
 
-- Signature: defbot :my_bot, type: <atom>, config: [...], use_apis: [...], use_libs: [...]
-- Creates a module Bobot.Bot.<CamelizedName> that uses Bobot.Bot with given options and injects the block as the module body.
-- Required opts: :type (e.g. :telegram)
+#### `defbot <atom_name> [, opts] do ... end`
+
+- Signature: `defbot :my_bot, type: <atom>, config: [...], use_apis: [...], use_libs: [...]`
+- Internally creates a module `Bobot.Bot.<CamelizedName>` that uses `Bobot.Bot` behavior with given options and injects the block as the module body.
+- Required `opts: :type` (e.g. `:telegram`)
 
 Example:
 
 ```elixir
-defbot :hello, type: :telegram, config: [token: "BOT_TOKEN"] do
-  # body: use hooks/blocks/commands below
+defbot :hello,  [
+  type: :telegram,
+  use_apis: [],
+  use_libs: [ :common_lib ],
+  config: [ # this config is specific for each type of bot, example below is for type :telegram 
+    token: "BOT_TOKEN",
+    session_ttl: 300_000,
+    max_bot_concurrency: 1000,
+    expire_message: "Bye bye!"
+]
+] do 
+  # Here the code of the bot. 
 end
+
 ```
 
-2) hooks(opts \ [])
+#### `hooks [start_block: <atom>, start_params_count: <n>, ...]`
 
-- Defines start_bot/3 which will run the start_block, optionally stop_block and uses fallback_block for errors.
+- Defines define 3 important block names.
 - Options:
-  - :start_block — the atom name of the initial run block (a defblock name)
-  - :start_params_count — number of params to accept (generates param vars a, b, c...)
-  - :stop_block — atom name of block to run at end
-  - :fallback_block — atom name of block run on exception
+  - `:start_block` — the atom name of the initial run block (a defblock name)
+  - `:start_params_count` — number of params to accept for the `:start_block`
+  - `:stop_block` — atom name of block to run at end
+  - `:fallback_block` — atom name of block run on exception
 
 Example:
 
 ```elixir
-hooks start_block: :main, start_params_count: 1, stop_block: :cleanup, fallback_block: :on_error
+hooks [
+  start_block: :main, 
+  start_params_count: 1, 
+  stop_block: :cleanup, 
+  fallback_block: :on_error
+]
 ```
 
-3) defblock(name, opts \ [], do: block)
+#### `defblock <atom_name) [, receive: <params>] do ... end`
 
-- Defines run(name, receive_vars, sess_id) implementation.
-- opts: :receive — receive-pattern variables (default :_)
-- This is the main building block where conversation steps and logic run.
+- This is one of the basic unit to build bots. 
+- `<params>` can be `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
 Example:
 
 ```elixir
-defblock :main, receive: {:_, [], nil} do
+defblock :main, receive: phone_number do
   send_message "Hello!"
 end
 ```
 
-4) defcommand(command, do: block)
+#### `defcommand <string_pattern> do ... end`
 
-- Defines run_command/3 for a literal command string (pattern match).
-- When incoming message matches command pattern, the block runs.
+- It is another basic unit. Some bots engines (example Telegram) allow define special
+    message that are **commands**. These **commands** can interrupt the normal flow of the bot and 
+    trigger some specific action.
+- `<string_pattern>` - an Elixir pattern (ex: `"/help " <> topic`, this example will match commands that
+  start with `"/help "` and will store in the variable `topic` everything that follows).
 
 Example:
 
 ```elixir
-defcommand "/start" do
-  send_message "Welcome!"
+defcommand "/say_hello " <> name do
+  send_message "hello #{name}!"
 end
 ```
 
-5) defchannel(channel_atom, opts \ [], do: block)
+#### `defchannel <channel_atom_name> [, description: <string>] do ... end`
 
-- Registers @bot_channels {channel_atom, description} and defines init_channel(channel_atom) that runs the block during init_channels().
-- Useful for setting up scheduled or channel-specific initialization.
+- Define a channel and internally registers `{<channel_atom_name>, <description>}` in `@bot_channels` attribute
+- Useful for setting up scheduled task
+- Allow throuhg API call send messages to subscribers from an external source
 
 Example:
 
 ```elixir
 defchannel :daily, description: "Daily updates" do
-  # run initialization for :daily channel
-  :ok
+  # send a message every day at 7am
+  every {{_, _, _},{7, 0, _}} do
+    send_message "Good morning!"
+  end  
 end
 ```
 
-6) call_block(name, opts \ [])
+#### `call_block <atom_name>[, params: <params>]`
 
-- Runs run(name, params, sess_id) — handy to call other blocks.
+- Move the execution flow of the bot to block <atom_name>
+- `<params>` - can be `<varname>` or [`<varname1>`, `<varname2>`, ...]
 
-7) break() / break(returning: value)
+#### `break [returning: value]`
 
-- Throws to break out of flow with optional value.
+- Break out of flow with an optional returning value
 
-Session helpers and storage
+#### `session_data()`
 
-- session_data() -> returns map of all session assigns: Bobot.Utils.Assigns.get_all(sess_id)
-- session_value(key) -> Bobot.Utils.Assigns.get(sess_id, key)
-- session_value(keys :: list) -> Bobot.Utils.Assigns.get_in(sess_id, keys)
-- session_value(key, is: val) / is_not: / contains: / icontains: / match:
-  - Comparison helpers returning boolean (useful in guards inside blocks)
-- session_store(map_or_list) -> store multiple keys into session assigns
-- session_store({keys, value}) -> nested put_in style store
+- Return a map with all the datas accumulated during the session. 
 
-Backward compatibility:
-- value_of(key) mirrors session_value
+Example: 
 
-Token-level settings (for token-specific persistent storage)
-- set_token_data(key, value) — stores token-scoped data via Bobot.Utils.Storage.set_token_data(@token, key, value)
-- set_token_data([{k, v}]) — convenience
-- get_token_data(key) — retrieve token-level data
-- settings_remove(key) — remove token-level setting
+```Elixir 
+session_data() # pay attention at parenthesis, they are mandatory
 
-APIs and HTTP helpers
+# You also could use it in this way
+session_data()[:firstname] # :firstname is an example
+```
+
+#### `session_value(<key>[, <expr>])`
+
+- Recover a value from the session. Also allow in the same sentency recover and compare the value to return a boolean value (see examples below)
+- <key> - can be <atom_key> or [<atom_key1>, <atom_key2>, ...] for recover a deep value in the map
+
+Examples:
+```Elixir 
+## You can use 'session_value' with or without parentheses
+
+## get the value
+session_value :firstname 
+## or if you want to store the value in a variable
+firstname = session_value :firstname 
+
+## compare the value (guessing that session_value(:firstname) is "jimmy")
+session_value :firstname, is: "jimmy"      # true
+session_value :firstname, is_not: "jimmy"  # false
+session_value :firstname, contains: "mm"   # true
+session_value :firstname, icontains: "MM"  # true (ignore case)
+session_value :firstname, match: ~r/^.i.+/ # true (regex for second letter is "i")
+```
+
+#### `session_store(<list_of_key_value>)`
+or 
+#### `session_store(<atom_keys>, <value>)`
+
+- Store one or more values in the session. 
+- `<list_of_key_value>` - can be an elixir keyword list or a map (ex: `[firstname: "jimmy", lastname: "carter"]`) 
+- `<atom_keys>` - is a list of atoms and allow deep store in the session map
+
+```Elixir 
+# Examples
+## store a value
+session_store firstname: "jimmy"
+## store many values
+session_store firstname: "jimmy", lastname: "carter"
+## deep store
+session_store [:user, :firstname], "jimmy"
+```
+
+### Using APIs and HTTP helpers
+
+#### `call_api <atom_api_id>[, params: <params>]`
+
+- Lookups in settings `:use_apis` list and tries find in order `<atom_api_id>` call in every API. The first match is called. The result is stored in the session under the key `<atom_api_id>`.
+- See `defapi...` in **Defining APIs** for more details
+
+```elixir
+call_api :find_user, params: id
+```
+
+#### `call_http <string_url>, <opts>`
+
+- Make a http call to the url with the options and return a map or a raw body
+- can store the result in the session via `:store_in` option
+- `<opts>` - can be a list with all or some of this parameters
+  ```elixir
+  [
+    method: :get,         # atoms :get or :post
+    auth: :none,          # atoms :none or :basic 
+    username: "<string>", # if auth: :basic
+    password: "<string>", # if auth: :basic
+    return_json: true,    # if true decode the body response as json and return a map, if false return the raw body
+                          # if false return the raw body
+    post_data: %{}        # a map with the post parameters 
+    store_in: <session_atom_key>
+  ]
+  ```
+
+## Defining APIs
 
 - defapi name do ... end
   - Creates a module Bobot.API.CamelName using Bobot.API for API call implementations.
@@ -123,15 +229,7 @@ APIs and HTTP helpers
 - defcall name, vars, do: block
   - Implement call(name, vars)
 
-- call_api(id, opts \ [])
-  - Lookups module attributes :bot_apis for this module and tries APIs in order via try_apis. Results are stored in session under id.
-  - try_apis attempts to call Bobot.API.<CamelizedApi>.call(id, params) for each API name in the configured :bot_apis attributes.
 
-- http_request(url, opts \ [])
-  - Utility function (not macro) that uses Tesla to call external HTTP endpoints.
-  - Default opts: method: :get, auth: :none, return_json: true, post_data: %{}
-  - auth: :basic requires :username and :password in opts
-  - return_json: true will attempt to decode JSON and return decoded map; otherwise raw Tesla response returned.
 
 - call_http(url, opts \ [])
   - Macro to call http_request(url, opts) and store result in session via :store_in option.
