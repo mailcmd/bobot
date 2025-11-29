@@ -162,6 +162,11 @@ input[readonly]:focus {
   background-color: rgba(200,0,210,0.1);
   cursor: pointer;
 }
+.block-selectable button.connect {
+  animation-name: animate-heartbeat;
+  animation-duration: 0.5s;
+  animation-iteration-count: infinite;
+}
 
 #bobot_editor.readonly::before, #bobot_editor.readonly .editor-status-bar {
   background-color: black;
@@ -233,6 +238,20 @@ input[readonly]:focus {
   100% {
   }
 }
+
+@keyframes animate-heartbeat {
+  0% {
+    scale: 100%;
+  }
+  50% {
+    
+    scale: 110%;
+  }
+  100% {
+    scale: 100%;
+  }
+}
+
 
 /* Icons */ 
 

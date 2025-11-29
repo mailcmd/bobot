@@ -71,7 +71,7 @@ defbot :smi,
     await_response store_in: id
     send_message "<i>Estoy pensando, esperá unos segundos...</i>"
     call_api :find_user, params: id
-    call_block :show
+    call_block session_value([:find_user, :result_type])
     call_block :loop
   end
 end

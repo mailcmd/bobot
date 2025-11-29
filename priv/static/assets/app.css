@@ -16119,6 +16119,10 @@ select {
   right: 0.25rem;
 }
 
+.right-10 {
+  right: 2.5rem;
+}
+
 .right-2 {
   right: 0.5rem;
 }
@@ -16149,10 +16153,6 @@ select {
 
 .top-6 {
   top: 1.5rem;
-}
-
-.right-10 {
-  right: 2.5rem;
 }
 
 .z-50 {
@@ -16827,8 +16827,8 @@ select {
   padding-left: 0.5rem;
 }
 
-.pr-10 {
-  padding-right: 2.5rem;
+.pr-14 {
+  padding-right: 3.5rem;
 }
 
 .pr-2 {
@@ -16845,10 +16845,6 @@ select {
 
 .pt-8 {
   padding-top: 2rem;
-}
-
-.pr-14 {
-  padding-right: 3.5rem;
 }
 
 .text-left {

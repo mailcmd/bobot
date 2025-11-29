@@ -2,7 +2,7 @@ import Bobot.DSL.Base
 
 ## WARNING: You MUST not touch the 'defapi ...' line!!!
 defapi :smi do
-  import Bobot.Tools
+  import Bobot.Utils
   @url "http://190.1.0.3:7531/smi/"
   @username "vianet"
   @password "lowland"
@@ -32,7 +32,7 @@ defapi :smi do
               _ -> %{}
             end
 
-          %{result_type: :ftth, data: process_ftth(user_data)}
+          %{result_type: :show, data: process_ftth(user_data)}
 
         %{cmtsdata: cmtsdata} when is_binary(cmtsdata) ->
           user_data =
@@ -44,7 +44,7 @@ defapi :smi do
           signal = hd(json[:item])
 
           %{
-            result_type: :docsis,
+            result_type: :show,
             data: process_docsis(user_data, "#{signal[:url]}?#{signal[:params]}")
           }
 

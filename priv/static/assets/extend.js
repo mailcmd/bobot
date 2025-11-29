@@ -66,6 +66,8 @@ function editor_gotoline(nline, select_line = false) {
 function open_connect(el) {
     el.disabled = true;
     const block = el.closest('.defblock');
+    block.style.filter = 'grayscale(1)';
+    block.style.opacity = '0.5';
     otherBlocks = siblings(block);
     otherBlocks.forEach( b => {
         const div = b.querySelector('div')
@@ -81,8 +83,12 @@ function open_connect(el) {
 
 function close_connect(el) {
     const block = el.closest('.defblock');
+    block.style.filter = null;
+    block.style.opacity = null;
     otherBlocks = [...siblings(block), block];
     otherBlocks.forEach( b => {
+        b.style.filter = null;
+        b.style.opacity = null;
         const div = b.querySelector('div')
         div.classList.remove('block-selectable');
         const button = div.querySelector('.connect');

@@ -2,7 +2,7 @@ defmodule Bobot.Config do
   def get_available_bots() do
     "dynamic/bots//*.ex"
     |> Path.wildcard()
-    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+    |> Stream.map(fn filename -> Bobot.Utils.ast_from_file(filename) end)
     |> Stream.map(fn ast -> BobotWeb.Bots.ast_extract_components(ast) end)
     |> Enum.into([])
     |> Enum.filter(fn bot -> bot != [] end)
@@ -12,7 +12,7 @@ defmodule Bobot.Config do
   def get_available_apis() do
     "dynamic/apis//*.ex"
     |> Path.wildcard()
-    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+    |> Stream.map(fn filename -> Bobot.Utils.ast_from_file(filename) end)
     |> Stream.map(fn ast -> BobotWeb.Apis.ast_extract_components(ast) end)
     |> Enum.into([])
     |> Enum.filter(fn api -> api != [] end)
@@ -22,7 +22,7 @@ defmodule Bobot.Config do
   def get_available_libs() do
     "dynamic/libs//*.ex"
     |> Path.wildcard()
-    |> Stream.map(fn filename -> Bobot.Tools.ast_from_file(filename) end)
+    |> Stream.map(fn filename -> Bobot.Utils.ast_from_file(filename) end)
     |> Stream.map(fn ast -> BobotWeb.Libs.ast_extract_components(ast) end)
     |> Enum.into([])
     |> Enum.filter(fn lib -> lib != [] end)
