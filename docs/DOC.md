@@ -180,8 +180,8 @@ or
 - `<list_of_key_value>` - can be an elixir keyword list or a map (ex: `[firstname: "jimmy", lastname: "carter"]`) 
 - `<atom_keys>` - is a list of atoms and allow deep store in the session map
 
+Examples:
 ```Elixir 
-# Examples
 ## store a value
 session_store firstname: "jimmy"
 ## store many values
@@ -221,8 +221,41 @@ call_api :find_user, params: id
 
 ## Defining APIs
 
-- defapi name do ... end
-  - Creates a module Bobot.API.CamelName using Bobot.API for API call implementations.
+Bobot allow to define call APIs identified by one id. The API calls can be grouped in API modules to be availables for the any bot.
+
+#### `defapi <atom_name> do ... end`
+  - Creates a module for API call implementations
+
+Example:
+```elixir
+defapi :quotes do 
+  # For 'defcall' explanation see below 
+  defcall :get_quote do 
+    # 'http_request' function is part of the common lib available on APIs (see below)
+    # This url return a json like this:
+    # {
+    #  "author": "Maurice Wilkes",
+    #  "quote": "By June 1949 people had begun to realize that it #     was not so easy to get programs right as at one time 
+    #     appeared."
+    # }
+    http_request("https://programming-quotesapi.vercel.app/api/random")
+  end
+end
+
+# And the bot could use it in this way
+defbot :daily_quote, [type: :telegram, config: [...], use_apis: [:quotes]] do 
+
+  defchannel :dayly_quote do 
+    every {{_,_,_}, {7,0,_}} do 
+      call_api :get_quote
+      send_message session_value([:get_quote, :quote])
+    end
+  end
+end
+
+```
+
+
 - defcall name, do: block
   - Implement call(name, nil) inside the defapi module.
 - defcall name, vars, do: block

@@ -34,57 +34,6 @@ defmodule Bobot.DSL.Base do
     end
   end
 
-  @http_default_opts [
-    method: :get,
-    auth: :none,
-    return_json: true,
-    post_data: %{}
-  ]
-
-  def http_request(url, opts \\ []) do
-    opts = Keyword.merge(@http_default_opts, opts)
-
-    url = url
-      |> URI.encode()
-      |> URI.encode(&(&1 != ?#))
-
-    client =
-      case opts[:auth] do
-        :none ->
-          []
-        :basic ->
-          [ {Tesla.Middleware.BasicAuth, %{username: opts[:username], password: opts[:password]}} ]
-      end
-      ++
-      case opts[:method] do
-        :post -> [
-            {Tesla.Middleware.FormUrlencoded,
-              encode: &Plug.Conn.Query.encode/1,
-              decode: &Plug.Conn.Query.decode/1
-            }
-          ]
-
-        _ -> []
-      end
-
-    result =
-      case opts[:method] do
-        :get -> Tesla.get(Tesla.client(client), url)
-        :post -> Tesla.post(Tesla.client(client), url, opts[:post_data])
-      end
-
-    if opts[:return_json] do
-      with  {:ok, %Tesla.Env{body: body}} <- result,
-            {:ok, json} <- Jason.decode(body, keys: :atoms) do
-        json
-      else
-        error -> %{error: error}
-      end
-    else
-      result
-    end
-  end
-
 
   ################################################################################################
   ## MACROS BOT
@@ -296,7 +245,7 @@ defmodule Bobot.DSL.Base do
   defmacro call_http(url, opts \\ []) do
     store_key = Keyword.fetch!(opts, :store_in)
     quote do
-      res = http_request(unquote(url), unquote(opts))
+      res = Bobot.Utils.http_request(unquote(url), unquote(opts))
       Bobot.Utils.Assigns.put_in(var!(sess_id), [unquote(store_key)], res)
     end
   end
