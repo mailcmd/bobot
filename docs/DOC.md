@@ -28,14 +28,6 @@ expert, it is important to know al least a little about the fundamentals of Elix
 
 **NOTE**: in the future will be created `Bobot.DSL.Whatsapp`, `Bobot.DSL.Discord` and others modules that implements the same bot-building macros as `Bobot.DSL.Telegram`. 
 
-## Key module attributes created by Telegram DSL
-
-- `@token` — bot token (set by passing config when using the DSL)
-- `@session_ttl` — session time-to-live (defaults from app config)
-- `@max_bot_concurrency` — optional max concurrency
-- `@bots_dir`, `@apis_dir`, `@libs_dir` — compile-time app config
-- `@bot_channels` — collects channel definitions declared via `defchannel`.
-
 ## Core macros (DSL Base)
 
 #### `defbot <atom_name> [, opts] do ... end`
@@ -228,53 +220,6 @@ call_api :find_user, params: id
   ]
   ```
 
-## Defining APIs
-
-Bobot allow to define call APIs identified by one id. The API calls can be grouped in API modules to be availables for the any bot.
-
-#### `defapi <atom_name> do ... end`
-  - Creates a module for API call implementations
-
-Example:
-```elixir
-defapi :quotes do 
-  # For 'defcall' explanation see below 
-  defcall :get_quote do 
-    # 'http_request' function is part of the common lib available on APIs (see below)
-    # This url return a json like this:
-    # {
-    #  "author": "Maurice Wilkes",
-    #  "quote": "By June 1949 people had begun to realize that it #     was not so easy to get programs right as at one time 
-    #     appeared."
-    # }
-    http_request("https://programming-quotesapi.vercel.app/api/random")
-  end
-end
-
-# And the bot could use it in this way
-defbot :daily_quote, [type: :telegram, config: [...], use_apis: [:quotes]] do 
-  defchannel :dayly_quote do 
-    every {{_,_,_}, {7,0,_}} do 
-      call_api :get_quote
-      send_message session_value([:get_quote, :quote])
-    end
-  end
-end
-```
-
-#### `defcall <atom_name>[, <params>] do ... block`
-  - Implement an API call.
-  - `<params>` - can be `<varname>` or `[<varname1>, <varname2>, ...]`
-  - These API calls can be called with `call_api ...` (see above)
-
-## Defining libraries
-
-#### `deflib <atom_name> do ... block`
-  - Defines lib module for shared helpers. 
-  - Libs can be imported to a bot using the setting `:use_libs`.
-
-
-
 # Engine specific macros (DSL implemented for Telegram for now)
 
 It is my intention define a standar DSL that every engine (telegram, whatsapp, discor, etc) should implement complete or partially. So, the DSL stated below applies to Telegram and should also apply to other engines added in the future.
@@ -339,6 +284,54 @@ This sentency has 2 variants:
 #### `await_response ... `
 
 (MISSING YET)
+
+
+# Defining APIs
+
+Bobot allow to define call APIs identified by one id. The API calls can be grouped in API modules to be availables for the any bot.
+
+#### `defapi <atom_name> do ... end`
+  - Creates a module for API call implementations
+
+Example:
+```elixir
+defapi :quotes do 
+  # For 'defcall' explanation see below 
+  defcall :get_quote do 
+    # 'http_request' function is part of the common lib available on APIs (see below)
+    # This url return a json like this:
+    # {
+    #  "author": "Maurice Wilkes",
+    #  "quote": "By June 1949 people had begun to realize that it #     was not so easy to get programs right as at one time 
+    #     appeared."
+    # }
+    http_request("https://programming-quotesapi.vercel.app/api/random")
+  end
+end
+
+# And the bot could use it in this way
+defbot :daily_quote, [type: :telegram, config: [...], use_apis: [:quotes]] do 
+  defchannel :dayly_quote do 
+    every {{_,_,_}, {7,0,_}} do 
+      call_api :get_quote
+      send_message session_value([:get_quote, :quote])
+    end
+  end
+end
+```
+
+#### `defcall <atom_name>[, <params>] do ... block`
+  - Implement an API call.
+  - `<params>` - can be `<varname>` or `[<varname1>, <varname2>, ...]`
+  - These API calls can be called with `call_api ...` (see above)
+
+# Defining libraries
+
+#### `deflib <atom_name> do ... block`
+  - Defines lib module for shared helpers. 
+  - Libs can be imported to a bot using the setting `:use_libs`.
+
+
 
 # Examples
 

@@ -17,6 +17,19 @@ Extra function:
 
 *******
 
+## Quotes
+
+A tool where YOU are the smart one!! 
+A tool where YOU are the one who thinks!!
+A tool where YOU're still the smart one!!
+A tool where YOU remain the smart one!!
+A tool for those who prefer to keep using their brains!!
+A tool where YOU are the one who solves problems!!
+A tool where YOU are the one who creates solutions!!
+A tool where YOU are the one who invent solutions!!
+A tool where YOU are the one who build solutions!!
+
+
 ## Components
 - Nodes are equal a BLOCKS. So the main unit of process is the "block". 
 - Inside a block came the logic. The logic is a sequence of sentencies, including 
