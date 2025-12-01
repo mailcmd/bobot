@@ -121,7 +121,7 @@ Example:
 
 ```elixir
 defchannel :daily, description: "Daily updates" do
-  # send a message every day at 7am
+  # send a message every day at 7am (see 'every' below)
   every {{_, _, _},{7, 0, _}} do
     send_message "Good morning!"
   end  
@@ -190,6 +190,15 @@ session_store firstname: "jimmy", lastname: "carter"
 session_store [:user, :firstname], "jimmy"
 ```
 
+#### `every <pattern>[, when: <guard>] do ... end`
+- This sentency must be used inside a `defchannel <...> do ... end` block. 
+- `<pattern>` - must be a elixir pattern match erlang local_time. The erlang local_time
+  function return `{{<year>, <month>, <day>}, {<hour>, <min>, <secs>}}`. An example pattern could 
+  be: `{{_, _, _}, {_, 0, _}}`. This pattern will match every 1 hour exactly at 0 minutes (00:00, 
+  01:00, 02:00, ... etc). 
+- `<guard>` - must be a logic expression. You could set an every pattern like this `every {{_, _, _}, {_, min, _}}, when: (rem(min,2) == 0) do ... end` to match every even minute.
+
+
 ### Using APIs and HTTP helpers
 
 #### `call_api <atom_api_id>[, params: <params>]`
@@ -244,7 +253,6 @@ end
 
 # And the bot could use it in this way
 defbot :daily_quote, [type: :telegram, config: [...], use_apis: [:quotes]] do 
-
   defchannel :dayly_quote do 
     every {{_,_,_}, {7,0,_}} do 
       call_api :get_quote
@@ -252,123 +260,89 @@ defbot :daily_quote, [type: :telegram, config: [...], use_apis: [:quotes]] do
     end
   end
 end
-
 ```
 
+#### `defcall <atom_name>[, <params>] do ... block`
+  - Implement an API call.
+  - `<params>` - can be `<varname>` or `[<varname1>, <varname2>, ...]`
+  - These API calls can be called with `call_api ...` (see above)
 
-- defcall name, do: block
-  - Implement call(name, nil) inside the defapi module.
-- defcall name, vars, do: block
-  - Implement call(name, vars)
+## Defining libraries
+
+#### `deflib <atom_name> do ... block`
+  - Defines lib module for shared helpers. 
+  - Libs can be imported to a bot using the setting `:use_libs`.
 
 
 
-- call_http(url, opts \ [])
-  - Macro to call http_request(url, opts) and store result in session via :store_in option.
+# Engine specific macros (DSL implemented for Telegram for now)
 
-Periodic tasks
+It is my intention define a standar DSL that every engine (telegram, whatsapp, discor, etc) should implement complete or partially. So, the DSL stated below applies to Telegram and should also apply to other engines added in the future.
 
-- every(pattern, opts \ [], do: block)
-  - Registers a task via Bobot.Task.add_task(__MODULE__, channel_name, pattern, func)
-  - pattern is used to match the scheduling criteria; you can pass when: guard to add a guard expression.
+## Mandatory implementations for each engine
 
-Macros for libraries
+### Channel support
+Every engine, if it will support channels functionality, must define 2 commands:
+- `defcommand "/chsub " <> channel` — to subscribe to a channel 
+- `defcommand "/chunsub " <> channel` — to unsubscribe from a channel 
 
-- deflib name, do: block
-  - Defines Bobot.Lib.CamelName module for shared helpers.
+### Callbacks that must be implemented
 
-Macros for flow control
+#### `inform_to_subscribers(channel, subscribers, message)`
+- Sends message to each subscriber.
+- The message supported for now are:
+  - Just text.
+  - A map like this to send text: `%{type: :text, text: text}`
+  - A map like this to send image: `%{type: :image, filename: filename}` 
+  - A map like this to send image: `%{type: :image, url: url}`
 
-- await_response(opts)
-  - Waits for next message and stores it in a variable.
-  - Options:
-    - :store_in — (required) variable name to store response into (passed as AST)
-    - :extract_re — Regex to extract parts from incoming message; if provided it does Regex.scan and picks capture groups (hd |> tl)
-    - :cast_as — optional type or list of types to cast using Bobot.Parser.parse; supports multiple cast types mapping to received values.
-  - Behavior:
-    - Sets token data for chat processes to {self(), engine} and flushes mailbox before receiving
-    - Receives:
-      - :stop -> kills process
-      - :cancel -> returns :cancel
-      - message (binary): returns message or extracted captures
-    - Applies casts if cast options provided. If cast is list and multiple captures, maps accordingly.
-  - There's also await_response(opts, do: block) which runs the block if response is not :cancel/:stop; if :cancel does :ok, if :stop calls terminate().
+#### `launch()`
+- Compiles the bot file, init_channels() and init the necessary supervised processes.
 
-- call_http / call_api previously covered.
+#### `stop()`
+- Terminate the supervised processes.
 
-Compatibility macros
-- send(message: message)
-- send(message: message, menu: menu)
-  - These forward to send_message or send_menu for backwards compatibility.
+## Engine DSL 
 
-Core macros (Telegram-specific) from Bobot.DSL.Telegram
+#### `send_message <string_message>`
+- Sends a text message. For default accept html tags supported by the engine
+- Stores message id into session under `:last_message_id`
 
-Note: Bobot.DSL.Telegram implements __using__(opts) — it expects opts to contain a :config keyword with :token (required). When a bot module uses this DSL (via Bobot.Bot perhaps), the following are set and imported.
+#### `send_image <url_filename>[, download: true]`
 
-Automatic / built-in commands
-- defcommand "/chsub " <> channel — subscribe current chat to a channel (uses Bobot.Utils.channel_subscribe)
-- defcommand "/chunsub " <> channel — unsubscribe
+This sentency has 2 variants:
+- If argument starts with "http", treats as URL. If opts `:download` is true it downloads content and sends the file content, otherwise sends the URL directly.
+- If argument is a local filename, reads file and sends the file_content.
 
-Callbacks implemented
-- inform_to_subscribers(channel, subscribers, message)
-  - Sends message to each subscriber using Telegram.Api methods: sendMessage, sendPhoto depending on map form message.
-  - Supported message forms:
-    - binary string -> sendMessage with HTML parse_mode.
-    - %{type: :text, text: text}
-    - %{type: :image, filename: filename} -> reads file and sendPhoto with file_content if exists
-    - %{type: :image, url: url} -> sendPhoto with the URL
+- In both cases stores message id into session under `:last_message_id`
 
-- launch()
-  - Compiles the bot file, init_channels(), starts Telegram.Poller supervisor children for engine and poller tasks, etc.
+#### `send_menu <list_menu>[, message: <string>]`
+- `<list_menu>` - must be as list; for telegram see docs about **inline_keyboard**
+- optional :message text can be send with the menu (default none)
 
-- stop()
-  - Terminates children in Telegram.Poller matching the token.
+#### `edit_message message: <text>[, message_id: <message_id>]`
+  - Edits a message identified by its id.
+  - `<message_id>` - if `<message_id>` is not set, it uses `:last_message_id` from session. 
 
-Messaging macros (Telegram-specific)
+#### `pin_message [message_id: <message_id>]`
+  - Pins a message
+  - `<message_id>` - if `<message_id>` is not set, it uses `:last_message_id` from session. 
 
-- send_message(message)
-  - Sends a text message using Telegram.Api.request(@token, "sendMessage", [... chat_id, text, parse_mode: "HTML"]) 
-  - Stores message id into session under :last_message_id.
+#### `unpin_message [message_id: <message_id>]`
+  - unpins a message
+  - `<message_id>` - if `<message_id>` is not set, it uses `:last_message_id` from session. 
 
-- send_image(url_filename, opts \ [])
-  - Two variants:
-    - If argument starts with "http", treats as URL. If opts[:download] is true it downloads content (via Bobot.DSL.Base.http_request) and sends as {:file_content, content, filename}; otherwise sends URL directly.
-    - If argument is filename (local), reads file and sends file_content.
-  - Stores message id to :last_message_id.
+#### `terminate([message: <message>])`
+  - Terminate the chat session
+  - `message: <message>` allow sends message before and then terminates
 
-- send_menu(menu, opts \ [])
-  - menu expected as list; constructs inline_keyboard with callback_data as indices, encodes with Jason, sends as sendMessage with reply_markup and parse_mode HTML. Stores message id to :last_message_id.
-  - opts: :message text to send with menu (default "")
+#### `await_response ... `
 
-- edit_message(opts \ [])
-  - Edits message text using editMessageText; opts: message (text), message_id; if message_id is nil it uses last_message_id from session. Also supports :menu option to set an inline keyboard (reply_markup).
+(MISSING YET)
 
-- pin_message(opts \ [])
-  - Pins message using pinChatMessage, message_id defaults to last_message_id.
+# Examples
 
-- unpin_message(opts \ [])
-  - Unpin using pinChatMessage as well (note: implementation calls pinChatMessage; follow code as-is).
-
-- terminate()
-  - Tries to stop engine, unset session assigns and exits process. Also available terminate(message: message) which first sends message then terminates.
-
-Other Telegram helper macros
-- set_token_data / get_token_data / settings_remove — wrappers around Bobot.Utils.Storage.* with @token bound.
-
-Utilities
-- flush() — empties mailbox with receive loop until 10 ms timeout.
-
-Macro import behavior
-- The Telegram DSL imports itself and Kernel except send/2 (so DSL defines send macro variants for compatibility).
-
-How to use sess_id and assigns
-- Many macros expect var!(sess_id) to refer to the session identifier variable in the runtime context (session process id or session key).
-- run_command signatures are run_command(cmd, sess_id_var, assigns)
-- When using await_response, send_message, send_image, the macros read/writes assigns and session via Bobot.Utils.Assigns helpers and Bobot.Utils.Storage for token storage.
-
-Examples
-
-1) Minimal Telegram echo bot
+## Minimal Telegram echo bot
 
 ```elixir
 defbot :echo, type: :telegram, config: [token: "MY_BOT_TOKEN"] do
