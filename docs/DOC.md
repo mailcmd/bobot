@@ -421,21 +421,4 @@ defchannel :daily, description: "Daily news" do
 end
 ```
 
-Notes and implementation details observed
 
-- The DSL uses Bobot.Utils.Assigns for session-level storage and Bobot.Utils.Storage for token-level storage.
-- http_request uses Tesla + Jason; when return_json: true it expects a JSON body and decodes to atoms keys.
-- try_apis turns API names into module atoms like Elixir.Bobot.API.CamelName and calls call/2; if a module isn't found/rescuable it keeps trying the next API name.
-- send_menu builds inline_keyboard where callback_data are indices starting at 1 (using :lists.enumerate then mapping).
-- The Telegram DSL automatically defines default /chsub and /chunsub commands to manage channel subscriptions through Bobot.Utils.channel_subscribe/unsubscribe.
-- last_message_id is updated after send_message/send_image/send_menu and is used by edit_message/pin/unpin when a message_id is not provided.
-
-Suggested next steps when authoring bots
-
-- Choose defbot name and ensure type: :telegram and config includes token: "..."
-- Use hooks start_block to define the entry point block name
-- Use defcommand to match literal commands or pattern matching commands (these are matched by incoming message text)
-- Use defblock for receive-driven logic; call other blocks with call_block
-- Use await_response to get the next user message in interactive flows
-- Store persistent bot configuration in token storage with set_token_data/get_token_data
-- Use call_api/call_http to fetch external data and store results into session for later use
