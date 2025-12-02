@@ -205,7 +205,7 @@ call_api :find_user, params: id
 #### `call_http <string_url>, <opts>`
 
 - Make a http call to the url with the options and return a map or a raw body
-- can store the result in the session via `:store_in` option
+- Can store the result in the session via `:store_in` option
 - `<opts>` - can be a list with all or some of this parameters
   ```elixir
   [
@@ -252,18 +252,21 @@ Every engine, if it will support channels functionality, must define 2 commands:
 #### `send_message <string_message>`
 - Sends a text message. For default accept html tags supported by the engine
 - Stores message id into session under `:last_message_id`
+- Return the `<message_id>`
 
 #### `send_image <url_filename>[, download: true]`
 
 This sentency has 2 variants:
 - If argument starts with "http", treats as URL. If opts `:download` is true it downloads content and sends the file content, otherwise sends the URL directly.
 - If argument is a local filename, reads file and sends the file_content.
-
 - In both cases stores message id into session under `:last_message_id`
+- Return the `<message_id>`
+
 
 #### `send_menu <list_menu>[, message: <string>]`
 - `<list_menu>` - must be as list; for telegram see docs about **inline_keyboard**
 - optional :message text can be send with the menu (default none)
+- Return the `<message_id>`
 
 #### `edit_message message: <text>[, message_id: <message_id>]`
   - Edits a message identified by its id.
@@ -281,7 +284,11 @@ This sentency has 2 variants:
   - Terminate the chat session
   - `message: <message>` allow sends message before and then terminates
 
-#### `await_response ... `
+#### `await_response [cast_as: :integer|:string|:float, extract_re: <regex>, store_in: <session_key>]`
+  - Freeze execution and wait for a message from the user.
+  - The message is always text but can be casted as integer of float using `:cast_as`
+  - Can store the result in the session via `:store_in` option
+  - Return the message (casted if required)
 
 (MISSING YET)
 

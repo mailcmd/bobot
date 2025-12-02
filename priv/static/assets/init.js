@@ -146,18 +146,143 @@ setTimeout(()=>{
                         value: `every {{_year, _month, _day}, {_hour, _min, _}}, when: (<guard>) ${do_end}`, 
                         meta: "Enqueue a periodic task",
                         move: {rows: 1, cols: 2},
-                        fromCol: 2,
+                        fromCol: 4,
+                        completer: completer
+                    },
+                    { 
+                        caption: "call_api",
+                        value: `call_api :call_id`, 
+                        meta: "Call to an API registered call_id",
+                        move: {rows: 0, cols: 10},
+                        completer: completer
+                    },
+                    { 
+                        caption: "call_api ... params",
+                        value: `call_api :call_id, params: <params>`, 
+                        meta: "Call to an API registered call_id",
+                        move: {rows: 0, cols: 10},
+                        completer: completer
+                    },
+                    { 
+                        caption: "call_http",
+                        value: `call_http "url"`, 
+                        meta: "Make a direct http req.",
+                        move: {rows: 0, cols: 10},
+                        completer: completer
+                    },
+                    { 
+                        caption: "call_http ... params",
+                        value: `call_http "url", opts: [\n${indent_base}${indent}method: :get,\n${indent_base}${indent}# auth: :none,\n${indent_base}${indent}# username: "string",\n${indent_base}${indent}# password: "string",\n${indent_base}${indent}return_json: true,\n${indent_base}${indent}# post_data: %{}\n${indent_base}${indent}store_in: :session_key>\n${indent_base}]`, 
+                        meta: "Make a direct http req.",
+                        move: {rows: 0, cols: 11},
+                        completer: completer
+                    },
+                    { 
+                        caption: "send_message",
+                        value: `send_message "message"`, 
+                        meta: "Send a text message",
+                        move: {rows: 0, cols: 14},
+                        completer: completer
+                    },
+                    { 
+                        caption: "send_image",
+                        value: `send_image "url_or_local_filename"`, 
+                        meta: "Send an image",
+                        move: {rows: 0, cols: 12},
+                        completer: completer
+                    },
+                    { 
+                        caption: "send_image",
+                        value: `send_image "url", download: true`, 
+                        meta: "Send a remote image",
+                        move: {rows: 0, cols: 12},
+                        completer: completer
+                    },
+                    { 
+                        caption: "send_menu",
+                        value: `send_menu [ {value, "text"}, ... ]`, 
+                        meta: "Send a remote image",
+                        move: {rows: 0, cols: 13},
+                        completer: completer
+                    },
+                    { 
+                        caption: "edit_message",
+                        value: `edit_message message: "message"`, 
+                        meta: "Edit last message",
+                        move: {rows: 0, cols: 23},
+                        completer: completer
+                    },
+                    { 
+                        caption: "edit_message",
+                        value: `edit_message message: "message", message_id: <msg_id>`, 
+                        meta: "Edit any text message",
+                        move: {rows: 0, cols: 23},
+                        completer: completer
+                    },
+                    { 
+                        caption: "pin_message",
+                        value: `pin_message()`, 
+                        meta: "Pin last message",
+                        move: {rows: 0, cols: 11},
+                        completer: completer
+                    },
+                    { 
+                        caption: "pin_message",
+                        value: `pin_message message_id: <msg_id>`, 
+                        meta: "Pin any text message",
+                        move: {rows: 0, cols: 24},
+                        completer: completer
+                    },
+                    { 
+                        caption: "unpin_message",
+                        value: `unpin_message()`, 
+                        meta: "Unpin last message",
+                        move: {rows: 0, cols: 13},
+                        completer: completer
+                    },
+                    { 
+                        caption: "unpin_message",
+                        value: `unpin_message message_id: <msg_id>`, 
+                        meta: "Unpin any text message",
+                        move: {rows: 0, cols: 26},
+                        completer: completer
+                    },
+                    { 
+                        caption: "unpin_message",
+                        value: `unpin_message :all`, 
+                        meta: "Unpin all pinned message",
+                        move: {rows: 0, cols: 18},
+                        completer: completer
+                    },
+                    { 
+                        caption: "terminate",
+                        value: `terminate()`, 
+                        meta: "Finalize the chat session",
+                        move: {rows: 0, cols: 11},
+                        completer: completer
+                    },
+                    { 
+                        caption: "terminate",
+                        value: `terminate message: "good_bye_message"`, 
+                        meta: "Finalize the chat session",
+                        move: {rows: 0, cols: 20},
+                        completer: completer
+                    },
+                    { 
+                        caption: "await_response",
+                        value: `await_response [\n${indent_base}${indent}# cast_as: :integer|:string|:float,\n${indent_base}${indent}# extract_re: ~r/.+/,\n${indent_base}${indent}store_in: <session_key>\n${indent_base}]`, 
+                        meta: "Await input from user",
+                        move: {rows: 1, cols: 2},
                         completer: completer
                     },
                     
                 ];
 
-                callback(null, bobotWords.filter(w => {
+                callback(null, bobotWords.sort( (w1, w2) => w1.caption > w2.caption ).filter(w => {
                     return real_column >= (w.fromCol??0) && w.caption.slice(0, prefix_len) == prefix                    
                 }));
             }
         }]);
-
 
         // Keyboard Commands
         editor.commands.addCommand({

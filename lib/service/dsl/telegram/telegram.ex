@@ -229,10 +229,14 @@ defmodule Bobot.DSL.Telegram do
   defmacro send_menu(menu, opts \\ []) do
     message = Keyword.get(opts, :message, "")
     quote do
+      menu =
+        case unquote(menu) do
+          [text | _] when is_binary(text) -> :lists.enumerate(unquote(menu))
+          [{_value, _text} | _] = m -> m
+        end
+
       menu = %{
-        inline_keyboard: unquote(menu)
-          |> :lists.enumerate()
-          |> Enum.map(fn {i, item} -> [ %{text: item, callback_data: "#{i}"} ] end)
+        inline_keyboard: menu |> Enum.map(fn {i, item} -> [ %{text: item, callback_data: "#{i}"} ] end)
       } |> Jason.encode!()
 
       result = Telegram.Api.request(@token, "sendMessage",
@@ -278,10 +282,19 @@ defmodule Bobot.DSL.Telegram do
     end
   end
 
-  defmacro unpin_message(opts \\ []) do
+  defmacro unpin_message(opts \\ [])
+  defmacro unpin_message(:all) do
+    quote do
+      Telegram.Api.request(@token, "unpinAllChatMessages",
+        chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id)
+      )
+    end
+  end
+
+  defmacro unpin_message(opts) do
     msg_id = Keyword.get(opts, :message_id, nil)
     quote do
-      Telegram.Api.request(@token, "pinChatMessage",
+      Telegram.Api.request(@token, "unpinChatMessage",
         chat_id: Bobot.Utils.Assigns.get(var!(sess_id), :chat_id),
         message_id: unquote(msg_id)|| Bobot.Utils.Assigns.get(var!(sess_id), :last_message_id)
       )
