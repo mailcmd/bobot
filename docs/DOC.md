@@ -222,32 +222,8 @@ call_api :find_user, params: id
 
 # Engine specific macros (DSL implemented for Telegram for now)
 
-It is my intention define a standar DSL that every engine (telegram, whatsapp, discor, etc) should implement complete or partially. So, the DSL stated below applies to Telegram and should also apply to other engines added in the future.
-
-## Mandatory implementations for each engine
-
-### Channel support
-Every engine, if it will support channels functionality, must define 2 commands:
-- `defcommand "/chsub " <> channel` — to subscribe to a channel 
-- `defcommand "/chunsub " <> channel` — to unsubscribe from a channel 
-
-### Callbacks that must be implemented
-
-#### `inform_to_subscribers(channel, subscribers, message)`
-- Sends message to each subscriber.
-- The message supported for now are:
-  - Just text.
-  - A map like this to send text: `%{type: :text, text: text}`
-  - A map like this to send image: `%{type: :image, filename: filename}` 
-  - A map like this to send image: `%{type: :image, url: url}`
-
-#### `launch()`
-- Compiles the bot file, init_channels() and init the necessary supervised processes.
-
-#### `stop()`
-- Terminate the supervised processes.
-
-## Engine DSL 
+This DSL is a standar and should implement complete or partially by any engine added to Bobot. So, 
+the DSL stated below applies to Telegram and should also apply to other engines added in the future.
 
 #### `send_message <string_message>`
 - Sends a text message. For default accept html tags supported by the engine
@@ -290,7 +266,28 @@ This sentency has 2 variants:
   - Can store the result in the session via `:store_in` option
   - Return the message (casted if required)
 
-(MISSING YET)
+## Mandatory implementations for each engine
+
+### Channel support
+Every engine, if it will support channels functionality, must define 2 commands:
+- `defcommand "/chsub " <> channel` — to subscribe to a channel 
+- `defcommand "/chunsub " <> channel` — to unsubscribe from a channel 
+
+### Callbacks that must be implemented
+
+#### `inform_to_subscribers(channel, subscribers, message)`
+- Sends message to each subscriber.
+- The message supported for now are:
+  - Just text.
+  - A map like this to send text: `%{type: :text, text: text}`
+  - A map like this to send image: `%{type: :image, filename: filename}` 
+  - A map like this to send image: `%{type: :image, url: url}`
+
+#### `launch()`
+- Compiles the bot file, init_channels() and init the necessary supervised processes.
+
+#### `stop()`
+- Terminate the supervised processes.
 
 
 # Defining APIs
@@ -305,11 +302,13 @@ Example:
 defapi :quotes do 
   # For 'defcall' explanation see below 
   defcall :get_quote do 
+
     # 'http_request' function is part of the common lib available on APIs (see below)
     # This url return a json like this:
     # {
     #  "author": "Maurice Wilkes",
-    #  "quote": "By June 1949 people had begun to realize that it #     was not so easy to get programs right as at one time 
+    #  "quote": "By June 1949 people had begun to realize that it 
+    #     was not so easy to get programs right as at one time 
     #     appeared."
     # }
     http_request("https://programming-quotesapi.vercel.app/api/random")
@@ -337,6 +336,7 @@ end
 #### `deflib <atom_name> do ... block`
   - Defines lib module for shared helpers. 
   - Libs can be imported to a bot using the setting `:use_libs`.
+  - The body of the lib is simply Elixir code. 
 
 
 
@@ -351,14 +351,8 @@ defbot :echo, type: :telegram, config: [token: "MY_BOT_TOKEN"] do
   defblock :main do
     # Wait a message and echo it back
     await_response store_in: msg
-    case msg do
-      :cancel -> send_message "Cancelled."
-      :stop -> terminate()
-      text when is_binary(text) ->
-        send_message "You said: #{text}"
-        # loop
-        call_block :main
-    end
+    send_message "You said: #{msg}"
+    call_block :main
   end
 
   defblock :on_error do
@@ -379,15 +373,11 @@ defbot :food, type: :telegram, config: [token: "TOKEN"], use_apis: [:food_api] d
 
   defcommand "/menu" do
     # present menu buttons (inline)
-    send_menu(["Pizza", "Sushi", "Tacos"], message: "Choose one:")
-  end
-
-  # react to callback presses in a block named :select - here assumed run is invoked by callback handler
-  defblock :select, receive: {:choice, [], nil} do
-    # hypothetical param 'choice' containing "1" index from send_menu callback_data
-    # call API to get details
-    call_api :food_details, params: [id: session_value(:user_id)]
-    send_message "You chose something. I'll fetch details..."
+    send_menu ["Pizza", "Sushi", "Tacos"], message: "Choose one:"
+    await_response store_in: food
+    # The API call return %{data: <data_about_the_food_selected>}
+    call_api :food_details, params: session_value(:food)
+    send_message "You chose this: #{session_value([:food_detail, :data])}"
   end
 
   defblock :on_err do
