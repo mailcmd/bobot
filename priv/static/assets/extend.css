@@ -147,6 +147,15 @@ input[readonly]:focus {
   padding-bottom: 4px;
 }
 
+svg.leader-line {
+  pointer-events: all !important;
+}
+
+svg.leader-line:hover {
+  filter: brightness(1.5);
+  cursor: pointer;
+}
+
 .invert {
   filter: invert(0.9);
 }
@@ -166,6 +175,16 @@ input[readonly]:focus {
   animation-name: animate-heartbeat;
   animation-duration: 0.5s;
   animation-iteration-count: infinite;
+}
+
+.defblock {
+  z-index: 100;
+}
+
+.pseudo-defblock {
+  z-index: 100;
+  width: 6rem;
+  height: 6rem;
 }
 
 #bobot_editor.readonly::before, #bobot_editor.readonly .editor-status-bar {

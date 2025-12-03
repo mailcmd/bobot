@@ -52,12 +52,20 @@ defmodule BobotWeb.Bots do
     blocks: nil,
     hooks: [],
     settings: nil,
-    changed: true
+    changed: true,
+    attributes: %{positions: %{}, connections: []}
   }
 
   @bots_dir Application.compile_env(:bobot, :bots_dir)
 
   def mount(params, _session, socket) do
+
+    bot =
+      if params["target"] do
+        params["target"] |> String.to_atom() |> load_bot()
+      else
+        nil
+      end
 
     {:ok, socket
       |> assign(sentencies: get_sentencies())
@@ -66,33 +74,10 @@ defmodule BobotWeb.Bots do
       |> assign(modal: %{})
       |> assign(box_status: "maximized")
       |> assign(editor_status_bar: "")
-      |> assign(current_bot: nil)
-      |> Bobot.Utils.pipe_if(
-          params["target"] != nil,
-            do: assign(current_bot: params["target"] |> String.to_atom() |> load_bot())
-        )
+      |> assign(current_bot: bot)
+      |> Bobot.Utils.pipe_if( bot != nil, do: js_init_bot(bot) )
+      # |> IO.inspect
       |> assign(current_block: nil)
-      |> push_event("js-exec", %{ js: """
-        bobot_editor.close();
-        interact('span.defblock').draggable({
-          listeners: {
-            start (event) {
-              if (!event.target.position) event.target.position = {x: 0, y: 0};
-            },
-            move (event) {
-              event.target.position.x += event.dx;
-              event.target.position.y += event.dy;
-
-              event.target.style.transform =
-                `translate(${event.target.position.x}px, ${event.target.position.y}px)`;
-
-              if (event.target.lines) {
-                event.target.lines.forEach( line => line.position() );
-              }
-            },
-          }
-        });
-      """ })
     }
   end
 
@@ -282,8 +267,10 @@ defmodule BobotWeb.Bots do
   ### SELECT BOT
   def handle_event("select-bot", params, socket) do
     name = params["bot_name"] |> String.replace(" *", "") |> String.to_atom()
+    bot = load_bot(name)
     {:noreply, socket
-      |> assign(current_bot: load_bot(name))
+      |> assign(current_bot: bot)
+      |> js_init_bot(bot)
     }
   end
 
@@ -302,8 +289,16 @@ defmodule BobotWeb.Bots do
 
   ########################
   ### SAVE AND COMPILE BOT
-  def handle_event("save-bot", _params, socket) do
+  def handle_event("save-bot", params, socket) do
+    bot_layout = Jason.decode!(params["value"], keys: :atoms)
+    pos = bot_layout[:positions] |> Map.to_list() |> Macro.escape()
+    con = Macro.escape(bot_layout[:connections])
     current_bot = socket.assigns[:current_bot]
+      |> update_in([:attributes], fn attrs ->
+        put_in(attrs, [:positions], pos)
+        put_in(attrs, [:connections], con)
+      end)
+
 
     with :ok <- save_bot(current_bot),
          {:ok, message} <- compile_bot(current_bot[:name]),
@@ -311,7 +306,7 @@ defmodule BobotWeb.Bots do
 
       text = bot_to_string(current_bot)
       {:noreply, socket
-        |> update(:current_bot, fn cb -> put_in(cb, [:changed], false) end)
+        |> update(:current_bot, fn _cb -> put_in(current_bot, [:changed], false) end)
         |> assign(last_result: :ok)
         |> put_message(message)
         |> push_event("js-exec", %{ js: """
@@ -321,7 +316,7 @@ defmodule BobotWeb.Bots do
           editor_set_status_bar('');
           editor.focus();
         """ })
-  }
+      }
     else
       {{:error, message}, %{message: error_message, nline: nline}} ->
         text = bot_to_string(current_bot)
@@ -364,6 +359,41 @@ defmodule BobotWeb.Bots do
       |> assign(last_result: changed && :error || :ok)
       |> put_message(changed && "Changes discarded!" || nil)
       |> assign(current_bot: nil)
+    }
+  end
+
+  ################
+  ### POS and CONN
+  def handle_event("update-position", params, socket) do
+    pos = params["value"]
+      |> Jason.decode!(keys: :atoms)
+      |> Map.to_list()
+      |> Macro.escape()
+
+    [_, {:connections, con}] = socket.assigns[:current_bot][:attributes]
+
+    current_bot = socket.assigns[:current_bot]
+      |> put_in([:attributes], [{:positions, pos}, {:connections, con}])
+      |> put_in([:changed], true)
+
+    {:noreply, socket
+      |> assign(current_bot: current_bot)
+    }
+  end
+
+  def handle_event("update-connections", params, socket) do
+    con = params["value"]
+      |> Jason.decode!(keys: :atoms)
+      |> Macro.escape()
+
+    [{:positions, pos}, _] = socket.assigns[:current_bot][:attributes]
+
+    current_bot = socket.assigns[:current_bot]
+      |> put_in([:attributes], [{:positions, pos}, {:connections, con}])
+      |> put_in([:changed], true)
+
+    {:noreply, socket
+      |> assign(current_bot: current_bot)
     }
   end
 
@@ -542,7 +572,10 @@ defmodule BobotWeb.Bots do
     {:noreply, socket
       |> update(:current_bot, fn current_bot ->
         current_bot
-          |> update_in([:blocks], fn blocks -> Map.delete(blocks, block_name) end)
+          |> update_in([:blocks], fn blocks ->
+            index = find_block_index(current_bot, block_name)
+            List.delete_at(blocks, index)
+          end)
           |> update_in([:changed], fn _ -> true end)
       end)
       |> push_event("js-exec", %{ js: """
@@ -596,6 +629,8 @@ defmodule BobotWeb.Bots do
         config: #{inspect bot[:settings][:config]}
       ] do
 
+      #{bot_attributes(bot[:attributes])}
+
       hooks #{Macro.to_string(bot[:hooks])}
 
       constants #{Macro.to_string(bot[:constants] || [])}
@@ -609,6 +644,15 @@ defmodule BobotWeb.Bots do
     """
     |> Code.format_string!(locals_without_parens: no_parens)
     |> Enum.join("")
+  end
+
+  defp bot_attributes([]), do: ""
+  # defp bot_attributes([attr | attrs]) do
+  defp bot_attributes([{attr, value} | attrs]) do
+    """
+    @#{attr} #{Macro.to_string(value)}
+    #{bot_attributes(attrs)}
+    """
   end
 
   defp bot_blocks_to_source([{_,_}|_] = blocks, no_parens) do
@@ -692,6 +736,16 @@ defmodule BobotWeb.Bots do
     {name,
       block
       |> Macro.prewalk(%{name: name, settings: settings}, fn
+        {:@, _, [{attr, _, [value]}]}, acc ->
+          # IO.inspect {attr, value |> Code.eval_quoted() |> elem(0)}
+          {
+            [], #node,
+            update_in(acc, [:attributes], fn
+              nil -> %{attr => value |> Code.eval_quoted() |> elem(0)}
+              attrs -> Map.put(attrs, attr, value |> Code.eval_quoted() |> elem(0))
+            end)
+          }
+
         {:hooks, _, [hooks]}, acc ->
           {
             [], #node,
@@ -800,6 +854,10 @@ defmodule BobotWeb.Bots do
         nil -> []
         blocks -> blocks
       end)
+      |> update_in([:attributes], fn
+        nil -> []
+        attributes -> attributes
+      end)
     }
   end
   def ast_extract_components(_), do: []
@@ -817,6 +875,22 @@ defmodule BobotWeb.Bots do
     |> Bobot.Utils.ast_from_file()
     |> ast_extract_components()
     |> elem(1)
+  end
+
+  def js_init_bot(socket, bot) do
+    socket
+      |> push_event("js-exec", %{ js: """
+        bobot_editor.close();
+        interact('span.defblock,span.pseudo-defblock').draggable( interactDragable );
+        #{for [name, text, pos] <- bot[:attributes][:pseudo_blocks] do
+          "add_pseudo_block('#{text}', '#{name}', #{pos && pos || "undefined"});"
+        end |> Enum.join("")}
+        setTimeout(()=>{
+          #{for [b1, b2] <- bot[:attributes][:connections] do
+            "block_connect('"<> b1 <>"', '"<> b2 <>"', undefined, false);"
+          end |> Enum.join("")}
+        }, 500);
+      """ })
   end
 
 end

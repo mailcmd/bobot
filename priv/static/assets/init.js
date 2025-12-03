@@ -1,3 +1,34 @@
+var connections = [];
+var interactDragable = {
+    listeners: {
+        start (event) {
+            if (!event.target.position) {
+            if (event.target.style.transform) {
+                let [_t1, _t2, x, y] = event.target.style.transform.match(/\(([0-9\.]+)px, ([0-9\.]+)px\)/);
+                event.target.position = {x: parseFloat(x), y: parseFloat(y)};
+            } else {
+                event.target.position = {x: 0, y: 0};
+            }
+            }
+            // console.log(event.target.position)
+        },
+        move (event) {
+            event.target.position.x += event.dx;
+            event.target.position.y += event.dy;
+
+            event.target.style.transform =
+            `translate(${event.target.position.x}px, ${event.target.position.y}px)`;
+
+            if (event.target.lines) {
+            event.target.lines.filter(l => l).forEach( line => line.position() );
+            }
+        },
+        end (event) {
+            update_positions.click();
+        }
+    }
+};
+
 setTimeout(()=>{
     if (window.bobot_editor) {
         bobot_editor.addEventListener('keydown', function (e) {

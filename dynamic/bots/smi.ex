@@ -11,6 +11,23 @@ defbot :smi,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo."
   ] do
+  @positions [
+    error: "translate(774.4px, 441.6px)",
+    start: "translate(420.8px, 37.6px)",
+    loop: "translate(548.8px, 39.2px)",
+    show: "translate(291.2px, 340px)",
+    good_bye: "translate(13.6px, 101.6px)",
+    fall_back: "translate(52px, 72px)"
+  ]
+  @connections [
+    ["start", "loop"],
+    ["loop", "show"],
+    ["loop", "error"],
+    ["error", "loop"],
+    ["show", "loop"]
+  ]
+  @pseudo_blocks [[:q455566, "Tipo de usuario?", nil]]
+
   hooks(
     start_block: :start,
     start_params_count: 1,
