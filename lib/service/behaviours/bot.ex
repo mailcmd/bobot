@@ -55,7 +55,7 @@ defmodule Bobot.Bot do
     end
   end
 
-  @callback inform_to_subscribers(channel::atom(), subs::list(), message::(String.t | map()))
+  @callback inform_to_subscribers(subs::list(), message::(String.t | map()))
     :: any()
 
   @callback launch() :: any()

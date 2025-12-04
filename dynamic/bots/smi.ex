@@ -11,22 +11,9 @@ defbot :smi,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo."
   ] do
-  @positions [
-    error: "translate(774.4px, 441.6px)",
-    start: "translate(420.8px, 37.6px)",
-    loop: "translate(548.8px, 39.2px)",
-    show: "translate(291.2px, 340px)",
-    good_bye: "translate(13.6px, 101.6px)",
-    fall_back: "translate(52px, 72px)"
-  ]
-  @connections [
-    ["start", "loop"],
-    ["loop", "show"],
-    ["loop", "error"],
-    ["error", "loop"],
-    ["show", "loop"]
-  ]
-  @pseudo_blocks [[:q455566, "Tipo de usuario?", nil]]
+  @connections []
+  @positions [error: "", start: "", show: "", good_bye: "", fall_back: "", search_user: ""]
+  @pseudo_blocks []
 
   hooks(
     start_block: :start,
@@ -58,7 +45,7 @@ defbot :smi,
     case session_value([:authenticate, :authentication]) do
       :ok ->
         send_message "Bienvenido, decime qué querés buscar..."
-        call_block :loop
+        call_block :search_user
 
       :error ->
         terminate(
@@ -84,11 +71,11 @@ defbot :smi,
     terminate(message: @bot_config[:expire_message])
   end
 
-  defblock :loop do
+  defblock :search_user do
     await_response store_in: id
     send_message "<i>Estoy pensando, esperá unos segundos...</i>"
     call_api :find_user, params: id
     call_block session_value([:find_user, :result_type])
-    call_block :loop
+    call_block :search_user
   end
 end

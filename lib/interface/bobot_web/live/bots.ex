@@ -127,6 +127,16 @@ defmodule BobotWeb.Bots do
     }
   end
 
+  ## Specific SHOW for defblock
+  def handle_event("show:pseudoblock", _params, socket) do
+    {:noreply, socket
+      |> open_modal(%{
+        template: %{module: Elixir.Bobot.DSL.Base.Templates, sentency: "pseudoblock"},
+        title: "Add pseudo block"
+      })
+    }
+  end
+
   ################################################################################################
   ## SAVEs
   ################################################################################################
@@ -259,6 +269,23 @@ defmodule BobotWeb.Bots do
     }
   end
 
+  ## Specific SAVE for pseudobloc
+  def handle_event("save:pseudoblock", params, socket) do
+    assigns = socket.assigns
+    module = assigns[:sentencies]["pseudoblock"][:template]
+    {_, _, block} = apply(module, :save, ["pseudoblock", params, assigns])
+
+    current_bot =
+      assigns[:current_bot]
+      |> update_in([:attributes, :pseudo_blocks], fn pb -> pb ++ [[block.name, block.text]] end)
+      |> put_in([:changed], true)
+
+    {:noreply, socket
+      |> assign(current_bot: current_bot)
+      |> close_modal()
+    }
+  end
+
   ################################################################################################
   ## Misc events
   ################################################################################################
@@ -290,15 +317,19 @@ defmodule BobotWeb.Bots do
   ########################
   ### SAVE AND COMPILE BOT
   def handle_event("save-bot", params, socket) do
-    bot_layout = Jason.decode!(params["value"], keys: :atoms)
-    pos = bot_layout[:positions] |> Map.to_list() |> Macro.escape()
-    con = Macro.escape(bot_layout[:connections])
-    current_bot = socket.assigns[:current_bot]
-      |> update_in([:attributes], fn attrs ->
-        put_in(attrs, [:positions], pos)
-        put_in(attrs, [:connections], con)
-      end)
+    current_bot =
+      case params["value"] do
+        nil ->
+          socket.assigns[:current_bot]
 
+        json ->
+          bot_layout = Jason.decode!(json, keys: :atoms)
+          pos = bot_layout[:positions] |> Map.to_list() |> Macro.escape()
+          con = Macro.escape(bot_layout[:connections])
+          socket.assigns[:current_bot]
+            |> put_in([:attributes, :positions], pos)
+            |> put_in([:attributes, :connections], con)
+      end
 
     with :ok <- save_bot(current_bot),
          {:ok, message} <- compile_bot(current_bot[:name]),
@@ -370,10 +401,15 @@ defmodule BobotWeb.Bots do
       |> Map.to_list()
       |> Macro.escape()
 
-    [_, {:connections, con}] = socket.assigns[:current_bot][:attributes]
+    %{connections: con, pseudo_blocks: pb} = socket.assigns[:current_bot][:attributes]
 
     current_bot = socket.assigns[:current_bot]
-      |> put_in([:attributes], [{:positions, pos}, {:connections, con}])
+      |> update_in([:attributes], fn attrs ->
+        attrs
+          |> put_in([:positions], pos)
+          |> put_in([:connections], con)
+          |> put_in([:pseudo_blocks], pb)
+      end)
       |> put_in([:changed], true)
 
     {:noreply, socket
@@ -386,10 +422,15 @@ defmodule BobotWeb.Bots do
       |> Jason.decode!(keys: :atoms)
       |> Macro.escape()
 
-    [{:positions, pos}, _] = socket.assigns[:current_bot][:attributes]
+    %{positions: pos, pseudo_blocks: pb} = socket.assigns[:current_bot][:attributes]
 
     current_bot = socket.assigns[:current_bot]
-      |> put_in([:attributes], [{:positions, pos}, {:connections, con}])
+      |> update_in([:attributes], fn attrs ->
+        attrs
+          |> put_in([:positions], pos)
+          |> put_in([:connections], con)
+          |> put_in([:pseudo_blocks], pb)
+      end)
       |> put_in([:changed], true)
 
     {:noreply, socket
@@ -412,6 +453,22 @@ defmodule BobotWeb.Bots do
       """ })
     }
   end
+
+  def handle_event("remove-pseudoblock", params, socket) do
+    name = params["value"] |> String.to_atom()
+    current_bot =
+      socket.assigns[:current_bot]
+      |> update_in([:attributes, :pseudo_blocks], fn pb ->
+        Enum.filter(pb, fn [n, _] -> n != name end)
+      end)
+      |> put_in([:changed], true)
+
+    {:noreply, socket
+      |> assign(current_bot: current_bot)
+      |> close_modal()
+    }
+  end
+
 
   def handle_event("operation-editor", %{"operation" => "cancel", "ctrl" => "true"}, socket) do
     {:noreply, socket
@@ -629,7 +686,7 @@ defmodule BobotWeb.Bots do
         config: #{inspect bot[:settings][:config]}
       ] do
 
-      #{bot_attributes(bot[:attributes])}
+      #{bot_attributes(Map.to_list(bot[:attributes]))}
 
       hooks #{Macro.to_string(bot[:hooks])}
 
@@ -855,7 +912,7 @@ defmodule BobotWeb.Bots do
         blocks -> blocks
       end)
       |> update_in([:attributes], fn
-        nil -> []
+        nil -> %{positions: [], connections: [], pseudo_blocks: []}
         attributes -> attributes
       end)
     }
@@ -880,16 +937,16 @@ defmodule BobotWeb.Bots do
   def js_init_bot(socket, bot) do
     socket
       |> push_event("js-exec", %{ js: """
+        //remove_block_connections();
         bobot_editor.close();
+        /*
         interact('span.defblock,span.pseudo-defblock').draggable( interactDragable );
-        #{for [name, text, pos] <- bot[:attributes][:pseudo_blocks] do
-          "add_pseudo_block('#{text}', '#{name}', #{pos && pos || "undefined"});"
-        end |> Enum.join("")}
         setTimeout(()=>{
           #{for [b1, b2] <- bot[:attributes][:connections] do
             "block_connect('"<> b1 <>"', '"<> b2 <>"', undefined, false);"
           end |> Enum.join("")}
         }, 500);
+        */
       """ })
   end
 

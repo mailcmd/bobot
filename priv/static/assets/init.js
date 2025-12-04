@@ -3,21 +3,24 @@ var interactDragable = {
     listeners: {
         start (event) {
             if (!event.target.position) {
-            if (event.target.style.transform) {
-                let [_t1, _t2, x, y] = event.target.style.transform.match(/\(([0-9\.]+)px, ([0-9\.]+)px\)/);
-                event.target.position = {x: parseFloat(x), y: parseFloat(y)};
-            } else {
-                event.target.position = {x: 0, y: 0};
-            }
+                if (event.target.style.transform) {
+                    let [x, y] = event.target.style.transform.match(/\(([0-9\.]+)px, ([0-9\.]+)px\)/).slice(-2);
+                    event.target.position = {x: parseFloat(x), y: parseFloat(y)};
+                } else {
+                    event.target.position = {x: 0, y: 0};
+                }
             }
             // console.log(event.target.position)
         },
-        move (event) {
+        move (event) {            
             event.target.position.x += event.dx;
             event.target.position.y += event.dy;
 
+            // console.log(event.target.position.x, event.target.position.y)
+
             event.target.style.transform =
             `translate(${event.target.position.x}px, ${event.target.position.y}px)`;
+
 
             if (event.target.lines) {
             event.target.lines.filter(l => l).forEach( line => line.position() );

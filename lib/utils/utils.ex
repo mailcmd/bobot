@@ -272,13 +272,22 @@ defmodule Bobot.Utils do
     end
   end
 
-  def channel_subscribe(channel, subject) do
-    IO.inspect :dets.insert(:static_db, {{:channel, channel}, subject})
+
+  ######################################################
+  ## channel -> {bot_name, channel}
+  def channel_subscribe(channel, user) do
+    IO.inspect :dets.insert(:static_db, {{:channel, channel}, user})
   end
 
-  def channel_unsubscribe(channel, subject) do
-    :dets.delete_object(:static_db, {{:channel, channel}, subject})
+  def channel_unsubscribe(channel, user) do
+    :dets.delete_object(:static_db, {{:channel, channel}, user})
   end
+
+  def get_channel_subscribers(channel) do
+    :dets.match_object(:static_db, {{:channel, channel}, :_})
+      |> Enum.map(fn {_, chat_id} -> chat_id end)
+  end
+  ######################################################
 
   def get_bot_module(name) do
     try do
@@ -353,6 +362,10 @@ defmodule Bobot.Utils do
     else
       result
     end
+  end
+
+  def random_string(len \\ 10) do
+    (for _ <- 1..len, do: Enum.random(?a..?z)) |> to_string()
   end
 
 end

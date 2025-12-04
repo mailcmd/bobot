@@ -95,6 +95,14 @@ defmodule Bobot.DSL.Base.Templates do
     end
   end
 
+  def save("pseudoblock", params, _assigns) do
+    text = String.to_atom(params["text"])
+    {:ok, nil, %{
+        name: Bobot.Utils.random_string() |> String.to_atom(),
+        text: text
+    }}
+  end
+
   def save("defcall", params, assigns) do
     name = String.to_atom(params["name"])
     case get_in(assigns[:current_api], [:calls, name]) do

@@ -20,6 +20,12 @@ defmodule Bobot.DSL.Base.Tools do
         type: :base,
         visible: true
       }},
+      {"pseudoblock", %{
+        template: Bobot.DSL.Base.Templates,
+        tools: Bobot.DSL.Base.Tools,
+        type: :base,
+        visible: false
+      }},
       {"call_block", %{
         template: Bobot.DSL.Base.Templates,
         tools: Bobot.DSL.Base.Tools,

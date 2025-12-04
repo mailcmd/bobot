@@ -31,7 +31,7 @@ defmodule Bobot.DSL.Telegram do
         chat_id = var!(assigns)[:chat_id]
         Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} subscribed to channel '#{channel}'")
         Bobot.Utils.channel_subscribe(
-          String.to_atom(channel),
+          {@bot_name, String.to_atom(channel)},
           chat_id
         )
         send_message "<i>You are now subscribed to the '#{channel}' channel</i>"
@@ -40,7 +40,7 @@ defmodule Bobot.DSL.Telegram do
         chat_id = var!(assigns)[:chat_id]
         Logger.log(:notice, "[Bobot][Channels] Chat ID #{chat_id} unsubscribed to channel #{channel}")
         Bobot.Utils.channel_unsubscribe(
-          String.to_atom(channel),
+          {@bot_name, String.to_atom(channel)},
           chat_id
         )
         send_message "<i>You have been removed from the '#{channel}' channel</i>"
@@ -51,7 +51,7 @@ defmodule Bobot.DSL.Telegram do
       ################################################################################################
 
       @impl Bobot.Bot
-      def inform_to_subscribers(channel, subscribers, message) do
+      def inform_to_subscribers(subscribers, message) do
         Enum.each(subscribers, fn chat_id ->
           case message do
             message when is_binary(message) ->

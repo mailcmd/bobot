@@ -262,11 +262,11 @@ defmodule Bobot.DSL.Base do
     if guard != nil do
       guard = Macro.escape(guard)
       quote do
-        Bobot.Task.add_task(__MODULE__, var!(channel_name), unquote(pattern), unquote(guard), unquote(func))
+        Bobot.Task.add_task(@bot_name, var!(channel_name), unquote(pattern), unquote(guard), unquote(func))
       end
     else
       quote do
-        Bobot.Task.add_task(__MODULE__, var!(channel_name), unquote(pattern), unquote(func))
+        Bobot.Task.add_task(@bot_name, var!(channel_name), unquote(pattern), unquote(func))
       end
     end
   end

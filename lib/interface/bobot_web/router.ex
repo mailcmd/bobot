@@ -14,13 +14,18 @@ defmodule BobotWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Other scopes may use custom stacks.
+  scope "/rest", BobotWeb do
+    pipe_through :api
+
+    get "/channel/:bot_channel/*text", RestApi, :index
+    post "/channel/:bot_channel", RestApi, :index
+    get "/*nouse", RestApi, :request_error
+    post "/*nouse", RestApi, :request_error
+  end
+
   scope "/", BobotWeb do
     pipe_through :browser
-
-    # get "/", PageController, :home
-    # get "/bots", PageController, :bots
-    # get "/apis", PageController, :apis
-    # get "/libs", PageController, :libs
 
     live_session :main do
       live "/", Home
@@ -32,8 +37,4 @@ defmodule BobotWeb.Router do
 
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", BobotWeb do
-  #   pipe_through :api
-  # end
 end

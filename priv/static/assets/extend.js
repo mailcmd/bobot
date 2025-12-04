@@ -68,7 +68,7 @@ function editor_gotoline(nline, select_line = false) {
 
 function open_connect(el) {
     el.disabled = true;
-    const block = el.closest('.defblock');
+    const block = el.closest('.defblock,.pseudo-defblock');
     block.style.filter = 'grayscale(1)';
     block.style.opacity = '0.5';
     otherBlocks = siblings(block);
@@ -85,7 +85,7 @@ function open_connect(el) {
 }
 
 function close_connect(el) {
-    const block = el.closest('.defblock');
+    const block = el.closest('.defblock,.pseudo-defblock');
     block.style.filter = null;
     block.style.opacity = null;
     otherBlocks = [...siblings(block), block];
@@ -116,7 +116,7 @@ function block_connect(b1, b2, color = '#a855f7', update = true) {
             endPlug: 'arrow1',
             color: color, 
             size: 3,
-            path: 'magnet',
+            path: 'grid',
             dash: {animation: true}
         }
     );
@@ -163,27 +163,28 @@ function remove_block_connections() {
     }
 }
 
-function add_pseudo_block(text, name, pos) {
-    name = name ?? random_name();
-    const span = document.querySelector('span.block');
-    span.innerHTML += `
-    <span class="pseudo-defblock" data-block-name="${name}"
-          style="${pos ? 'transform: '+pos : ''};">
-      <div class="flex-none inline-block w-full h-full relative text-xs m-2 p-2
-                  border-2 border-purple-400 bg-white rounded-lg" 
-           style="text-align: center; align-content: center; rotate: -45deg;">
-        <button type="button" 
-                class="connect absolute right-10 top-2 text-purple-600 hover:text-purple-800 hover:scale-110 " 
-                value="${name}" title="Connect with..." onclick="open_connect(this)">
-          <span class="h-3 w-3 hero-arrow-down-circle"></span>
-        </button>
-        <div style="rotate: 45deg;">
-          ${text}
-        </div>
-      </div>
-    </span>
-    `;
-}
+// function add_pseudo_block(text, name, pos) {
+//     if (document.querySelector(`span.block[data-block-name="${name}"]`)) return;
+//     name = name ?? random_name();
+//     const span = document.querySelector('span.block');
+//     span.innerHTML += `
+//     <span class="pseudo-defblock" data-block-name="${name}"
+//           style="${pos ? 'transform: '+pos : ''};">
+//       <div class="flex-none inline-block w-full h-full relative text-xs m-2 p-2
+//                   border-2 border-purple-400 bg-white rounded-lg" 
+//            style="text-align: center; align-content: center; rotate: -45deg;">
+//         <button type="button" 
+//                 class="connect absolute right-10 top-2 text-purple-600 hover:text-purple-800 hover:scale-110 " 
+//                 value="${name}" title="Connect with..." onclick="open_connect(this)">
+//           <span class="h-3 w-3 hero-arrow-down-circle"></span>
+//         </button>
+//         <div style="rotate: 45deg;">
+//           ${text}
+//         </div>
+//       </div>
+//     </span>
+//     `;
+// }
 
 function serialize_block_connections() {
     return JSON.stringify(
