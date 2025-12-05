@@ -1,4 +1,4 @@
-# Bobot
+<h1>Bobot bot builder</h1>
 
 # Bobot, a tool not suitable for lazy people
 
@@ -23,7 +23,7 @@ expert, it is important to know al least a little about the fundamentals of Elix
 
 See [DSL document](DOCS.md)
 
-## TODO
+## TODO (sorry, only me can understand what the hell mean this list)
 
 - [x] Move render_table from telegram to tools
 - [x] Make assigns variable more specific for every step
