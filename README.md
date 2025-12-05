@@ -38,10 +38,10 @@ See [DSL document](DOCS.md)
 - [x] Base: add task schedule that trigger actions every time period
 - [x] every with guards
 - [x] Reload active BOT
-- [ ] Default commands: help, chsub, chunsub, chls
+- [ ] Add commands: /help, /chls, /mysubs
 - [x] chsub, chunsub FEEDBACK
 - [ ] Duplicate BOT y API
-- [ ] API to sent messages to channels
-- [ ] See what can make with connections between blocks
+- [x] API to sent messages to channels
+- [ ] See what can make with connections between blocks (Not for now!)
 
 
