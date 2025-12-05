@@ -304,7 +304,7 @@ setTimeout(()=>{
                     },
                     { 
                         caption: "await_response",
-                        value: `await_response [\n${indent_base}${indent}# cast_as: :integer|:string|:float,\n${indent_base}${indent}# extract_re: ~r/.+/,\n${indent_base}${indent}store_in: <session_key>\n${indent_base}]`, 
+                        value: `await_response [\n${indent_base}${indent}# cast_as: :integer|:string|:float,\n${indent_base}${indent}# extract_re: ~r/.+/,\n${indent_base}${indent}store_in: <varname>\n${indent_base}]`, 
                         meta: "Await input from user",
                         move: {rows: 1, cols: 2},
                         completer: completer

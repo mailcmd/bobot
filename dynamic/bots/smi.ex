@@ -11,8 +11,8 @@ defbot :smi,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo."
   ] do
-  @connections []
   @positions [error: "", start: "", show: "", good_bye: "", fall_back: "", search_user: ""]
+  @connections []
   @pseudo_blocks []
 
   hooks(

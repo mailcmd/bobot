@@ -241,10 +241,10 @@ This sentency has 2 variants:
   - Terminate the chat session
   - `message: <message>` allow sends message before and then terminates
 
-#### `await_response [cast_as: :integer|:string|:float, extract_re: <regex>, store_in: <session_key>]`
+#### `await_response [cast_as: :integer|:string|:float, extract_re: <regex>, store_in: <varname>]`
   - Freeze execution and wait for a message from the user.
   - The message is always text but can be casted as integer of float using `:cast_as`
-  - Can store the result in the session via `:store_in` option
+  - Can store the result in a variable via `:store_in` option
   - Return the message (casted if required)
 
 ## Mandatory implementations for each engine

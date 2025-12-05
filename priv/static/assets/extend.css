@@ -159,6 +159,11 @@ dialog:not(.full-screen) .editor-status-bar {
   width: 60vw;
 }
 
+.ace_autocomplete {
+  min-width: 0;
+  width: 30% !important;
+}
+
 .editor-status-bar {
   padding-top: 4px;
   padding-bottom: 4px;
