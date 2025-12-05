@@ -1,7 +1,12 @@
 
 <dialog id="bobot_editor" phx-update="ignore"  data-title="" 
   class="relative px-0 pb-0 pt-8 before:bg-purple-800 before:font-mono before:text-xs">
-  <form phx-submit="operation-editor" onsubmit="block_text.value = editor.getValue().trim()">
+  <form phx-submit="operation-editor" style="height: calc(100% - 1.5rem);"
+    onsubmit="block_text.value = editor.getValue().trim()">
+    
+    <.icon_button type="button" onclick="editor_toggle_fs(this)"
+      class="absolute top-1 right-14 text-white" icon="arrows-pointing-out"/>
+
     <!-- editing mode -->
     <.icon_button type="submit" onclick="editor_set_operation(event, 'commit')" 
       class="commit editing absolute top-1 right-8 text-white" icon="folder-arrow-down-solid" 
@@ -24,6 +29,7 @@
     <div id="editor-status-bar" class="editor-status-bar text-right px-2 text-xs bg-purple-800 text-white">
       <div class="info float-left"></div>
     </div>
+    
   </form>
 </dialog>
 

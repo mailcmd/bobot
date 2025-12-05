@@ -56,28 +56,28 @@
         <div :for={api <- @available_apis}
           class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 border-2 border-purple-400 bg-white rounded-lg">
           <%= "#{api}" %>
-          <.icon_button icon="pencil-solid" icon-size="4" title="Edit api"
-            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
-            phx-click="navigate-to-value" value={"apis##{api}"}/>
           <.icon_button icon="x-circle-solid" icon-size="4" value={api} title="Remove api"
             class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
             onclick={"confirm_action(
               'Are you sure about to remove the api <b class=\"text-red-800\">#{api}</b>?', 'remove:apis:#{api}'
             )"}/>
+          <.icon_button icon="pencil-solid" icon-size="4" title="Edit api"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            phx-click="navigate-to-value" value={"apis##{api}"}/>
         </div>
       </span>
       <span class="home-list before:text-purple-800" content="libs">
         <div :for={lib <- @available_libs}
           class="min-w-64 font-mono text-xs h-fit-content m-2 p-2 border-2 border-purple-400 bg-white rounded-lg">
           <%= "#{lib}" %>
-          <.icon_button icon="pencil-solid" icon-size="4" title="Edit lib"
-            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
-            phx-click="navigate-to-value" value={"libs##{lib}"}/>
           <.icon_button icon="x-circle-solid" icon-size="4" value={lib} title="Remove lib"
             class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
             onclick={"confirm_action(
               'Are you sure about to remove the lib <b class=\"text-red-800\">#{lib}</b>?', 'remove:libs:#{lib}'
             )"}/>
+          <.icon_button icon="pencil-solid" icon-size="4" title="Edit lib"
+            class="float-right mr-2 text-purple-600 hover:text-purple-800 hover:scale-110"
+            phx-click="navigate-to-value" value={"libs##{lib}"}/>
         </div>
       </span>
     </div>

@@ -136,13 +136,30 @@ input[readonly]:focus {
   font-weight: bolder;
 }
 
-.ace_editor {
+dialog.full-screen {
+  width: 100vw;
+  height: 100vh;
+  box-shadow: 0 0 4px #777;
+}
+
+dialog.full-screen::backdrop {
+  background-color: #bb71f8c0;
+}
+
+dialog.full-screen .ace_editor {
+  height: 100%;
+}
+
+dialog:not(.full-screen) .ace_editor {
   width: 60vw;
   height: 70vh;
 }
 
-.editor-status-bar {
+dialog:not(.full-screen) .editor-status-bar {
   width: 60vw;
+}
+
+.editor-status-bar {
   padding-top: 4px;
   padding-bottom: 4px;
 }

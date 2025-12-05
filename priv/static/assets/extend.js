@@ -20,6 +20,20 @@ function editor_open(title, text, readonly = false) {
     }, 100);
 }
 
+function editor_toggle_fs(el) {
+    console.log(el)
+    if (bobot_editor.classList.contains('full-screen')) {
+        bobot_editor.classList.remove('full-screen');        
+        el.querySelector('span').classList.remove('hero-arrows-pointing-in');
+        el.querySelector('span').classList.add('hero-arrows-pointing-out');
+    } else {
+        bobot_editor.classList.add('full-screen');
+        el.querySelector('span').classList.remove('hero-arrows-pointing-out');
+        el.querySelector('span').classList.add('hero-arrows-pointing-in');
+    }
+    editor.resize();
+}
+
 function editor_set_readonly(readonly) {
     editor.setReadOnly(readonly);
     if (readonly) {
