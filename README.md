@@ -1,6 +1,8 @@
-<h1>Bobot, a bot builder for those who hate point and click solutions</h1>
+<h1>Bobot</h1>
 
-## Bobot, a tool not suitable for lazy people
+#### ... a bot builder for those who hate point and click solutions
+
+## A tool not suitable for lazy people
 
 With Bobot YOU are the smart one, YOU are the one who thinks, YOU are the one who solves problems,
 and YOU are the one who creates solutions. Yes dude!... with Bobot there is not AIs, no prompts, 
