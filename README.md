@@ -1,4 +1,4 @@
-<h1>Bobot bot builder</h1>
+<h1>Bobot, a bot builder for those who hate point and click solutions</h1>
 
 ## Bobot, a tool not suitable for lazy people
 
