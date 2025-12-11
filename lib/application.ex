@@ -10,11 +10,6 @@ defmodule Bobot.Application do
 
   @impl Application
   def start(_type, _args) do
-    # webhook_config = [
-    #   host: Keyword.fetch!(config, :host),
-    #   local_port: Keyword.fetch!(config, :local_port)
-    # ]
-
     # init static_db
     :dets.open_file(:static_db, file: ~c"priv/static.db")
 
@@ -49,7 +44,8 @@ defmodule Bobot.Application do
     bobot_config = Bobot.Config.__info__(:attributes)
     telegram_bots = Keyword.get(bobot_config, :telegram_bots, [])
 
-    telegram_bots=
+    # Exclude bots that cause errors when compiling
+    telegram_bots =
       Enum.map(telegram_bots, fn name ->
         Logger.log(:notice, "[BOBOT] Compiling #{name} bot...")
         case Bobot.Utils.compile_file("#{@bots_dir}/#{name}.ex") do
@@ -65,7 +61,7 @@ defmodule Bobot.Application do
     # Set supervisor childrens
     children = [
       {DNSCluster, query: Application.get_env(:bobot, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Bobot.PubSub},
+      # {Phoenix.PubSub, name: Bobot.PubSub}, # I do not use it
       BobotWeb.Endpoint,
       {Bobot.Utils.Assigns, []},
       {Bobot.Utils.Storage, []},
