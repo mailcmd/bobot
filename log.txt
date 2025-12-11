@@ -1,0 +1,2 @@
+2025/12/10 17:11:03 Micro started
+2025/12/10 17:11:03 micro-fzf is not a plugin
