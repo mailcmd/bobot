@@ -13,12 +13,12 @@ defmodule Bobot.DSL.Base do
         Enum.each(bot_channels, fn channel ->
           init_channel(channel)
         end)
-        :ok        
+        :ok
       end
     end
   end
 
- 
+
   ################################################################################################
   ## UTILS
   ################################################################################################
@@ -29,7 +29,7 @@ defmodule Bobot.DSL.Base do
       api = String.to_existing_atom("Elixir.Bobot.API.#{api |> to_string() |> Macro.camelize()}")
       api.call(id, params)
     rescue
-      _ ->  
+      _ ->
        try_apis(apis, id, params)
     end
   end
@@ -310,7 +310,7 @@ defmodule Bobot.DSL.Base do
     quote do
       @impl true
       def call(unquote(name), unquote(vars)) when unquote(expr) do
-        unquote(block)        
+        unquote(block)
       end
     end
   end
@@ -330,5 +330,5 @@ defmodule Bobot.DSL.Base do
     end
   end
 
-
+ "holacomo "
 end
