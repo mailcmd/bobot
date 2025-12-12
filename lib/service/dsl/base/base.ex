@@ -31,7 +31,7 @@ defmodule Bobot.DSL.Base do
     rescue
       _ ->
        try_apis(apis, id, params)
-    end
+    end    
   end
 
 
@@ -329,6 +329,4 @@ defmodule Bobot.DSL.Base do
       end
     end
   end
-
- "holacomo "
 end
