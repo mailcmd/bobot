@@ -6,13 +6,14 @@ defbot :smi,
   use_apis: [:smi],
   use_libs: [],
   config: [
-    token: "8241208776:AAHz1-OjK94w_L0RIuIDoReuaZnJX0IWSXI",
+    token:
+      "1A14161314121A1919181C2323282D3A24284E5055561B144831584E4E4317511B2C525B41262D4E14582F272B3B",
     session_ttl: 300_000,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo."
   ] do
-  @positions [error: "", start: "", show: "", good_bye: "", fall_back: "", search_user: ""]
   @connections []
+  @positions [error: "", start: "", show: "", good_bye: "", fall_back: "", search_user: ""]
   @pseudo_blocks []
 
   hooks(

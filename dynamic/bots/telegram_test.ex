@@ -3,7 +3,7 @@ import Bobot.DSL.Base
 defbot :telegram_test,
   type: :telegram,
   config: [
-    token: "8241208776:AAHz1-OjK94w_L0RIuIDoReuaZnJX0IWSXI",
+    token: "",
     session_ttl: 10000,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo.",

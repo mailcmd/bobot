@@ -61,7 +61,7 @@ defmodule Bobot.Application do
     # Set supervisor childrens
     children = [
       {DNSCluster, query: Application.get_env(:bobot, :dns_cluster_query) || :ignore},
-      # {Phoenix.PubSub, name: Bobot.PubSub}, # I do not use it
+      {Phoenix.PubSub, name: Bobot.PubSub}, ## I do not use it
       BobotWeb.Endpoint,
       {Bobot.Utils.Assigns, []},
       {Bobot.Utils.Storage, []},
@@ -109,7 +109,7 @@ defmodule Bobot.Application do
 
     ## get bot config
     bot_config = :attributes |> bot_module.__info__() |> Keyword.fetch!(:bot_config)
-    token = Keyword.fetch!(bot_config, :token)
+    token = bot_config |> Keyword.fetch!(:token) |> Bobot.Utils.decrypt() 
     session_ttl = Keyword.fetch!(bot_config, :session_ttl)
     expire_message = Keyword.get(bot_config, :expire_message, "👏")
     commands_as_message = Keyword.get(bot_config, :commands_as_message, false)
@@ -120,7 +120,6 @@ defmodule Bobot.Application do
       Bobot.Utils.Storage.set_token_data(token, :commands_as_message, commands_as_message)
     end)
     {Bobot.Engine.Telegram, bot_config}
-    # {Bobot.Engine.Telegram, [{:name, name} | bot_config]}
   end
 
 

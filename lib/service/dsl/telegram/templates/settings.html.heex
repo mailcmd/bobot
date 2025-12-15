@@ -4,7 +4,7 @@
       <.input name="token" label="Token" required 
         value={
           is_list(@current_bot[:settings]) 
-            && get_in(@current_bot, [:settings, :config, :token]) 
+            && (@current_bot |> get_in([:settings, :config, :token]) |> Bobot.Utils.decrypt())
             || ""}
           />
     </li>
