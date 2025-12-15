@@ -7,7 +7,7 @@ defmodule Bobot.DSL.Telegram do
 
     config = Keyword.get(opts, :config, [])
 
-    token = Keyword.fetch!(config, :token)
+    token = config |> Keyword.fetch!(:token) |> Bobot.Utils.decrypt()
     session_ttl = Keyword.get(config, :session_ttl, session_ttl_default)
     max_bot_concurrency = Keyword.get(config, :max_bot_concurrency, 1_000)
 

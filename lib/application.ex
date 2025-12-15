@@ -110,6 +110,7 @@ defmodule Bobot.Application do
     ## get bot config
     bot_config = :attributes |> bot_module.__info__() |> Keyword.fetch!(:bot_config)
     token = bot_config |> Keyword.fetch!(:token) |> Bobot.Utils.decrypt() 
+    bot_config = Keyword.put(bot_config, :token, token)
     session_ttl = Keyword.fetch!(bot_config, :session_ttl)
     expire_message = Keyword.get(bot_config, :expire_message, "👏")
     commands_as_message = Keyword.get(bot_config, :commands_as_message, false)
