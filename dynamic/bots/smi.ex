@@ -6,8 +6,7 @@ defbot :smi,
   use_apis: [:smi],
   use_libs: [],
   config: [
-    token:
-      "1A14161314121A1919181C2323282D3A24284E5055561B144831584E4E4317511B2C525B41262D4E14582F272B3B",
+    token: "GhQWExQSGhkZGBwjIygtOiQoTlBVVhsUSDFYTk5DF1EbLFJbQSYtThRYLycrOw==",
     session_ttl: 300_000,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo."

@@ -6,17 +6,23 @@ defbot :telegram_test_x,
   use_apis: [:test],
   use_libs: [],
   config: [
-    token: "8241208776:AAHz1-OjK94w_L0RIuIDoReuaZnJX0IWSXI",
+    token: "GhQWExQSGhkZGBwjIypcEw8xTC0bFllBLhI0K1crJlE0R1dDPFAsOhIrOTU6Kw==",
     session_ttl: 3600,
     max_bot_concurrency: 1000,
     expire_message: "El tiempo de espera se agotó. Empezá de nuevo."
   ] do
+  @connections []
+  @positions [start: "", first_contact: "", addresses_menu: "", good_bye: "", first_check: ""]
+  @pseudo_blocks []
+
   hooks(
     start_block: :start,
     start_params_count: 1,
     stop_block: :first_contact,
     fallback_block: :good_bye
   )
+
+  constants([])
 
   defblock :start, receive: phone do
     session_store(time: System.os_time(:second))
@@ -26,7 +32,7 @@ defbot :telegram_test_x,
 
   defblock :good_bye do
     call_api :save_interaction
-    terminate message: "Gracias por comunicarte con nosotros!"
+    terminate(message: "Gracias por comunicarte con nosotros!")
   end
 
   defblock :first_contact, receive: phone do

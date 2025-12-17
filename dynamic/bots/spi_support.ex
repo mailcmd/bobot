@@ -6,8 +6,7 @@ defbot :spi_support,
   use_apis: [:spi_support],
   use_libs: [:common],
   config: [
-    token:
-      "1A161B141415121212131C2323292F2D41333B4D1330195643564357342F2E5743143928295139532E352E182A37",
+    token: "GhYbFBQVEhISExwjIykvLUEzO00TMBlWQ1ZDVzQvLldDFDkoKVE5Uy41LhgqNw==",
     session_ttl: 3_600_000,
     max_bot_concurrency: 1000,
     expire_message: "La sesión expiro, pero podés volver a contactarnos cuando lo necesites 👋"

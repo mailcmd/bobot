@@ -365,7 +365,7 @@ defmodule Bobot.Utils do
   end
 
   def random_string(len \\ 10) do
-    (for _ <- 1..len, do: Enum.random(?a..?z)) |> to_string()
+    (for _ <- 1..len, do: Enum.random(?a..?z)) |> to_string()        
   end
 
   def encrypt(""), do: ""
@@ -375,16 +375,16 @@ defmodule Bobot.Utils do
       |> Enum.filter(&(&1 != ""))      
       |> Enum.map(fn c -> c |> String.to_charlist() |> hd() |> Kernel.-(30) end)
       |> to_string()
-      |> Base.encode16()
+      |> Base.encode64()
   end
 
   def decrypt(""), do: ""
   def decrypt(encoded_data) do
     encoded_data
-      |> Base.decode16!()
+      |> Base.decode64!()
       |> String.split("")
       |> Enum.filter(&(&1 != ""))      
       |> Enum.map(fn c -> c |> String.to_charlist() |> hd() |> Kernel.+(30) end)
       |> to_string()
-  end
+  end  
 end
