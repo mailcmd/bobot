@@ -20,7 +20,7 @@ defmodule Bobot.Application do
       write_concurrency: true,
       read_concurrency: true
     ])
-
+    
     # Compile APIs
     Path.wildcard("#{@apis_dir}/*.ex") |> Enum.map(fn filename ->
       try do
