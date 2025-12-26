@@ -2,7 +2,7 @@
 
 
 export PHX_HOST=0.0.0.0
-export PORT=5000
+export PORT=4500
 
 # SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd ) #"
 SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")") #"

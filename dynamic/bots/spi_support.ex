@@ -9,7 +9,8 @@ defbot :spi_support,
     token: "GhYbFBQVEhISExwjIykvLUEzO00TMBlWQ1ZDVzQvLldDFDkoKVE5Uy41LhgqNw==",
     session_ttl: 3_600_000,
     max_bot_concurrency: 1000,
-    expire_message: "La sesión expiro, pero podés volver a contactarnos cuando lo necesites 👋"
+    expire_message: "La sesión expiro, pero podés volver a contactarnos cuando lo necesites 👋",
+    commands_as_message: true
   ] do
   @connections []
   @positions [start: "", loop: "", good_bye: ""]
