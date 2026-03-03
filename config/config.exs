@@ -15,7 +15,7 @@ config :bobot,
 
 # Configures the endpoint
 config :bobot, BobotWeb.Endpoint,
-  url: [host: "localhost"],
+  url: [host: System.get_env("PHX_HOST") || "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: BobotWeb.ErrorHTML, json: BobotWeb.ErrorJSON],
