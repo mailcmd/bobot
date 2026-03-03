@@ -3,6 +3,7 @@
 
 export PHX_HOST=0.0.0.0
 export PORT=4500
+export ELIXIR_ERL_OPTIONS="+fnu"
 
 # SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd ) #"
 SCRIPT_DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")") #"
