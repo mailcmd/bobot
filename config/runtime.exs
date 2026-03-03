@@ -40,6 +40,7 @@ if config_env() == :prod do
 
   config :bobot, BobotWeb.Endpoint,
     url: [host: host, port: port, scheme: "http"],
+    check_origin: false,
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
