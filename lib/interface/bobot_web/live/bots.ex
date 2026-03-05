@@ -747,18 +747,18 @@ defmodule BobotWeb.Bots do
  end
  defp bot_channels_to_source(nil, _), do: ""
  defp bot_channels_to_source([], _), do: ""
- defp bot_channels_to_source([{channel, block} | channels], no_parens) do
+ defp bot_channels_to_source([{channel, {options, block}} | channels], no_parens) do
    """
-   defchannel #{Macro.to_string(channel)} do
+   defchannel #{Macro.to_string(channel)}, #{Macro.to_string(options)} do
      #{Bobot.Utils.ast_to_source(block, no_parens)}
    end
 
    #{bot_channels_to_source(channels, no_parens)}
    """
  end
- defp bot_channels_to_source([{channel, {options, block}} | channels], no_parens) do
+ defp bot_channels_to_source([{channel, block} | channels], no_parens) do
    """
-   defchannel #{Macro.to_string(channel)}, #{Macro.to_string(options)} do
+   defchannel #{Macro.to_string(channel)} do
      #{Bobot.Utils.ast_to_source(block, no_parens)}
    end
 
