@@ -756,6 +756,15 @@ defmodule BobotWeb.Bots do
    #{bot_channels_to_source(channels, no_parens)}
    """
  end
+ defp bot_channels_to_source([{channel, {options, block}} | channels], no_parens) do
+   """
+   defchannel #{Macro.to_string(channel)}, #{Macro.to_string(options)} do
+     #{Bobot.Utils.ast_to_source(block, no_parens)}
+   end
+
+   #{bot_channels_to_source(channels, no_parens)}
+   """
+ end
 
  defp compile_bot(name) do
     filename = file_name(name)
@@ -885,6 +894,18 @@ defmodule BobotWeb.Bots do
               [], #node,
               acc
                 |> Bobot.Utils.put_inx([:channels, channel], block)
+            }
+
+          {:defchannel, _, [channel, options, [do: block]]}, acc ->
+            block =
+              case block do
+                {:__block__, _, block} -> block
+                block -> [block]
+              end
+            {
+              [], #node,
+              acc
+                |> Bobot.Utils.put_inx([:channels, channel], {options, block})
             }
 
           {:__block__, _, _}, %{hooks: _hooks} = acc ->
