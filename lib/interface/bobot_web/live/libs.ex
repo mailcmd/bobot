@@ -82,7 +82,7 @@ defmodule BobotWeb.Libs do
 
           socket
             |> assign(current_lib: current_lib)
-            |> assign(libs: Map.put(assigns[:libs], def[:name], def[:name]))
+            |> assign(libs: Keyword.put(assigns[:libs], def[:name], def[:name]))
 
         :error ->
           socket
