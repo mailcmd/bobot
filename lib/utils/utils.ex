@@ -379,6 +379,7 @@ defmodule Bobot.Utils do
   end
 
   def decrypt(""), do: ""
+  def decrypt(nil), do: ""
   def decrypt(encoded_data) do
     encoded_data
       |> Base.decode64!()

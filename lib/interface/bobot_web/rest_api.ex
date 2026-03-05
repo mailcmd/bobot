@@ -5,7 +5,11 @@ defmodule BobotWeb.RestApi do
   alias Plug.Conn
 
   def index(conn, params) do
-    bot_channel = params["bot_channel"] |> String.split(":") |> Enum.map(&String.to_atom/1)
+    bot_channel =
+      params["bot_channel"]
+      |> String.split(":")
+      |> Enum.map(&String.to_atom/1)
+    
     with [bot_name, channel] <- bot_channel,
          module <- Bobot.Utils.get_bot_module(bot_name),
          message when is_map(message) <- extract_message(conn, params) do
