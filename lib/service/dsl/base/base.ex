@@ -256,7 +256,7 @@ defmodule Bobot.DSL.Base do
     func = Macro.escape(quote do
       fn (var!(module), var!(channel), bot_libs) ->
         for module <- bot_libs do
-          module = String.to_atom("Elixir.Bobot.Lib.#{module |> to_string() |> Macro.camelize()}")
+          module = String.to_existing_atom("Elixir.Bobot.Lib.#{module |> to_string() |> Macro.camelize()}")
           import module
         end
         Code.eval_quoted(unquote(Macro.escape(block)), [module: var!(module), channel: var!(channel)]) |> elem(0)
