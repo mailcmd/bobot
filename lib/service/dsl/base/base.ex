@@ -254,8 +254,8 @@ defmodule Bobot.DSL.Base do
   defmacro every(pattern, opts \\ [], do: block) do
     pattern = Macro.escape(pattern)
     func = Macro.escape(quote do
-      fn (var!(module), var!(channel)) ->
-        for module <- @bot_libs do
+      fn (var!(module), var!(channel), bot_libs) ->
+        for module <- bot_libs do
           module = String.to_atom("Elixir.Bobot.Lib.#{module |> to_string() |> Macro.camelize()}")
           import module
         end

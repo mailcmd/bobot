@@ -52,15 +52,17 @@ defmodule Bobot.Task do
         unquote(quoted_pattern) ->
           # Get channel subscribers from db
           subscribers = Bobot.Utils.get_channel_subscribers({unquote(bot_name), unquote(channel)})
-
           # If there are not subs it is not worth run the task
           if length(subscribers) > 0 do
+            # I need to allow use libs inside anonymous function so first list all
+            # libs imported by the bot and then send them as 3rd parm to the func.
+            libs = Bobot.Utils.get_bot_module(unquote(bot_name)).__info__(:attributes)[:bot_libs]            
             require Logger
             # Run the 'every' function and save the result as message
             func = unquote(quoted_func)
             message =
               try do
-                func.(unquote(bot_name), unquote(channel))
+                func.(unquote(bot_name), unquote(channel), libs)
               rescue
                 _ -> "ERROR running task!"
               end
