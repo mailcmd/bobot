@@ -255,6 +255,10 @@ defmodule Bobot.DSL.Base do
     pattern = Macro.escape(pattern)
     func = Macro.escape(quote do
       fn (var!(module), var!(channel)) ->
+        for module <- @bot_libs do
+          module = String.to_atom("Elixir.Bobot.Lib.#{module |> to_string() |> Macro.camelize()}")
+          import unquote(module)
+        end
         Code.eval_quoted(unquote(Macro.escape(block)), [module: var!(module), channel: var!(channel)]) |> elem(0)
       end
     end)
