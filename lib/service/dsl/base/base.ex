@@ -255,8 +255,6 @@ defmodule Bobot.DSL.Base do
     pattern = Macro.escape(pattern)
     func = Macro.escape(quote do
       fn (var!(module), var!(channel)) ->
-        import Bobot.DSL.Base
-        import Bobot.DSL.Telegram
         Code.eval_quoted(unquote(Macro.escape(block)), [module: var!(module), channel: var!(channel)]) |> elem(0)
       end
     end)
