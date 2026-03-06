@@ -62,7 +62,7 @@ defmodule Bobot.Task do
             func = unquote(quoted_func)
             message =
               try do
-                func.(unquote(bot_name), unquote(channel), libs)
+                func.(unquote(bot_name), unquote(channel))
               rescue
                 _ -> "ERROR running task!"
               end
