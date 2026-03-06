@@ -47,34 +47,40 @@ defmodule Bobot.Task do
 
   # task without guard
   defp every_minute_tasks_h([{:task, bot_name, channel, quoted_pattern, quoted_func} | tasks], now) do
-    Code.eval_quoted(quote do
-      case unquote(now) do
-        unquote(quoted_pattern) ->
-          # Get channel subscribers from db
-          subscribers = Bobot.Utils.get_channel_subscribers({unquote(bot_name), unquote(channel)})
-          # If there are not subs it is not worth run the task
-          if length(subscribers) > 0 do
-            # I need to allow use libs inside anonymous function so first list all
-            # libs imported by the bot and then send them as 3rd parm to the func.
-            libs = Bobot.Utils.get_bot_module(unquote(bot_name)).__info__(:attributes)[:bot_libs]            
-            require Logger
-            # Run the 'every' function and save the result as message
-            func = unquote(quoted_func)
-            message =
-              try do
-                func.(unquote(bot_name), unquote(channel))
-              rescue
-                _ -> "ERROR running task!"
+    Code.eval_quoted(
+      quote do
+        case unquote(now) do
+          unquote(quoted_pattern) ->
+            # Get channel subscribers from db
+            subscribers = Bobot.Utils.get_channel_subscribers({unquote(bot_name), unquote(channel)})
+            # If there are not subs it is not worth run the task
+            if length(subscribers) > 0 do
+              # I need to allow use libs inside anonymous function so first list all
+              # libs imported by the bot and then send them as 3rd parm to the func.
+              libs = Bobot.Utils.get_bot_module(unquote(bot_name)).__info__(:attributes)[:bot_libs]
+              for lib_module <- libs do
+                lib_module = lib_module |> to_string() |> Macro.camelize()
+                import String.to_existing_atom("Elixir.Bobot.Lib.#{lib_module}")
               end
+              require Logger
+              # Run the 'every' function and save the result as message
+              func = unquote(quoted_func)
+              message =
+                try do
+                  func.(unquote(bot_name), unquote(channel))
+                rescue
+                  _ -> "ERROR running task!"
+                end
 
-            Logger.log(:info, "[Bobot][Tasks] Sending news for channel '#{unquote(channel)}' to #{inspect subscribers}")
-            Bobot.Utils.get_bot_module(unquote(bot_name)).inform_to_subscribers(subscribers, message)
-          end
+              Logger.log(:info, "[Bobot][Tasks] Sending news for channel '#{unquote(channel)}' to #{inspect subscribers}")
+              Bobot.Utils.get_bot_module(unquote(bot_name)).inform_to_subscribers(subscribers, message)
+            end
 
-        _ ->
-          nil
+          _ ->
+            nil
+        end
       end
-    end)
+    )
 
     every_minute_tasks_h(tasks, now)
   end
